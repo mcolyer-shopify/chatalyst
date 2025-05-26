@@ -28,6 +28,31 @@ pnpm tauri android init    # Initialize Android support
 pnpm tauri ios init        # Initialize iOS support
 ```
 
+### Testing
+
+#### Frontend Testing
+The project uses Vitest for frontend testing with the following commands:
+```bash
+pnpm test              # Run tests once
+pnpm test:watch        # Run tests in watch mode
+pnpm test:ui           # Run tests with UI interface
+pnpm test:coverage     # Run tests with coverage report
+```
+
+Frontend tests use:
+- **Vitest** - Test runner and assertion library
+- **@testing-library/preact** - Testing utilities for Preact components
+- **@testing-library/jest-dom** - Additional DOM matchers
+- **jsdom** - DOM implementation for Node.js
+
+#### Backend Testing
+Rust tests are run using Cargo:
+```bash
+cd src-tauri
+cargo test             # Run all Rust tests
+cargo test -- --nocapture  # Run tests with console output
+```
+
 ## Architecture
 
 ### Directory Structure
