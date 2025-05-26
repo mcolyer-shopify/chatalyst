@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Model search filtering now works correctly with onInput event handler
 - Models are sorted alphabetically for improved user experience
+- Dropdown menu interaction bug where only the last conversation could be renamed or deleted
 
 ## [0.1.0] - 2025-01-26
 

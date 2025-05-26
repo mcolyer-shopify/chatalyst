@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
 
@@ -32,11 +32,12 @@ export function ConversationList({
   const [dropdownId, setDropdownId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Element;
+      // Check if the click is outside any dropdown menu
+      if (!target.closest('.conversation-menu')) {
         setDropdownId(null);
       }
     }
@@ -108,7 +109,7 @@ export function ConversationList({
                 >
                   {conversation.title}
                 </div>
-                <div class="conversation-menu" ref={dropdownRef}>
+                <div class="conversation-menu">
                   <button
                     class="menu-button"
                     onClick={(e) => {
