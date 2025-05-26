@@ -77,4 +77,67 @@ describe('Message', () => {
     const contentDiv = container.querySelector('.message-content');
     expect(contentDiv).toHaveTextContent('');
   });
+
+  describe('Markdown rendering', () => {
+    it('renders markdown in assistant messages', () => {
+      const markdownMessage: MessageType = {
+        id: '3',
+        content: '# Hello\n\nThis is **bold** and *italic* text.',
+        role: 'assistant',
+        timestamp: Date.now()
+      };
+
+      const { container } = render(<Message message={markdownMessage} />);
+      
+      // Check that markdown is converted to HTML
+      expect(container.querySelector('h1')).toHaveTextContent('Hello');
+      expect(container.querySelector('strong')).toHaveTextContent('bold');
+      expect(container.querySelector('em')).toHaveTextContent('italic');
+    });
+
+    it('does not render markdown in user messages', () => {
+      const markdownMessage: MessageType = {
+        id: '4',
+        content: '# Hello\n\nThis is **bold** text.',
+        role: 'user',
+        timestamp: Date.now()
+      };
+
+      const { container } = render(<Message message={markdownMessage} />);
+      
+      // Check that markdown is NOT converted for user messages
+      expect(container.querySelector('h1')).not.toBeInTheDocument();
+      expect(container.querySelector('strong')).not.toBeInTheDocument();
+      expect(screen.getByText('# Hello This is **bold** text.')).toBeInTheDocument();
+    });
+
+    it('renders code blocks correctly', () => {
+      const codeMessage: MessageType = {
+        id: '5',
+        content: 'Here is some code:\n\n```javascript\nconst x = 42;\nconsole.log(x);\n```',
+        role: 'assistant',
+        timestamp: Date.now()
+      };
+
+      const { container } = render(<Message message={codeMessage} />);
+      
+      expect(container.querySelector('pre')).toBeInTheDocument();
+      expect(container.querySelector('code')).toHaveTextContent('const x = 42;');
+    });
+
+    it('renders links correctly', () => {
+      const linkMessage: MessageType = {
+        id: '6',
+        content: 'Check out [this link](https://example.com)',
+        role: 'assistant',
+        timestamp: Date.now()
+      };
+
+      const { container } = render(<Message message={linkMessage} />);
+      
+      const link = container.querySelector('a');
+      expect(link).toHaveAttribute('href', 'https://example.com');
+      expect(link).toHaveTextContent('this link');
+    });
+  });
 });

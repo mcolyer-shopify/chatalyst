@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite for model selection with 13+ test cases
 - Cmd+N keyboard shortcut to create new conversations instantly
 - Auto-focus functionality for message input when conversations are selected
+- Markdown rendering support for assistant messages with full GitHub Flavored Markdown (GFM)
 
 ### Changed
 - Streamlined UI by removing app header and moving settings to sidebar footer

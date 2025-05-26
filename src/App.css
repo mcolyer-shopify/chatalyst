@@ -275,12 +275,118 @@ body {
   border-bottom-left-radius: 0.25rem;
 }
 
+/* Markdown styling for assistant messages */
+.message-assistant .message-content h1,
+.message-assistant .message-content h2,
+.message-assistant .message-content h3,
+.message-assistant .message-content h4,
+.message-assistant .message-content h5,
+.message-assistant .message-content h6 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.message-assistant .message-content h1:first-child,
+.message-assistant .message-content h2:first-child,
+.message-assistant .message-content h3:first-child,
+.message-assistant .message-content h4:first-child,
+.message-assistant .message-content h5:first-child,
+.message-assistant .message-content h6:first-child {
+  margin-top: 0;
+}
+
+.message-assistant .message-content p {
+  margin: 0.5rem 0;
+}
+
+.message-assistant .message-content p:first-child {
+  margin-top: 0;
+}
+
+.message-assistant .message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-assistant .message-content ul,
+.message-assistant .message-content ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.message-assistant .message-content li {
+  margin: 0.25rem 0;
+}
+
+.message-assistant .message-content code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 0.875em;
+}
+
+.message-assistant .message-content pre {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.message-assistant .message-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.message-assistant .message-content blockquote {
+  border-left: 3px solid #007bff;
+  margin: 0.5rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  color: #666;
+}
+
+.message-assistant .message-content a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.message-assistant .message-content a:hover {
+  text-decoration: underline;
+}
+
+.message-assistant .message-content table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  width: 100%;
+}
+
+.message-assistant .message-content th,
+.message-assistant .message-content td {
+  border: 1px solid #dee2e6;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.message-assistant .message-content th {
+  background: rgba(0, 0, 0, 0.03);
+  font-weight: 600;
+}
+
+.message-assistant .message-content hr {
+  border: 0;
+  border-top: 1px solid #dee2e6;
+  margin: 1rem 0;
+}
+
 .message-timestamp {
   font-size: 0.75rem;
   color: #999;
   margin-top: 0.25rem;
   padding: 0 0.5rem;
 }
+
 
 /* Message Input Styles */
 .message-input {
@@ -671,6 +777,37 @@ body {
   .message-assistant .message-content {
     background: #3a3a3a;
     color: #e0e0e0;
+  }
+
+  /* Dark mode markdown styles */
+  .message-assistant .message-content code {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .message-assistant .message-content pre {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .message-assistant .message-content blockquote {
+    border-left-color: #64b5f6;
+    color: #999;
+  }
+
+  .message-assistant .message-content a {
+    color: #64b5f6;
+  }
+
+  .message-assistant .message-content th,
+  .message-assistant .message-content td {
+    border-color: #555;
+  }
+
+  .message-assistant .message-content th {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .message-assistant .message-content hr {
+    border-top-color: #555;
   }
 
   .message-input-field,
