@@ -43,6 +43,7 @@ body {
   border-right: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .conversation-list-header {
@@ -193,6 +194,7 @@ body {
   display: flex;
   flex-direction: column;
   background: white;
+  overflow: hidden;
 }
 
 .conversation-empty {
@@ -225,6 +227,7 @@ body {
   overflow-y: auto;
   padding: 1rem;
   background: #fafafa;
+  position: relative;
 }
 
 /* Message Styles */
@@ -385,6 +388,37 @@ body {
   color: #999;
   margin-top: 0.25rem;
   padding: 0 0.5rem;
+}
+
+/* Scroll to bottom button */
+.scroll-to-bottom {
+  position: sticky;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.scroll-to-bottom:hover {
+  background: #0056b3;
+  transform: translateX(-50%) scale(1.1);
+}
+
+.scroll-to-bottom:active {
+  transform: translateX(-50%) scale(0.95);
 }
 
 
@@ -922,5 +956,14 @@ body {
 
   .model-selector-option.selected.highlighted {
     background: #2a4f6f;
+  }
+
+  .scroll-to-bottom {
+    background: #1976d2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .scroll-to-bottom:hover {
+    background: #1565c0;
   }
 }

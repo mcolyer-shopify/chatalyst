@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cmd+N keyboard shortcut to create new conversations instantly
 - Auto-focus functionality for message input when conversations are selected
 - Markdown rendering support for assistant messages with full GitHub Flavored Markdown (GFM)
+- Scroll-to-bottom button that appears when new content is below viewport
 
 ### Changed
 - Streamlined UI by removing app header and moving settings to sidebar footer
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Model search filtering now works correctly with onInput event handler
 - Models are sorted alphabetically for improved user experience
 - Dropdown menu interaction bug where only the last conversation could be renamed or deleted
+- Conversation scrolling no longer auto-scrolls when users are reading older messages
 
 ## [0.1.0] - 2025-01-26
 

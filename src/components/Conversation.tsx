@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { Message } from './Message';
 import { MessageInput } from './MessageInput';
 import { ModelSelector } from './ModelSelector';
@@ -12,10 +12,47 @@ interface ConversationProps {
 
 export function Conversation({ conversation, onSendMessage, onModelChange }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // Check if user is at the bottom of scroll
+  const isAtBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    const threshold = 100; // pixels from bottom
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+  };
+
+  // Handle scroll events to show/hide button
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setShowScrollButton(!isAtBottom());
+    };
+
+    // Check initially
+    handleScroll();
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [conversation?.id]);
+
+  // Check if we should show button when messages change
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
+    // Give DOM time to update
+    setTimeout(() => {
+      setShowScrollButton(!isAtBottom());
+    }, 0);
   }, [conversation?.messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   if (!conversation) {
     return (
@@ -35,11 +72,20 @@ export function Conversation({ conversation, onSendMessage, onModelChange }: Con
           className="conversation-model-selector"
         />
       </div>
-      <div class="conversation-messages">
+      <div class="conversation-messages" ref={messagesContainerRef}>
         {conversation.messages.map((message) => (
           <Message key={message.id} message={message} />
         ))}
         <div ref={messagesEndRef} />
+        {showScrollButton && (
+          <button
+            class="scroll-to-bottom"
+            onClick={scrollToBottom}
+            aria-label="Scroll to bottom"
+          >
+            ↓
+          </button>
+        )}
       </div>
       <MessageInput onSend={onSendMessage} />
     </div>
