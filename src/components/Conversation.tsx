@@ -8,11 +8,9 @@ interface ConversationProps {
   conversation: ConversationType | null;
   onSendMessage: (message: string) => void;
   onModelChange: (modelId: string) => void;
-  baseURL: string;
-  apiKey: string;
 }
 
-export function Conversation({ conversation, onSendMessage, onModelChange, baseURL, apiKey }: ConversationProps) {
+export function Conversation({ conversation, onSendMessage, onModelChange }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,8 +32,6 @@ export function Conversation({ conversation, onSendMessage, onModelChange, baseU
         <ModelSelector
           selectedModel={conversation.model}
           onModelChange={onModelChange}
-          baseURL={baseURL}
-          apiKey={apiKey}
           className="conversation-model-selector"
         />
       </div>

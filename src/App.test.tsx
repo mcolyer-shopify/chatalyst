@@ -1,18 +1,38 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import App from './App';
-import { loadConversations, saveConversations } from './utils/storage';
+import * as store from './store';
 import type { Conversation } from './types';
 
 // Mock dependencies
-vi.mock('./utils/storage');
 vi.mock('@ai-sdk/openai-compatible');
 vi.mock('ai');
 
+// Mock the store module
+vi.mock('./store', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
+  const { signal } = require('@preact/signals');
+  
+  return {
+    conversations: signal([]),
+    selectedConversationId: signal(null),
+    selectedConversation: { value: null },
+    settings: signal({ baseURL: 'https://openrouter.ai/api/v1', apiKey: '', defaultModel: '' }),
+    isStreaming: signal(false),
+    createConversation: vi.fn(),
+    deleteConversation: vi.fn(),
+    updateConversationTitle: vi.fn(),
+    addMessage: vi.fn(),
+    updateMessage: vi.fn(),
+    updateSettings: vi.fn()
+  };
+});
+
 // Mock child components with basic functionality
 vi.mock('./components/ConversationList', () => ({
-  ConversationList: ({ conversations, _selectedId, onSelect, onCreate, onRename, onDelete }: any) => (
+  ConversationList: ({ conversations, _selectedId, onSelect, onCreate, onRename, onDelete, onSettingsClick }: any) => (
     <div data-testid="conversation-list">
       <button onClick={onCreate}>Create New</button>
+      <button onClick={onSettingsClick} title="Settings">Settings</button>
       {conversations.map((conv: any) => (
         <div key={conv.id} data-testid={`conv-${conv.id}`}>
           <span onClick={() => onSelect(conv.id)}>{conv.title}</span>
@@ -68,58 +88,71 @@ describe('App Integration', () => {
     vi.clearAllMocks();
     localStorage.clear();
     
-    // Default mock implementations
-    (loadConversations as any).mockReturnValue([]);
-    (saveConversations as any).mockImplementation(() => {});
+    // Reset store values
+    store.conversations.value = [];
+    store.selectedConversationId.value = null;
+    (store as any).selectedConversation = { value: null };
+    store.settings.value = { baseURL: 'https://openrouter.ai/api/v1', apiKey: '', defaultModel: '' };
   });
 
   it('renders main app structure', () => {
     render(<App />);
     
-    expect(screen.getByText('Chatalyst')).toBeInTheDocument();
     expect(screen.getByTestId('conversation-list')).toBeInTheDocument();
     expect(screen.getByTestId('conversation')).toBeInTheDocument();
   });
 
   it('loads conversations on mount', () => {
-    (loadConversations as any).mockReturnValue(mockConversations);
+    store.conversations.value = mockConversations;
+    store.selectedConversationId.value = mockConversations[0].id;
+    (store as any).selectedConversation = { value: mockConversations[0] };
     
     render(<App />);
     
-    expect(loadConversations).toHaveBeenCalled();
     expect(screen.getByTestId('conv-1')).toHaveTextContent('First Conversation');
   });
 
-  it('saves conversations when they change', async () => {
+  it('creates conversation when create button is clicked', async () => {
+    const mockCreateConversation = store.createConversation as any;
+    mockCreateConversation.mockImplementation((title: string) => {
+      const newConv = {
+        id: Date.now().toString(),
+        title,
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      store.conversations.value = [...store.conversations.value, newConv];
+      store.selectedConversationId.value = newConv.id;
+      return newConv;
+    });
+    
     render(<App />);
     
-    // Create a new conversation
     fireEvent.click(screen.getByText('Create New'));
     
     await waitFor(() => {
-      expect(saveConversations).toHaveBeenCalled();
+      expect(mockCreateConversation).toHaveBeenCalled();
     });
   });
 
-  it('creates new conversation', async () => {
+  it('creates new conversation with correct title', async () => {
+    const mockCreateConversation = store.createConversation as any;
+    
     render(<App />);
     
     fireEvent.click(screen.getByText('Create New'));
     
     await waitFor(() => {
-      expect(saveConversations).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            title: expect.stringContaining('New Conversation'),
-            messages: []
-          })
-        ])
+      expect(mockCreateConversation).toHaveBeenCalledWith(
+        expect.stringContaining('New Conversation'),
+        expect.any(String)
       );
     });
   });
 
   it('selects conversation when clicked', () => {
-    (loadConversations as any).mockReturnValue(mockConversations);
+    store.conversations.value = mockConversations;
     
     const { container } = render(<App />);
     
@@ -127,37 +160,33 @@ describe('App Integration', () => {
     const convTitle = container.querySelector('[data-testid="conv-1"] span');
     fireEvent.click(convTitle!);
     
-    expect(screen.getByText('user: Hello')).toBeInTheDocument();
+    // The selectedConversationId signal should be updated
+    expect(store.selectedConversationId.value).toBe('1');
   });
 
   it('renames conversation', async () => {
-    (loadConversations as any).mockReturnValue(mockConversations);
+    store.conversations.value = mockConversations;
+    const mockUpdateTitle = store.updateConversationTitle as any;
     
     render(<App />);
     
     fireEvent.click(screen.getByText('Rename'));
     
     await waitFor(() => {
-      expect(saveConversations).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: '1',
-            title: 'Renamed'
-          })
-        ])
-      );
+      expect(mockUpdateTitle).toHaveBeenCalledWith('1', 'Renamed');
     });
   });
 
   it('deletes conversation', async () => {
-    (loadConversations as any).mockReturnValue(mockConversations);
+    store.conversations.value = mockConversations;
+    const mockDeleteConversation = store.deleteConversation as any;
     
     render(<App />);
     
     fireEvent.click(screen.getByText('Delete'));
     
     await waitFor(() => {
-      expect(saveConversations).toHaveBeenCalledWith([]);
+      expect(mockDeleteConversation).toHaveBeenCalledWith('1');
     });
   });
 
@@ -172,6 +201,8 @@ describe('App Integration', () => {
   });
 
   it('saves settings', () => {
+    const mockUpdateSettings = store.updateSettings as any;
+    
     render(<App />);
     
     fireEvent.click(screen.getByTitle('Settings'));
@@ -181,13 +212,16 @@ describe('App Integration', () => {
     
     fireEvent.click(screen.getByText('Save'));
     
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      'chatalyst-settings',
-      expect.stringContaining('https://new-api.com')
+    expect(mockUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: 'https://new-api.com'
+      })
     );
   });
 
   it('cancels settings changes', () => {
+    const mockUpdateSettings = store.updateSettings as any;
+    
     render(<App />);
     
     fireEvent.click(screen.getByTitle('Settings'));
@@ -197,22 +231,15 @@ describe('App Integration', () => {
     
     fireEvent.click(screen.getByText('Cancel'));
     
-    expect(localStorage.setItem).not.toHaveBeenCalledWith(
-      'chatalyst-settings',
-      expect.any(String)
-    );
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
   });
 
-  it('loads settings from localStorage', () => {
-    localStorage.getItem.mockImplementation((key) => {
-      if (key === 'chatalyst-settings') {
-        return JSON.stringify({
-          baseURL: 'https://custom-api.com',
-          apiKey: 'test-key'
-        });
-      }
-      return null;
-    });
+  it('shows current settings in modal', () => {
+    store.settings.value = {
+      baseURL: 'https://custom-api.com',
+      apiKey: 'test-key',
+      defaultModel: ''
+    };
     
     render(<App />);
     
@@ -227,8 +254,10 @@ describe('App Integration', () => {
     expect(screen.getByText('No conversation selected')).toBeInTheDocument();
   });
 
-  it('auto-selects first conversation when loaded', () => {
-    (loadConversations as any).mockReturnValue(mockConversations);
+  it('shows selected conversation', () => {
+    store.conversations.value = mockConversations;
+    store.selectedConversationId.value = mockConversations[0].id;
+    (store as any).selectedConversation = { value: mockConversations[0] };
     
     render(<App />);
     
@@ -247,7 +276,7 @@ describe('App Integration', () => {
       }
     ];
     
-    (loadConversations as any).mockReturnValue(multipleConversations);
+    store.conversations.value = multipleConversations;
     
     render(<App />);
     
@@ -255,26 +284,20 @@ describe('App Integration', () => {
     expect(screen.getByTestId('conv-2')).toHaveTextContent('Second Conversation');
   });
 
-  it('selects next conversation after deleting current', async () => {
+  it('deletes conversation when delete is clicked', async () => {
     const multipleConversations: Conversation[] = [
       ...mockConversations,
       {
         id: '2',
         title: 'Second Conversation',
-        messages: [
-          {
-            id: 'msg2',
-            content: 'Second message',
-            role: 'user',
-            timestamp: Date.now()
-          }
-        ],
+        messages: [],
         createdAt: Date.now(),
         updatedAt: Date.now()
       }
     ];
     
-    (loadConversations as any).mockReturnValue(multipleConversations);
+    store.conversations.value = multipleConversations;
+    const mockDeleteConversation = store.deleteConversation as any;
     
     const { container } = render(<App />);
     
@@ -284,7 +307,7 @@ describe('App Integration', () => {
     fireEvent.click(firstDeleteButton!);
     
     await waitFor(() => {
-      expect(screen.getByText('user: Second message')).toBeInTheDocument();
+      expect(mockDeleteConversation).toHaveBeenCalledWith('1');
     });
   });
 });

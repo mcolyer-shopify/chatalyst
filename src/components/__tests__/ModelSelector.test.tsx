@@ -1,30 +1,42 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModelSelector } from '../ModelSelector';
-import * as modelsCache from '../../utils/modelsCache';
 
-// Mock fetch and cache
+// Mock fetch
 global.fetch = vi.fn();
-vi.mock('../../utils/modelsCache', () => ({
-  getCachedModels: vi.fn(),
-  setCachedModels: vi.fn(),
-  isCacheStale: vi.fn(),
-  clearModelsCache: vi.fn()
+
+// Mock the store
+vi.mock('../../store', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
+  const { signal } = require('@preact/signals');
+  return {
+    settings: signal({ baseURL: 'https://api.test.com', apiKey: 'test-key', defaultModel: '' }),
+    getCachedModels: vi.fn(),
+    setCachedModels: vi.fn(),
+    availableModels: signal([])
+  };
+});
+
+// Mock signals
+vi.mock('@preact/signals', () => ({
+  signal: vi.fn((initialValue) => ({ value: initialValue })),
+  computed: vi.fn((fn) => ({ value: fn() })),
+  effect: vi.fn()
 }));
 
 describe('ModelSelector', () => {
   const mockProps = {
     selectedModel: 'gpt-4',
-    onModelChange: vi.fn(),
-    baseURL: 'https://api.test.com',
-    apiKey: 'test-key'
+    onModelChange: vi.fn()
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     (global.fetch as ReturnType<typeof vi.fn>).mockClear();
-    (modelsCache.getCachedModels as ReturnType<typeof vi.fn>).mockReturnValue(null);
-    (modelsCache.isCacheStale as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
+    const store = require('../../store');
+    store.getCachedModels.mockReturnValue(null);
+    store.availableModels.value = [];
   });
 
   it('renders with selected model', async () => {
@@ -266,8 +278,9 @@ describe('ModelSelector', () => {
       { id: 'cached-model', name: 'cached-model', description: 'From cache' }
     ];
 
-    (modelsCache.getCachedModels as ReturnType<typeof vi.fn>).mockReturnValue(cachedModels);
-    (modelsCache.isCacheStale as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
+    const store = require('../../store');
+    store.getCachedModels.mockReturnValue(cachedModels);
 
     render(<ModelSelector {...{ ...mockProps, selectedModel: 'cached-model' }} />);
 

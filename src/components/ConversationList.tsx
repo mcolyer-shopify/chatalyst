@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useEffect } from 'preact/hooks';
+import { signal } from '@preact/signals';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
+
+// Local UI state signals
+const dropdownId = signal<string | null>(null);
+const editingId = signal<string | null>(null);
+const editTitle = signal('');
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -12,8 +18,6 @@ interface ConversationListProps {
   onSettingsClick: () => void;
   defaultModel?: string;
   onDefaultModelChange: (modelId: string) => void;
-  baseURL: string;
-  apiKey: string;
 }
 
 export function ConversationList({
@@ -25,20 +29,15 @@ export function ConversationList({
   onDelete,
   onSettingsClick,
   defaultModel,
-  onDefaultModelChange,
-  baseURL,
-  apiKey
+  onDefaultModelChange
 }: ConversationListProps) {
-  const [dropdownId, setDropdownId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState('');
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Element;
       // Check if the click is outside any dropdown menu
       if (!target.closest('.conversation-menu')) {
-        setDropdownId(null);
+        dropdownId.value = null;
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -46,22 +45,22 @@ export function ConversationList({
   }, []);
 
   const handleRename = (conversation: Conversation) => {
-    setEditingId(conversation.id);
-    setEditTitle(conversation.title);
-    setDropdownId(null);
+    editingId.value = conversation.id;
+    editTitle.value = conversation.title;
+    dropdownId.value = null;
   };
 
   const handleSaveRename = (id: string) => {
-    if (editTitle.trim()) {
-      onRename(id, editTitle.trim());
+    if (editTitle.value.trim()) {
+      onRename(id, editTitle.value.trim());
     }
-    setEditingId(null);
-    setEditTitle('');
+    editingId.value = null;
+    editTitle.value = '';
   };
 
   const handleDelete = (id: string) => {
     onDelete(id);
-    setDropdownId(null);
+    dropdownId.value = null;
   };
 
   return (
@@ -72,8 +71,6 @@ export function ConversationList({
           <ModelSelector
             selectedModel={defaultModel}
             onModelChange={onDefaultModelChange}
-            baseURL={baseURL}
-            apiKey={apiKey}
             className="sidebar-model-selector"
             showAsDefault={true}
           />
@@ -85,16 +82,16 @@ export function ConversationList({
             key={conversation.id}
             class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''}`}
           >
-            {editingId === conversation.id ? (
+            {editingId.value === conversation.id ? (
               <input
                 type="text"
-                value={editTitle}
-                onInput={(e) => setEditTitle(e.currentTarget.value)}
+                value={editTitle.value}
+                onInput={(e) => editTitle.value = e.currentTarget.value}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleSaveRename(conversation.id);
                   } else if (e.key === 'Escape') {
-                    setEditingId(null);
+                    editingId.value = null;
                   }
                 }}
                 onBlur={() => handleSaveRename(conversation.id)}
@@ -114,12 +111,12 @@ export function ConversationList({
                     class="menu-button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDropdownId(dropdownId === conversation.id ? null : conversation.id);
+                      dropdownId.value = dropdownId.value === conversation.id ? null : conversation.id;
                     }}
                   >
                     ⋮
                   </button>
-                  {dropdownId === conversation.id && (
+                  {dropdownId.value === conversation.id && (
                     <div class="dropdown-menu">
                       <button onClick={() => handleRename(conversation)}>
                         Rename

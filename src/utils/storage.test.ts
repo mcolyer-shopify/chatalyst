@@ -1,7 +1,8 @@
 import { loadConversations, saveConversations } from './storage';
 import type { Conversation } from '../types';
 
-describe('Storage utilities', () => {
+// Note: These utilities are now deprecated as we use signals for state management
+describe('Storage utilities (deprecated)', () => {
   const mockConversations: Conversation[] = [
     {
       id: '1',

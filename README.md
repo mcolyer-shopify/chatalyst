@@ -32,12 +32,11 @@ pnpm test:coverage
 
 ## TODO
 
-- Read https://github.com/preactjs/signals. It's used to handle reactive state across the code base. Review all of the typescript and components and see where we can simplify by using this library.
-- Show pulsing ... in assistant message when generating but no content has been returned yet.
+- Show . .. ... (looping) in assistant message when generating but no content has been returned yet.
+- remember the last selected conversation between application restarts
+- remember the window size between application restarts
 
-- Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.
-
-## M2
+## MCP MVP
 - Add a mcp configuration textarea to the settings page and persist it.
     - Validate that mcp configuration is valid JSON. If there's an error, show an error message.
     - Validate when the user unfocuses the textarea or presses configuration save.
@@ -47,11 +46,15 @@ pnpm test:coverage
 - Initialize any mcp connections with the configuration from the settings page at app startup.
 - Close any existing mcp connections when the app is closed or reloaded.
 
-## Support for Ollama
-
 ## Support for MCP server
 - Have a tab in settings for MCP
 - On each tab, see the cmd, active, options, type.
   - Also see status, list of tools and log all output and a log of calls and responses.
   - Clear logs after last 1000 lines
+
+### Future
+
+- Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.
+- Support for Ollama
+
 

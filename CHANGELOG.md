@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Model selector in sidebar shows "Default model (selected)" with ellipsis for overflow
 - Conversation model selector width increased to 300px minimum for better visibility
 - Cache invalidation when API base URL changes for proper model fetching
+- Refactored state management to use Preact Signals for improved performance and simpler code
+- Eliminated props drilling by allowing components to directly access shared state
+- Simplified complex state updates with direct mutations instead of immutable patterns
+- Replaced multiple useState hooks with centralized signal-based store
+- Improved model caching with signal-based reactive cache management
 
 ### Fixed
 - Model search filtering now works correctly with onInput event handler

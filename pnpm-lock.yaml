@@ -20,6 +20,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.0
         version: 1.12.0
+      '@preact/signals':
+        specifier: ^2.0.5
+        version: 2.0.5(preact@10.26.6)
       '@tauri-apps/api':
         specifier: ^2
         version: 2.5.0
@@ -548,6 +551,14 @@ packages:
     peerDependencies:
       '@babel/core': 7.x
       vite: 2.x || 3.x || 4.x || 5.x || 6.x
+
+  '@preact/signals-core@1.8.0':
+    resolution: {integrity: sha512-OBvUsRZqNmjzCZXWLxkZfhcgT+Fk8DDcT/8vD6a1xhDemodyy87UJRJfASMuSD8FaAIeGgGm85ydXhm7lr4fyA==}
+
+  '@preact/signals@2.0.5':
+    resolution: {integrity: sha512-isC3ktsX2UW48ZivmBIheWiYq5jW6TBaw9FtKEPgNHuMQ8d7IpDPq+VfxmQPbyslg7yoBhXPDsXXd8ixKSaz7Q==}
+    peerDependencies:
+      preact: '>= 10.25.0'
 
   '@prefresh/babel-plugin@0.5.1':
     resolution: {integrity: sha512-uG3jGEAysxWoyG3XkYfjYHgaySFrSsaEb4GagLzYaxlydbuREtaX+FTxuIidp241RaLl85XoHg9Ej6E4+V1pcg==}
@@ -3288,6 +3299,13 @@ snapshots:
     transitivePeerDependencies:
       - preact
       - supports-color
+
+  '@preact/signals-core@1.8.0': {}
+
+  '@preact/signals@2.0.5(preact@10.26.6)':
+    dependencies:
+      '@preact/signals-core': 1.8.0
+      preact: 10.26.6
 
   '@prefresh/babel-plugin@0.5.1': {}
 

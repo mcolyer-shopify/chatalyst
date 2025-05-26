@@ -2,6 +2,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { ConversationList } from './ConversationList';
 import type { Conversation } from '../types';
 
+// Mock the signals
+vi.mock('@preact/signals', () => ({
+  signal: vi.fn((initialValue) => ({ value: initialValue })),
+  computed: vi.fn((fn) => ({ value: fn() })),
+  effect: vi.fn()
+}));
+
 describe('ConversationList', () => {
   const mockConversations: Conversation[] = [
     {
@@ -26,7 +33,10 @@ describe('ConversationList', () => {
     onSelect: vi.fn(),
     onCreate: vi.fn(),
     onRename: vi.fn(),
-    onDelete: vi.fn()
+    onDelete: vi.fn(),
+    onSettingsClick: vi.fn(),
+    defaultModel: 'gpt-4',
+    onDefaultModelChange: vi.fn()
   };
 
   beforeEach(() => {
@@ -37,7 +47,7 @@ describe('ConversationList', () => {
     render(<ConversationList {...mockProps} />);
     
     expect(screen.getByText('Conversations')).toBeInTheDocument();
-    expect(screen.getByText('+ New')).toBeInTheDocument();
+    expect(screen.getByText('New Conversation')).toBeInTheDocument();
   });
 
   it('renders all conversations', () => {
@@ -64,7 +74,7 @@ describe('ConversationList', () => {
   it('calls onCreate when new button is clicked', () => {
     render(<ConversationList {...mockProps} />);
     
-    fireEvent.click(screen.getByText('+ New'));
+    fireEvent.click(screen.getByText('New Conversation'));
     expect(mockProps.onCreate).toHaveBeenCalled();
   });
 
@@ -176,7 +186,7 @@ describe('ConversationList', () => {
     render(<ConversationList {...mockProps} conversations={[]} />);
     
     expect(screen.getByText('Conversations')).toBeInTheDocument();
-    expect(screen.getByText('+ New')).toBeInTheDocument();
+    expect(screen.getByText('New Conversation')).toBeInTheDocument();
     expect(screen.queryByText('First Conversation')).not.toBeInTheDocument();
   });
 
@@ -194,5 +204,18 @@ describe('ConversationList', () => {
     fireEvent.click(menuButtons[1]); // Click menu on second conversation
     
     expect(mockProps.onSelect).not.toHaveBeenCalled();
+  });
+
+  it('renders settings button', () => {
+    render(<ConversationList {...mockProps} />);
+    
+    expect(screen.getByTitle('Settings')).toBeInTheDocument();
+  });
+
+  it('calls onSettingsClick when settings button is clicked', () => {
+    render(<ConversationList {...mockProps} />);
+    
+    fireEvent.click(screen.getByTitle('Settings'));
+    expect(mockProps.onSettingsClick).toHaveBeenCalled();
   });
 });

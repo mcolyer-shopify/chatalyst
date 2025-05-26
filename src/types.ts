@@ -19,3 +19,9 @@ export interface Model {
   name: string;
   description?: string;
 }
+
+export interface Settings {
+  baseURL: string;
+  apiKey: string;
+  defaultModel: string;
+}
