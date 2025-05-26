@@ -11,4 +11,11 @@ export interface Conversation {
   messages: Message[];
   createdAt: number;
   updatedAt: number;
+  model?: string;
+}
+
+export interface Model {
+  id: string;
+  name: string;
+  description?: string;
 }

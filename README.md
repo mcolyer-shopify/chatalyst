@@ -32,15 +32,6 @@ pnpm test:coverage
 
 ## TODO
 
-## Model Selection
-- Add a model attribute to a conversation object.
-- Create a model selection component which allows users to select a model from a dropdown.
-    - Populate the models via the API.
-- Create a default model selection in the sidebar.
-- Add a model selection dropdown to the conversation component.
-- Conversations should start with the default model.
-- Add unit tests.
-
 
 ## M2
 - Add a mcp configuration textarea to the settings page and persist it.

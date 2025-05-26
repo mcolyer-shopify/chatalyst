@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import type { Conversation } from '../types';
+import { ModelSelector } from './ModelSelector';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -9,6 +10,10 @@ interface ConversationListProps {
   onRename: (id: string, newTitle: string) => void;
   onDelete: (id: string) => void;
   onSettingsClick: () => void;
+  defaultModel?: string;
+  onDefaultModelChange: (modelId: string) => void;
+  baseURL: string;
+  apiKey: string;
 }
 
 export function ConversationList({
@@ -18,7 +23,11 @@ export function ConversationList({
   onCreate,
   onRename,
   onDelete,
-  onSettingsClick
+  onSettingsClick,
+  defaultModel,
+  onDefaultModelChange,
+  baseURL,
+  apiKey
 }: ConversationListProps) {
   const [dropdownId, setDropdownId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,6 +67,16 @@ export function ConversationList({
     <div class="conversation-list">
       <div class="conversation-list-header">
         <h2>Conversations</h2>
+        <div class="sidebar-model-selector">
+          <ModelSelector
+            selectedModel={defaultModel}
+            onModelChange={onDefaultModelChange}
+            baseURL={baseURL}
+            apiKey={apiKey}
+            className="sidebar-model-selector"
+            showAsDefault={true}
+          />
+        </div>
       </div>
       <div class="conversations">
         {conversations.map((conversation) => (

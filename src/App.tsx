@@ -25,6 +25,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [tempSettings, setTempSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [defaultModel, setDefaultModel] = useState<string>('');
 
   // Load conversations and settings from localStorage on mount
   useEffect(() => {
@@ -39,6 +40,11 @@ function App() {
       const parsed = JSON.parse(savedSettings);
       setSettings(parsed);
       setTempSettings(parsed);
+    }
+
+    const savedDefaultModel = localStorage.getItem('chatalyst-default-model');
+    if (savedDefaultModel) {
+      setDefaultModel(savedDefaultModel);
     }
   }, []);
 
@@ -64,7 +70,8 @@ function App() {
       title: `New Conversation ${conversations.length + 1}`,
       messages: [],
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      model: defaultModel || undefined
     };
     setConversations([...conversations, newConversation]);
     setSelectedConversationId(newConversation.id);
@@ -126,10 +133,11 @@ function App() {
         c.id === selectedConversation.id ? conversationWithAssistant : c
       ));
 
-      // Call the AI with current settings
+      // Call the AI with current settings and conversation model
       const aiProvider = getAIProvider();
+      const modelToUse = selectedConversation.model || defaultModel || 'gpt-4-turbo';
       const result = await streamText({
-        model: aiProvider('gpt-4-turbo'),
+        model: aiProvider(modelToUse),
         messages: updatedConversation.messages.map((m) => ({
           role: m.role,
           content: m.content
@@ -175,6 +183,21 @@ function App() {
   const handleCancelSettings = () => {
     setTempSettings(settings);
     setShowSettings(false);
+  };
+
+  const handleDefaultModelChange = (modelId: string) => {
+    setDefaultModel(modelId);
+    localStorage.setItem('chatalyst-default-model', modelId);
+  };
+
+  const handleConversationModelChange = (modelId: string) => {
+    if (!selectedConversation) return;
+    
+    setConversations(conversations.map(c => 
+      c.id === selectedConversation.id 
+        ? { ...c, model: modelId, updatedAt: Date.now() }
+        : c
+    ));
   };
 
   return (
@@ -239,11 +262,18 @@ function App() {
           onRename={renameConversation}
           onDelete={deleteConversation}
           onSettingsClick={() => setShowSettings(true)}
+          defaultModel={defaultModel}
+          onDefaultModelChange={handleDefaultModelChange}
+          baseURL={settings.baseURL}
+          apiKey={settings.apiKey}
         />
         <div class="conversation-container">
           <Conversation
             conversation={selectedConversation}
             onSendMessage={sendMessage}
+            onModelChange={handleConversationModelChange}
+            baseURL={settings.baseURL}
+            apiKey={settings.apiKey}
           />
           {error && (
             <div class="error-message">

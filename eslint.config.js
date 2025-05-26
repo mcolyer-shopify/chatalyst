@@ -30,7 +30,10 @@ export default [
         MouseEvent: 'readonly',
         Node: 'readonly',
         global: 'readonly',
-        process: 'readonly'
+        process: 'readonly',
+        fetch: 'readonly',
+        setTimeout: 'readonly',
+        KeyboardEvent: 'readonly'
       }
     },
     plugins: {
@@ -61,7 +64,8 @@ export default [
         beforeAll: 'readonly',
         afterAll: 'readonly',
         vi: 'readonly',
-        jest: 'readonly'
+        jest: 'readonly',
+        fetch: 'readonly'
       }
     }
   },

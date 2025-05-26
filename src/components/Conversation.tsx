@@ -1,14 +1,18 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { Message } from './Message';
 import { MessageInput } from './MessageInput';
+import { ModelSelector } from './ModelSelector';
 import type { Conversation as ConversationType } from '../types';
 
 interface ConversationProps {
   conversation: ConversationType | null;
   onSendMessage: (message: string) => void;
+  onModelChange: (modelId: string) => void;
+  baseURL: string;
+  apiKey: string;
 }
 
-export function Conversation({ conversation, onSendMessage }: ConversationProps) {
+export function Conversation({ conversation, onSendMessage, onModelChange, baseURL, apiKey }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,6 +31,13 @@ export function Conversation({ conversation, onSendMessage }: ConversationProps)
     <div class="conversation">
       <div class="conversation-header">
         <h2>{conversation.title}</h2>
+        <ModelSelector
+          selectedModel={conversation.model}
+          onModelChange={onModelChange}
+          baseURL={baseURL}
+          apiKey={apiKey}
+          className="conversation-model-selector"
+        />
       </div>
       <div class="conversation-messages">
         {conversation.messages.map((message) => (

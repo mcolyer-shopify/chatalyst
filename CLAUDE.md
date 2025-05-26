@@ -62,10 +62,32 @@ pnpm lint              # Check for linting errors
 pnpm lint:fix          # Automatically fix linting errors
 ```
 
+**Note:** Only run linting directly before committing code. During development and iterative changes, focus on functionality first and address linting issues as a final step before commit.
+
 ESLint is configured with:
 - **TypeScript ESLint** - TypeScript-specific linting rules
 - **Preact ESLint Plugin** - Preact-specific rules
 - **Flat config** - Modern ESLint configuration format (eslint.config.js)
+
+#### Code Style Guidelines
+When writing code, follow these ESLint-enforced style rules:
+
+**TypeScript & JavaScript:**
+- Use **single quotes** for strings: `'hello'` not `"hello"`
+- Use **semicolons** to end statements: `const x = 1;`
+- Use **2-space indentation** consistently
+- **No trailing commas** in objects/arrays: `{ a: 1, b: 2 }` not `{ a: 1, b: 2, }`
+- Avoid `any` type - use specific types or `unknown` with type guards
+- Prefer `console.error()` over `console.log()` for error logging, but avoid console statements in production code
+
+**Testing:**
+- Use `global.fetch` instead of `fetch` in tests when mocking
+- Type mocked functions properly: `(global.fetch as ReturnType<typeof vi.fn>)`
+- Avoid `any` in test code - use proper typing for mocks
+
+**Browser APIs:**
+- `fetch`, `localStorage`, `window`, `document` are available as globals
+- No need to import or declare these browser APIs
 
 ### Continuous Integration
 

@@ -7,12 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Model selection functionality with dropdown components in sidebar and conversation headers
+- Typeahead search for models with real-time filtering by name and description
+- Global models cache with localStorage for improved performance (1-hour expiration)
+- Keyboard navigation support in model selector (arrow keys, Enter, Escape)
+- Auto-selection of first available model when no default is set
+- Comprehensive test suite for model selection with 13+ test cases
+
 ### Changed
 - Streamlined UI by removing app header and moving settings to sidebar footer
 - Repositioned New Conversation and Settings buttons to bottom of sidebar
 - Updated New Conversation button styling to match Send button design
 - Changed New Conversation button to secondary color for less visual prominence
 - Removed border separator above footer buttons for cleaner appearance
+- Moved default model selector to sidebar header next to "Conversations" title
+- Model selector in sidebar shows "Default model (selected)" with ellipsis for overflow
+- Conversation model selector width increased to 300px minimum for better visibility
+- Cache invalidation when API base URL changes for proper model fetching
+
+### Fixed
+- Model search filtering now works correctly with onInput event handler
+- Models are sorted alphabetically for improved user experience
 
 ## [0.1.0] - 2025-01-26
 
