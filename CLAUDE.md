@@ -67,6 +67,25 @@ ESLint is configured with:
 - **Preact ESLint Plugin** - Preact-specific rules
 - **Flat config** - Modern ESLint configuration format (eslint.config.js)
 
+### Continuous Integration
+
+The project uses GitHub Actions for automated testing and code quality checks:
+
+#### Frontend CI (`.github/workflows/ci.yml`)
+- **ESLint** - Code linting and style checks
+- **TypeScript** - Type checking via build process
+- **Vitest** - Unit tests with coverage reporting
+- **Coverage** - Automatic upload to Codecov (if configured)
+
+#### Backend CI (Rust)
+- **rustfmt** - Code formatting checks
+- **clippy** - Rust linting and suggestions
+- **cargo test** - Unit tests
+
+The CI pipeline runs on:
+- All pushes to `main` branch
+- All pull requests targeting `main`
+
 ## Architecture
 
 ### Directory Structure
