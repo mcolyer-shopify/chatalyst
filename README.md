@@ -30,8 +30,6 @@ pnpm test:coverage
 
 ## TODO
 
-Using Github actions, add a release workflow to build a macos release using `pnpm tauri build` and upload it to the releases page when a new tag is pushed.
-
 ## Model Selection
 - Add a model attribute to a conversation object.
 - Create a model selection component which allows users to select a model from a dropdown.
@@ -50,7 +48,7 @@ Using Github actions, add a release workflow to build a macos release using `pnp
     - When it is successfuan mcp configuration is changed, shutdown any existing mcp connections and create a new one with the new configuration.
 
 - Initialize any mcp connections with the configuration from the settings page at app startup.
-- Close any existing mcp connections when the app is closed.
+- Close any existing mcp connections when the app is closed or reloaded.
 
 ## Support for Ollama
 

@@ -86,17 +86,31 @@ The CI pipeline runs on:
 - All pushes to `main` branch
 - All pull requests targeting `main`
 
+#### Release Workflow (`.github/workflows/release.yml`)
+Automated release builds for macOS:
+- **Triggers**: On git tag pushes (format: `v*`)
+- **Platforms**: macOS (both Intel and Apple Silicon)
+- **Artifacts**: DMG and .app.tar.gz files
+- **Distribution**: Automatically uploaded to GitHub Releases
+
+To create a release:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ### Documentation Maintenance
 
 #### Changelog (`CHANGELOG.md`)
 The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format:
 
 **When making changes, always update the changelog:**
-1. Add new entries under `## [Unreleased]` section
+1. Add new entries under `## [Unreleased]` section for user-facing changes only
 2. Use appropriate categories: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
 3. Write clear, user-focused descriptions of changes
-4. When releasing, move unreleased changes to a new version section
-5. Update version links at the bottom of the file
+4. **Exclude chores** like CI updates, documentation changes, or development tooling
+5. When releasing, move unreleased changes to a new version section
+6. Update version links at the bottom of the file
 
 **Example entry format:**
 ```markdown
