@@ -179,16 +179,6 @@ function App() {
 
   return (
     <div class="app">
-      <header class="app-header">
-        <h1>Chatalyst</h1>
-        <button
-          onClick={() => setShowSettings(true)}
-          class="settings-button"
-          title="Settings"
-        >
-          ⚙️
-        </button>
-      </header>
 
       {showSettings && (
         <>
@@ -248,6 +238,7 @@ function App() {
           onCreate={createNewConversation}
           onRename={renameConversation}
           onDelete={deleteConversation}
+          onSettingsClick={() => setShowSettings(true)}
         />
         <div class="conversation-container">
           <Conversation

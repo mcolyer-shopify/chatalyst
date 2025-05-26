@@ -8,6 +8,7 @@ interface ConversationListProps {
   onCreate: () => void;
   onRename: (id: string, newTitle: string) => void;
   onDelete: (id: string) => void;
+  onSettingsClick: () => void;
 }
 
 export function ConversationList({
@@ -16,7 +17,8 @@ export function ConversationList({
   onSelect,
   onCreate,
   onRename,
-  onDelete
+  onDelete,
+  onSettingsClick
 }: ConversationListProps) {
   const [dropdownId, setDropdownId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,9 +58,6 @@ export function ConversationList({
     <div class="conversation-list">
       <div class="conversation-list-header">
         <h2>Conversations</h2>
-        <button class="new-conversation-btn" onClick={onCreate}>
-          + New
-        </button>
       </div>
       <div class="conversations">
         {conversations.map((conversation) => (
@@ -115,6 +114,18 @@ export function ConversationList({
             )}
           </div>
         ))}
+      </div>
+      <div class="conversation-list-footer">
+        <button class="new-conversation-btn" onClick={onCreate}>
+          New Conversation
+        </button>
+        <button
+          onClick={onSettingsClick}
+          class="settings-button"
+          title="Settings"
+        >
+          ⚙️
+        </button>
       </div>
     </div>
   );

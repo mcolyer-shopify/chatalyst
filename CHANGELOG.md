@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Streamlined UI by removing app header and moving settings to sidebar footer
+- Repositioned New Conversation and Settings buttons to bottom of sidebar
+- Updated New Conversation button styling to match Send button design
+- Changed New Conversation button to secondary color for less visual prominence
+- Removed border separator above footer buttons for cleaner appearance
+
 ## [0.1.0] - 2025-01-26
 
 ### Added
