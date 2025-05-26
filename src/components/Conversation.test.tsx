@@ -8,7 +8,7 @@ vi.mock('./Message', () => ({
     <div data-testid={`message-${message.id}`} class={`message message-${message.role}`}>
       {message.content}
     </div>
-  ),
+  )
 }));
 
 vi.mock('./MessageInput', () => ({
@@ -18,7 +18,7 @@ vi.mock('./MessageInput', () => ({
         Send Test
       </button>
     </div>
-  ),
+  )
 }));
 
 describe('Conversation', () => {
@@ -30,17 +30,17 @@ describe('Conversation', () => {
         id: '1',
         content: 'Hello',
         role: 'user',
-        timestamp: Date.now(),
+        timestamp: Date.now()
       },
       {
         id: '2',
         content: 'Hi there!',
         role: 'assistant',
-        timestamp: Date.now(),
-      },
+        timestamp: Date.now()
+      }
     ],
     createdAt: Date.now(),
-    updatedAt: Date.now(),
+    updatedAt: Date.now()
   };
 
   const mockOnSendMessage = vi.fn();
@@ -107,7 +107,7 @@ describe('Conversation', () => {
   it('handles conversation with no messages', () => {
     const emptyConversation: ConversationType = {
       ...mockConversation,
-      messages: [],
+      messages: []
     };
 
     const { container } = render(<Conversation conversation={emptyConversation} onSendMessage={mockOnSendMessage} />);
@@ -138,9 +138,9 @@ describe('Conversation', () => {
           id: '3',
           content: 'New message',
           role: 'user',
-          timestamp: Date.now(),
-        },
-      ],
+          timestamp: Date.now()
+        }
+      ]
     };
 
     rerender(<Conversation conversation={updatedConversation} onSendMessage={mockOnSendMessage} />);
@@ -158,7 +158,7 @@ describe('Conversation', () => {
     const newConversation: ConversationType = {
       ...mockConversation,
       id: '2',
-      title: 'New Conversation',
+      title: 'New Conversation'
     };
 
     rerender(<Conversation conversation={newConversation} onSendMessage={mockOnSendMessage} />);

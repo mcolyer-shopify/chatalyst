@@ -1,6 +1,6 @@
-import { useState, useEffect } from "preact/hooks";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { streamText } from "ai";
+import { useState, useEffect } from 'preact/hooks';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { streamText } from 'ai';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
 import type { Conversation as ConversationType, Message } from './types';
@@ -13,14 +13,14 @@ interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: "",
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: ''
 };
 
 function App() {
   const [conversations, setConversations] = useState<ConversationType[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -34,7 +34,7 @@ function App() {
       setSelectedConversationId(savedConversations[0].id);
     }
 
-    const savedSettings = localStorage.getItem("chatalyst-settings");
+    const savedSettings = localStorage.getItem('chatalyst-settings');
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
       setSettings(parsed);
@@ -52,9 +52,9 @@ function App() {
   // Create AI provider with current settings
   const getAIProvider = () => {
     return createOpenAICompatible({
-      name: "custom-ai-provider",
+      name: 'custom-ai-provider',
       baseURL: settings.baseURL,
-      apiKey: settings.apiKey || "openrouter",
+      apiKey: settings.apiKey || 'openrouter'
     });
   };
 
@@ -64,7 +64,7 @@ function App() {
       title: `New Conversation ${conversations.length + 1}`,
       messages: [],
       createdAt: Date.now(),
-      updatedAt: Date.now(),
+      updatedAt: Date.now()
     };
     setConversations([...conversations, newConversation]);
     setSelectedConversationId(newConversation.id);
@@ -90,15 +90,15 @@ function App() {
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: "user",
+      role: 'user',
       content,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     };
 
     const updatedConversation = {
       ...selectedConversation,
       messages: [...selectedConversation.messages, userMessage],
-      updatedAt: Date.now(),
+      updatedAt: Date.now()
     };
 
     setConversations(conversations.map(c => 
@@ -112,14 +112,14 @@ function App() {
       // Create assistant message placeholder
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "",
-        timestamp: Date.now(),
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now()
       };
 
       const conversationWithAssistant = {
         ...updatedConversation,
-        messages: [...updatedConversation.messages, assistantMessage],
+        messages: [...updatedConversation.messages, assistantMessage]
       };
 
       setConversations(conversations.map(c => 
@@ -129,28 +129,28 @@ function App() {
       // Call the AI with current settings
       const aiProvider = getAIProvider();
       const result = await streamText({
-        model: aiProvider("gpt-4-turbo"),
+        model: aiProvider('gpt-4-turbo'),
         messages: updatedConversation.messages.map((m) => ({
           role: m.role,
-          content: m.content,
-        })),
+          content: m.content
+        }))
       });
 
       // Stream the response
-      let fullContent = "";
+      let fullContent = '';
       for await (const chunk of result.textStream) {
         fullContent += chunk;
         setConversations(prevConversations => 
           prevConversations.map(c => 
             c.id === selectedConversation.id 
               ? {
-                  ...c,
-                  messages: c.messages.map(m => 
-                    m.id === assistantMessage.id 
-                      ? { ...m, content: fullContent }
-                      : m
-                  ),
-                }
+                ...c,
+                messages: c.messages.map(m => 
+                  m.id === assistantMessage.id 
+                    ? { ...m, content: fullContent }
+                    : m
+                )
+              }
               : c
           )
         );
@@ -168,7 +168,7 @@ function App() {
 
   const handleSaveSettings = () => {
     setSettings(tempSettings);
-    localStorage.setItem("chatalyst-settings", JSON.stringify(tempSettings));
+    localStorage.setItem('chatalyst-settings', JSON.stringify(tempSettings));
     setShowSettings(false);
   };
 
@@ -207,7 +207,7 @@ function App() {
                 onInput={(e) =>
                   setTempSettings({
                     ...tempSettings,
-                    baseURL: (e.target as HTMLInputElement).value,
+                    baseURL: (e.target as HTMLInputElement).value
                   })
                 }
               />
@@ -221,7 +221,7 @@ function App() {
                 onInput={(e) =>
                   setTempSettings({
                     ...tempSettings,
-                    apiKey: (e.target as HTMLInputElement).value,
+                    apiKey: (e.target as HTMLInputElement).value
                   })
                 }
                 placeholder="Leave blank to use 'openrouter'"

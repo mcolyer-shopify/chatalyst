@@ -7,7 +7,7 @@ const localStorageMock = {
   clear: vi.fn(),
   removeItem: vi.fn(),
   length: 0,
-  key: vi.fn(),
+  key: vi.fn()
 };
 
 global.localStorage = localStorageMock as any;

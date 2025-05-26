@@ -53,6 +53,20 @@ cargo test             # Run all Rust tests
 cargo test -- --nocapture  # Run tests with console output
 ```
 
+### Code Quality
+
+#### Linting
+The project uses ESLint for frontend code quality:
+```bash
+pnpm lint              # Check for linting errors
+pnpm lint:fix          # Automatically fix linting errors
+```
+
+ESLint is configured with:
+- **TypeScript ESLint** - TypeScript-specific linting rules
+- **Preact ESLint Plugin** - Preact-specific rules
+- **Flat config** - Modern ESLint configuration format (eslint.config.js)
+
 ## Architecture
 
 ### Directory Structure

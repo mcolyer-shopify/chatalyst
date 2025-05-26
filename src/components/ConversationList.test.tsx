@@ -9,15 +9,15 @@ describe('ConversationList', () => {
       title: 'First Conversation',
       messages: [],
       createdAt: Date.now(),
-      updatedAt: Date.now(),
+      updatedAt: Date.now()
     },
     {
       id: '2',
       title: 'Second Conversation',
       messages: [],
       createdAt: Date.now(),
-      updatedAt: Date.now(),
-    },
+      updatedAt: Date.now()
+    }
   ];
 
   const mockProps = {
@@ -26,7 +26,7 @@ describe('ConversationList', () => {
     onSelect: vi.fn(),
     onCreate: vi.fn(),
     onRename: vi.fn(),
-    onDelete: vi.fn(),
+    onDelete: vi.fn()
   };
 
   beforeEach(() => {

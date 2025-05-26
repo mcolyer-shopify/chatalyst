@@ -11,19 +11,19 @@ describe('Storage utilities', () => {
           id: '1',
           content: 'Hello',
           role: 'user',
-          timestamp: Date.now(),
-        },
+          timestamp: Date.now()
+        }
       ],
       createdAt: Date.now(),
-      updatedAt: Date.now(),
+      updatedAt: Date.now()
     },
     {
       id: '2',
       title: 'Second Conversation',
       messages: [],
       createdAt: Date.now(),
-      updatedAt: Date.now(),
-    },
+      updatedAt: Date.now()
+    }
   ];
 
   beforeEach(() => {
@@ -131,17 +131,17 @@ describe('Storage utilities', () => {
             id: '1',
             content: 'Message with special characters: "quotes", \'apostrophes\', and \n newlines',
             role: 'user',
-            timestamp: 1704067200000,
+            timestamp: 1704067200000
           },
           {
             id: '2',
             content: 'Unicode: 🎉 emoji support',
             role: 'assistant',
-            timestamp: 1704067260000,
-          },
+            timestamp: 1704067260000
+          }
         ],
         createdAt: 1704067200000,
-        updatedAt: 1704067260000,
+        updatedAt: 1704067260000
       };
 
       saveConversations([complexConversation]);

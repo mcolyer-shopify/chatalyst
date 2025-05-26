@@ -11,7 +11,9 @@
     "test": "vitest",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
   },
   "dependencies": {
     "@ai-sdk/openai": "2.0.0-alpha.4",
@@ -24,12 +26,18 @@
     "preact": "^10.25.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.27.0",
     "@preact/preset-vite": "^2.9.3",
     "@tailwindcss/vite": "^4.1.7",
     "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/preact": "^3.2.4",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
     "@vitest/ui": "^3.1.4",
+    "eslint": "^9.27.0",
+    "eslint-config-preact": "^1.5.0",
+    "eslint-plugin-preact": "^0.1.0",
     "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.7",
     "typescript": "~5.6.2",

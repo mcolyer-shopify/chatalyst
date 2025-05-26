@@ -10,7 +10,7 @@ vi.mock('ai');
 
 // Mock child components with basic functionality
 vi.mock('./components/ConversationList', () => ({
-  ConversationList: ({ conversations, selectedId, onSelect, onCreate, onRename, onDelete }: any) => (
+  ConversationList: ({ conversations, _selectedId, onSelect, onCreate, onRename, onDelete }: any) => (
     <div data-testid="conversation-list">
       <button onClick={onCreate}>Create New</button>
       {conversations.map((conv: any) => (
@@ -21,7 +21,7 @@ vi.mock('./components/ConversationList', () => ({
         </div>
       ))}
     </div>
-  ),
+  )
 }));
 
 vi.mock('./components/Conversation', () => ({
@@ -43,7 +43,7 @@ vi.mock('./components/Conversation', () => ({
         <div>No conversation selected</div>
       )}
     </div>
-  ),
+  )
 }));
 
 describe('App Integration', () => {
@@ -56,12 +56,12 @@ describe('App Integration', () => {
           id: 'msg1',
           content: 'Hello',
           role: 'user',
-          timestamp: Date.now(),
-        },
+          timestamp: Date.now()
+        }
       ],
       createdAt: Date.now(),
-      updatedAt: Date.now(),
-    },
+      updatedAt: Date.now()
+    }
   ];
 
   beforeEach(() => {
@@ -111,8 +111,8 @@ describe('App Integration', () => {
         expect.arrayContaining([
           expect.objectContaining({
             title: expect.stringContaining('New Conversation'),
-            messages: [],
-          }),
+            messages: []
+          })
         ])
       );
     });
@@ -142,8 +142,8 @@ describe('App Integration', () => {
         expect.arrayContaining([
           expect.objectContaining({
             id: '1',
-            title: 'Renamed',
-          }),
+            title: 'Renamed'
+          })
         ])
       );
     });
@@ -208,7 +208,7 @@ describe('App Integration', () => {
       if (key === 'chatalyst-settings') {
         return JSON.stringify({
           baseURL: 'https://custom-api.com',
-          apiKey: 'test-key',
+          apiKey: 'test-key'
         });
       }
       return null;
@@ -243,8 +243,8 @@ describe('App Integration', () => {
         title: 'Second Conversation',
         messages: [],
         createdAt: Date.now(),
-        updatedAt: Date.now(),
-      },
+        updatedAt: Date.now()
+      }
     ];
     
     (loadConversations as any).mockReturnValue(multipleConversations);
@@ -266,12 +266,12 @@ describe('App Integration', () => {
             id: 'msg2',
             content: 'Second message',
             role: 'user',
-            timestamp: Date.now(),
-          },
+            timestamp: Date.now()
+          }
         ],
         createdAt: Date.now(),
-        updatedAt: Date.now(),
-      },
+        updatedAt: Date.now()
+      }
     ];
     
     (loadConversations as any).mockReturnValue(multipleConversations);

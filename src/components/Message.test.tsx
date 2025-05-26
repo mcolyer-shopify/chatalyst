@@ -7,14 +7,14 @@ describe('Message', () => {
     id: '1',
     content: 'Hello, how are you?',
     role: 'user',
-    timestamp: 1704067200000, // 2024-01-01 00:00:00
+    timestamp: 1704067200000 // 2024-01-01 00:00:00
   };
 
   const mockAssistantMessage: MessageType = {
     id: '2',
     content: 'I am doing well, thank you!',
     role: 'assistant',
-    timestamp: 1704067260000, // 2024-01-01 00:01:00
+    timestamp: 1704067260000 // 2024-01-01 00:01:00
   };
 
   it('renders user message with correct styling', () => {
@@ -57,7 +57,7 @@ describe('Message', () => {
   it('handles long messages without breaking layout', () => {
     const longMessage: MessageType = {
       ...mockUserMessage,
-      content: 'This is a very long message that should wrap properly within the message bubble without breaking the layout or causing overflow issues in the conversation interface.',
+      content: 'This is a very long message that should wrap properly within the message bubble without breaking the layout or causing overflow issues in the conversation interface.'
     };
 
     const { container } = render(<Message message={longMessage} />);
@@ -69,7 +69,7 @@ describe('Message', () => {
   it('handles empty message content', () => {
     const emptyMessage: MessageType = {
       ...mockUserMessage,
-      content: '',
+      content: ''
     };
 
     const { container } = render(<Message message={emptyMessage} />);
