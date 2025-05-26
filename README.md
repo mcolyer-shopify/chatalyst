@@ -2,6 +2,8 @@
 
 A native MCP llm client.
 
+![Screenshot v0.1.0](https://github.com/user-attachments/assets/f7421edd-dcdf-4060-86d0-8a3aa876f259)
+
 ## Development
 
 Use `claude` for development. Create PRs with feature branches and ensure they are rebased with the latest `main` branch before merging.
