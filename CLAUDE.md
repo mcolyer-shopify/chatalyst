@@ -99,6 +99,26 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
+**After the automated release is created, update the GitHub release notes:**
+1. Extract the relevant changelog section from `CHANGELOG.md` for the version
+2. Update the GitHub release with the changelog content:
+```bash
+# Example for v1.0.0 - replace with actual changelog content
+gh release edit v1.0.0 --notes "$(cat <<'EOF'
+## What's New in v1.0.0
+
+### Added
+- Feature descriptions from changelog
+
+### Changed
+- Changes from changelog
+
+### Fixed
+- Bug fixes from changelog
+EOF
+)"
+```
+
 ### Documentation Maintenance
 
 #### Changelog (`CHANGELOG.md`)
