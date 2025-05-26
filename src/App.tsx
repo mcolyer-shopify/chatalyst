@@ -94,9 +94,10 @@ function App() {
       // Call the AI with current settings and conversation model
       const aiProvider = getAIProvider();
       const modelToUse = conversation.model || settings.value.defaultModel || 'gpt-4-turbo';
+      const messages = conversation.messages.concat([userMessage]);
       const result = await streamText({
         model: aiProvider(modelToUse),
-        messages: conversation.messages.map((m) => ({
+        messages: messages.map((m) => ({
           role: m.role,
           content: m.content
         }))
