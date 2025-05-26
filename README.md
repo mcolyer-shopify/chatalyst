@@ -32,6 +32,10 @@ pnpm test:coverage
 
 ## TODO
 
+- Read https://github.com/preactjs/signals. It's used to handle reactive state across the code base. Review all of the typescript and components and see where we can simplify by using this library.
+- Show pulsing ... in assistant message when generating but no content has been returned yet.
+
+- Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.
 
 ## M2
 - Add a mcp configuration textarea to the settings page and persist it.

@@ -53,6 +53,22 @@ function App() {
     saveConversations(conversations);
   }, [conversations]);
 
+  // Handle global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cmd+N (macOS) or Ctrl+N (Windows/Linux) to create new conversation
+      if ((event.metaKey || event.ctrlKey) && event.key === 'n') {
+        event.preventDefault();
+        createNewConversation();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [conversations, defaultModel]);
+
   const selectedConversation = conversations.find(c => c.id === selectedConversationId) || null;
 
   // Create AI provider with current settings

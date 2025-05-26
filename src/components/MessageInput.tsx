@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useRef, useEffect } from 'preact/hooks';
 
 interface MessageInputProps {
   onSend: (message: string) => void;
@@ -7,6 +7,14 @@ interface MessageInputProps {
 
 export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
   const [message, setMessage] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the input when component mounts or becomes enabled
+  useEffect(() => {
+    if (!disabled && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [disabled]);
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -19,6 +27,7 @@ export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
   return (
     <form class="message-input" onSubmit={handleSubmit}>
       <input
+        ref={inputRef}
         type="text"
         value={message}
         onInput={(e) => setMessage(e.currentTarget.value)}
