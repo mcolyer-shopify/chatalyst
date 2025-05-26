@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "vitest",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@ai-sdk/openai": "2.0.0-alpha.4",
@@ -23,8 +27,13 @@
     "@preact/preset-vite": "^2.9.3",
     "@tailwindcss/vite": "^4.1.7",
     "@tauri-apps/cli": "^2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/preact": "^3.2.4",
+    "@vitest/ui": "^3.1.4",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.7",
     "typescript": "~5.6.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vitest": "^3.1.4"
   }
 }

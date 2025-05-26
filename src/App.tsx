@@ -1,12 +1,11 @@
 import { useState, useEffect } from "preact/hooks";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { streamText } from "ai";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
+import { ConversationList } from './components/ConversationList';
+import { Conversation } from './components/Conversation';
+import type { Conversation as ConversationType, Message } from './types';
+import { loadConversations, saveConversations } from './utils/storage';
+import './App.css';
 
 interface Settings {
   baseURL: string;
@@ -19,16 +18,22 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 function App() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+  const [conversations, setConversations] = useState<ConversationType[]>([]);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [tempSettings, setTempSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
-  // Load settings from localStorage on mount
+  // Load conversations and settings from localStorage on mount
   useEffect(() => {
+    const savedConversations = loadConversations();
+    setConversations(savedConversations);
+    if (savedConversations.length > 0) {
+      setSelectedConversationId(savedConversations[0].id);
+    }
+
     const savedSettings = localStorage.getItem("chatalyst-settings");
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
@@ -36,6 +41,13 @@ function App() {
       setTempSettings(parsed);
     }
   }, []);
+
+  // Save conversations whenever they change
+  useEffect(() => {
+    saveConversations(conversations);
+  }, [conversations]);
+
+  const selectedConversation = conversations.find(c => c.id === selectedConversationId) || null;
 
   // Create AI provider with current settings
   const getAIProvider = () => {
@@ -46,20 +58,53 @@ function App() {
     });
   };
 
-  const handleSubmit = async (e: Event) => {
-    e.preventDefault();
+  const createNewConversation = () => {
+    const newConversation: ConversationType = {
+      id: Date.now().toString(),
+      title: `New Conversation ${conversations.length + 1}`,
+      messages: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    setConversations([...conversations, newConversation]);
+    setSelectedConversationId(newConversation.id);
+  };
 
-    if (!input.trim()) return;
+  const renameConversation = (id: string, newTitle: string) => {
+    setConversations(conversations.map(c => 
+      c.id === id ? { ...c, title: newTitle, updatedAt: Date.now() } : c
+    ));
+  };
+
+  const deleteConversation = (id: string) => {
+    const newConversations = conversations.filter(c => c.id !== id);
+    setConversations(newConversations);
+    if (selectedConversationId === id) {
+      setSelectedConversationId(newConversations.length > 0 ? newConversations[0].id : null);
+    }
+  };
+
+  const sendMessage = async (content: string) => {
+    if (!selectedConversation || !content.trim()) return;
 
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input,
+      content,
+      timestamp: Date.now(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+    const updatedConversation = {
+      ...selectedConversation,
+      messages: [...selectedConversation.messages, userMessage],
+      updatedAt: Date.now(),
+    };
+
+    setConversations(conversations.map(c => 
+      c.id === selectedConversation.id ? updatedConversation : c
+    ));
+
     setIsLoading(true);
     setError(null);
 
@@ -69,15 +114,23 @@ function App() {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: "",
+        timestamp: Date.now(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      const conversationWithAssistant = {
+        ...updatedConversation,
+        messages: [...updatedConversation.messages, assistantMessage],
+      };
+
+      setConversations(conversations.map(c => 
+        c.id === selectedConversation.id ? conversationWithAssistant : c
+      ));
 
       // Call the AI with current settings
       const aiProvider = getAIProvider();
       const result = await streamText({
         model: aiProvider("gpt-4-turbo"),
-        messages: [...messages, userMessage].map((m) => ({
+        messages: updatedConversation.messages.map((m) => ({
           role: m.role,
           content: m.content,
         })),
@@ -87,16 +140,27 @@ function App() {
       let fullContent = "";
       for await (const chunk of result.textStream) {
         fullContent += chunk;
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMessage.id ? { ...m, content: fullContent } : m,
-          ),
+        setConversations(prevConversations => 
+          prevConversations.map(c => 
+            c.id === selectedConversation.id 
+              ? {
+                  ...c,
+                  messages: c.messages.map(m => 
+                    m.id === assistantMessage.id 
+                      ? { ...m, content: fullContent }
+                      : m
+                  ),
+                }
+              : c
+          )
         );
       }
     } catch (err) {
       setError(err as Error);
       // Remove the empty assistant message on error
-      setMessages((prev) => prev.slice(0, -1));
+      setConversations(conversations.map(c => 
+        c.id === selectedConversation.id ? updatedConversation : c
+      ));
     } finally {
       setIsLoading(false);
     }
@@ -114,31 +178,29 @@ function App() {
   };
 
   return (
-    <main class="m-0 pt-[10vh] flex flex-col justify-center text-center">
-      <div class="flex items-center justify-between mb-5">
-        <h1 class="m-0 text-center">Chatalyst</h1>
+    <div class="app">
+      <header class="app-header">
+        <h1>Chatalyst</h1>
         <button
           onClick={() => setShowSettings(true)}
-          class="bg-transparent border-none cursor-pointer text-2xl p-2 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800"
+          class="settings-button"
           title="Settings"
         >
           ⚙️
         </button>
-      </div>
+      </header>
 
       {showSettings && (
         <>
           <div
-            class="fixed inset-0 bg-black/50 z-[999]"
+            class="modal-backdrop"
             onClick={handleCancelSettings}
           />
-          <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.2)] z-[1000] min-w-[400px]">
-            <h2 class="mt-0">Settings</h2>
+          <div class="modal">
+            <h2>Settings</h2>
 
-            <div class="mb-4">
-              <label class="block mb-2">
-                Base URL:
-              </label>
+            <div class="form-group">
+              <label>Base URL:</label>
               <input
                 type="text"
                 value={tempSettings.baseURL}
@@ -148,14 +210,11 @@ function App() {
                     baseURL: (e.target as HTMLInputElement).value,
                   })
                 }
-                class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
               />
             </div>
 
-            <div class="mb-6">
-              <label class="block mb-2">
-                API Key:
-              </label>
+            <div class="form-group">
+              <label>API Key:</label>
               <input
                 type="password"
                 value={tempSettings.apiKey}
@@ -166,21 +225,14 @@ function App() {
                   })
                 }
                 placeholder="Leave blank to use 'openrouter'"
-                class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
               />
             </div>
 
-            <div class="flex gap-2 justify-end">
-              <button
-                onClick={handleCancelSettings}
-                class="px-4 py-2 rounded border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
+            <div class="modal-actions">
+              <button onClick={handleCancelSettings} class="button-secondary">
                 Cancel
               </button>
-              <button
-                onClick={handleSaveSettings}
-                class="px-4 py-2 rounded border-none bg-blue-500 text-white cursor-pointer hover:bg-blue-600"
-              >
+              <button onClick={handleSaveSettings} class="button-primary">
                 Save
               </button>
             </div>
@@ -188,51 +240,28 @@ function App() {
         </>
       )}
 
-      <div class="flex flex-col h-[calc(100vh-200px)] max-w-[800px] mx-auto">
-        <div class="flex-1 overflow-y-auto p-5 border border-gray-300 dark:border-gray-600 rounded-lg mb-5 bg-white dark:bg-gray-800">
-          {messages.length === 0 ? (
-            <p class="text-center text-gray-600 dark:text-gray-400">
-              Start a conversation...
-            </p>
-          ) : (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                class={`mb-4 p-3 rounded-lg ${
-                  message.role === "user"
-                    ? "bg-blue-100 dark:bg-blue-900/30"
-                    : "bg-gray-100 dark:bg-gray-700"
-                }`}
-              >
-                <strong>{message.role === "user" ? "You" : "AI"}:</strong>
-                <p class="mt-2 mb-0">
-                  {message.content || <em>Typing...</em>}
-                </p>
-              </div>
-            ))
+      <div class="app-content">
+        <ConversationList
+          conversations={conversations}
+          selectedId={selectedConversationId}
+          onSelect={setSelectedConversationId}
+          onCreate={createNewConversation}
+          onRename={renameConversation}
+          onDelete={deleteConversation}
+        />
+        <div class="conversation-container">
+          <Conversation
+            conversation={selectedConversation}
+            onSendMessage={sendMessage}
+          />
+          {error && (
+            <div class="error-message">
+              Error: {error.message || error.toString()}
+            </div>
           )}
         </div>
-
-        {error && (
-          <div class="text-red-600 dark:text-red-400 mb-2.5 p-2.5 bg-red-50 dark:bg-red-900/20 rounded">
-            Error: {error.message || error.toString()}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} class="flex justify-center gap-2">
-          <input
-            value={input}
-            onInput={(e) => setInput((e.target as HTMLInputElement).value)}
-            placeholder="Type your message..."
-            class="flex-1 rounded-lg border border-transparent px-3 py-2 text-base font-medium bg-white dark:bg-gray-800 shadow-sm transition-colors duration-200 outline-none focus:border-blue-500 dark:focus:border-blue-400"
-            disabled={isLoading}
-          />
-          <button type="submit" disabled={isLoading || !input.trim()} class="rounded-lg border border-transparent px-4 py-2 text-base font-medium bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 active:bg-gray-100 dark:active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            {isLoading ? "Sending..." : "Send"}
-          </button>
-        </form>
       </div>
-    </main>
+    </div>
   );
 }
 
