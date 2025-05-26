@@ -1,12 +1,6 @@
-import { useEffect } from 'preact/hooks';
-import { signal } from '@preact/signals';
+import { useEffect, useState } from 'preact/hooks';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
-
-// Local UI state signals
-const dropdownId = signal<string | null>(null);
-const editingId = signal<string | null>(null);
-const editTitle = signal('');
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -32,12 +26,17 @@ export function ConversationList({
   onDefaultModelChange
 }: ConversationListProps) {
 
+  // Local component state for UI state
+  const [dropdownId, setDropdownId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Element;
       // Check if the click is outside any dropdown menu
       if (!target.closest('.conversation-menu')) {
-        dropdownId.value = null;
+        setDropdownId(null);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -45,22 +44,22 @@ export function ConversationList({
   }, []);
 
   const handleRename = (conversation: Conversation) => {
-    editingId.value = conversation.id;
-    editTitle.value = conversation.title;
-    dropdownId.value = null;
+    setEditingId(conversation.id);
+    setEditTitle(conversation.title);
+    setDropdownId(null);
   };
 
   const handleSaveRename = (id: string) => {
-    if (editTitle.value.trim()) {
-      onRename(id, editTitle.value.trim());
+    if (editTitle.trim()) {
+      onRename(id, editTitle.trim());
     }
-    editingId.value = null;
-    editTitle.value = '';
+    setEditingId(null);
+    setEditTitle('');
   };
 
   const handleDelete = (id: string) => {
     onDelete(id);
-    dropdownId.value = null;
+    setDropdownId(null);
   };
 
   return (
@@ -82,16 +81,16 @@ export function ConversationList({
             key={conversation.id}
             class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''}`}
           >
-            {editingId.value === conversation.id ? (
+            {editingId === conversation.id ? (
               <input
                 type="text"
-                value={editTitle.value}
-                onInput={(e) => editTitle.value = e.currentTarget.value}
+                value={editTitle}
+                onInput={(e) => setEditTitle(e.currentTarget.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleSaveRename(conversation.id);
                   } else if (e.key === 'Escape') {
-                    editingId.value = null;
+                    setEditingId(null);
                   }
                 }}
                 onBlur={() => handleSaveRename(conversation.id)}
@@ -111,12 +110,12 @@ export function ConversationList({
                     class="menu-button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      dropdownId.value = dropdownId.value === conversation.id ? null : conversation.id;
+                      setDropdownId(dropdownId === conversation.id ? null : conversation.id);
                     }}
                   >
                     ⋮
                   </button>
-                  {dropdownId.value === conversation.id && (
+                  {dropdownId === conversation.id && (
                     <div class="dropdown-menu">
                       <button onClick={() => handleRename(conversation)}>
                         Rename

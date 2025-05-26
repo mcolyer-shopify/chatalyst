@@ -1,15 +1,15 @@
-import { signal, computed, effect, batch } from "@preact/signals";
+import { signal, computed, effect, batch } from '@preact/signals';
 import type {
   Conversation as ConversationType,
   Message,
-  Settings,
-} from "../types";
+  Settings
+} from '../types';
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
-  baseURL: "",
-  apiKey: "",
-  defaultModel: "",
+  baseURL: '',
+  apiKey: '',
+  defaultModel: ''
 };
 
 // Flag to track initialization
@@ -30,7 +30,7 @@ export const availableModels = signal<any[]>([]);
 
 // Computed values
 export const selectedConversation = computed(() =>
-  conversations.value.find((c) => c.id === selectedConversationId.value),
+  conversations.value.find((c) => c.id === selectedConversationId.value)
 );
 
 export const defaultModel = computed(() => settings.value.defaultModel);
@@ -38,17 +38,17 @@ export const defaultModel = computed(() => settings.value.defaultModel);
 // Initialize from localStorage
 function initializeFromStorage() {
   try {
-    const savedConversations = localStorage.getItem("chatalyst-conversations");
+    const savedConversations = localStorage.getItem('chatalyst-conversations');
     if (savedConversations) {
       conversations.value = JSON.parse(savedConversations);
     }
 
-    const savedSettings = localStorage.getItem("chatalyst-settings");
+    const savedSettings = localStorage.getItem('chatalyst-settings');
     if (savedSettings) {
       settings.value = JSON.parse(savedSettings);
     }
 
-    const savedModelsCache = localStorage.getItem("chatalyst-models-cache");
+    const savedModelsCache = localStorage.getItem('chatalyst-models-cache');
     if (savedModelsCache) {
       const parsed = JSON.parse(savedModelsCache);
       modelsCache.value = new Map(Object.entries(parsed));
@@ -67,8 +67,8 @@ effect(() => {
   const conversationsData = conversations.value;
   if (isInitialized) {
     localStorage.setItem(
-      "chatalyst-conversations",
-      JSON.stringify(conversationsData),
+      'chatalyst-conversations',
+      JSON.stringify(conversationsData)
     );
   }
 });
@@ -77,7 +77,7 @@ effect(() => {
   // Always access .value to ensure subscription
   const settingsData = settings.value;
   if (isInitialized) {
-    localStorage.setItem("chatalyst-settings", JSON.stringify(settingsData));
+    localStorage.setItem('chatalyst-settings', JSON.stringify(settingsData));
   }
 });
 
@@ -86,14 +86,14 @@ effect(() => {
   const cacheData = modelsCache.value;
   if (isInitialized) {
     const cacheObj = Object.fromEntries(cacheData);
-    localStorage.setItem("chatalyst-models-cache", JSON.stringify(cacheObj));
+    localStorage.setItem('chatalyst-models-cache', JSON.stringify(cacheObj));
   }
 });
 
 // Actions
 export function createConversation(
   title: string,
-  model?: string,
+  model?: string
 ): ConversationType {
   const newConversation: ConversationType = {
     id: Date.now().toString(),
@@ -101,7 +101,7 @@ export function createConversation(
     model: model || settings.value.defaultModel,
     messages: [],
     createdAt: Date.now(),
-    updatedAt: Date.now(),
+    updatedAt: Date.now()
   };
 
   batch(() => {
@@ -124,13 +124,13 @@ export function deleteConversation(id: string) {
 
 export function updateConversationTitle(id: string, title: string) {
   conversations.value = conversations.value.map((c) =>
-    c.id === id ? { ...c, title, updatedAt: Date.now() } : c,
+    c.id === id ? { ...c, title, updatedAt: Date.now() } : c
   );
 }
 
 export function updateConversationModel(id: string, model: string) {
   conversations.value = conversations.value.map((c) =>
-    c.id === id ? { ...c, model, updatedAt: Date.now() } : c,
+    c.id === id ? { ...c, model, updatedAt: Date.now() } : c
   );
 }
 
@@ -138,25 +138,25 @@ export function addMessage(conversationId: string, message: Message) {
   conversations.value = conversations.value.map((c) =>
     c.id === conversationId
       ? { ...c, messages: [...c.messages, message], updatedAt: Date.now() }
-      : c,
+      : c
   );
 }
 
 export function updateMessage(
   conversationId: string,
   messageId: string,
-  updates: Partial<Message>,
+  updates: Partial<Message>
 ) {
   conversations.value = conversations.value.map((c) =>
     c.id === conversationId
       ? {
-          ...c,
-          messages: c.messages.map((m) =>
-            m.id === messageId ? { ...m, ...updates } : m,
-          ),
-          updatedAt: Date.now(),
-        }
-      : c,
+        ...c,
+        messages: c.messages.map((m) =>
+          m.id === messageId ? { ...m, ...updates } : m
+        ),
+        updatedAt: Date.now()
+      }
+      : c
   );
 }
 

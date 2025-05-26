@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'preact/hooks';
-import { signal, computed } from '@preact/signals';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { Model } from '../types';
 import { settings, getCachedModels, setCachedModels, availableModels } from '../store';
 
@@ -9,25 +8,6 @@ interface ModelSelectorProps {
   className?: string;
   showAsDefault?: boolean;
 }
-
-// Local component signals for UI state
-const isOpen = signal(false);
-const searchTerm = signal('');
-const highlightedIndex = signal(-1);
-const isLoading = signal(false);
-const error = signal<string | null>(null);
-
-// Computed filtered models
-const filteredModels = computed(() => {
-  const models = availableModels.value;
-  if (searchTerm.value.trim() === '') {
-    return models;
-  }
-  return models.filter(model =>
-    model.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    (model.description && model.description.toLowerCase().includes(searchTerm.value.toLowerCase()))
-  );
-});
 
 export function ModelSelector({
   selectedModel,
@@ -39,6 +19,22 @@ export function ModelSelector({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Local component state for UI state (instance-specific)
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Computed filtered models based on local search term
+  const filteredModels = availableModels.value.filter(model => {
+    if (searchTerm.trim() === '') {
+      return true;
+    }
+    return model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (model.description && model.description.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
+
   useEffect(() => {
     if (settings.value.baseURL && settings.value.apiKey) {
       loadModels();
@@ -47,14 +43,14 @@ export function ModelSelector({
 
   useEffect(() => {
     // Reset highlighted index when search results change
-    highlightedIndex.value = -1;
-  }, [filteredModels.value]);
+    setHighlightedIndex(-1);
+  }, [filteredModels]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        isOpen.value = false;
-        searchTerm.value = '';
+        setIsOpen(false);
+        setSearchTerm('');
       }
     };
 
@@ -70,7 +66,7 @@ export function ModelSelector({
     
     if (cachedModels) {
       availableModels.value = cachedModels;
-      error.value = null;
+      setError(null);
       
       // Auto-select first model if no default is selected and this is a default selector
       if (showAsDefault && !selectedModel && cachedModels.length > 0) {
@@ -85,8 +81,8 @@ export function ModelSelector({
 
   const fetchModels = async () => {
     const { baseURL, apiKey } = settings.value;
-    isLoading.value = true;
-    error.value = null;
+    setIsLoading(true);
+    setError(null);
     
     try {
       const response = await fetch(`${baseURL}/models`, {
@@ -121,9 +117,9 @@ export function ModelSelector({
         onModelChange(fetchedModels[0].id);
       }
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to fetch models';
+      setError(err instanceof Error ? err.message : 'Failed to fetch models');
     } finally {
-      isLoading.value = false;
+      setIsLoading(false);
     }
   };
 
@@ -134,18 +130,18 @@ export function ModelSelector({
 
   const handleModelSelect = (modelId: string) => {
     onModelChange(modelId);
-    isOpen.value = false;
-    searchTerm.value = '';
-    highlightedIndex.value = -1;
+    setIsOpen(false);
+    setSearchTerm('');
+    setHighlightedIndex(-1);
   };
 
   const handleDropdownToggle = () => {
-    const newIsOpen = !isOpen.value;
-    isOpen.value = newIsOpen;
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
     
     if (newIsOpen) {
-      searchTerm.value = '';
-      highlightedIndex.value = -1;
+      setSearchTerm('');
+      setHighlightedIndex(-1);
       // Focus search input when dropdown opens
       setTimeout(() => {
         searchInputRef.current?.focus();
@@ -154,42 +150,40 @@ export function ModelSelector({
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (!isOpen.value) return;
+    if (!isOpen) return;
 
     switch (e.key) {
     case 'ArrowDown':
       e.preventDefault();
-      highlightedIndex.value = 
-        highlightedIndex.value < filteredModels.value.length - 1 
-          ? highlightedIndex.value + 1 
-          : 0;
+      setHighlightedIndex(prev => 
+        prev < filteredModels.length - 1 ? prev + 1 : 0
+      );
       break;
     case 'ArrowUp':
       e.preventDefault();
-      highlightedIndex.value = 
-        highlightedIndex.value > 0 
-          ? highlightedIndex.value - 1 
-          : filteredModels.value.length - 1;
+      setHighlightedIndex(prev => 
+        prev > 0 ? prev - 1 : filteredModels.length - 1
+      );
       break;
     case 'Enter':
       e.preventDefault();
-      if (highlightedIndex.value >= 0 && filteredModels.value[highlightedIndex.value]) {
-        handleModelSelect(filteredModels.value[highlightedIndex.value].id);
+      if (highlightedIndex >= 0 && filteredModels[highlightedIndex]) {
+        handleModelSelect(filteredModels[highlightedIndex].id);
       }
       break;
     case 'Escape':
       e.preventDefault();
-      isOpen.value = false;
-      searchTerm.value = '';
-      highlightedIndex.value = -1;
+      setIsOpen(false);
+      setSearchTerm('');
+      setHighlightedIndex(-1);
       break;
     }
   };
 
   // Scroll highlighted item into view
   useEffect(() => {
-    if (highlightedIndex.value >= 0 && listRef.current) {
-      const highlightedElement = listRef.current.children[highlightedIndex.value] as HTMLElement;
+    if (highlightedIndex >= 0 && listRef.current) {
+      const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
       if (highlightedElement) {
         highlightedElement.scrollIntoView({
           block: 'nearest',
@@ -197,27 +191,27 @@ export function ModelSelector({
         });
       }
     }
-  }, [highlightedIndex.value]);
+  }, [highlightedIndex]);
 
   return (
     <div className={`model-selector ${className}`} ref={dropdownRef}>
       <button
         className="model-selector-button"
         onClick={handleDropdownToggle}
-        disabled={isLoading.value || (!availableModels.value.length && !error.value)}
+        disabled={isLoading || (!availableModels.value.length && !error)}
         onKeyDown={handleKeyDown}
       >
         <span className="model-selector-text">
-          {isLoading.value ? 'Loading...' : displayName}
+          {isLoading ? 'Loading...' : displayName}
         </span>
         <span className="model-selector-arrow">▼</span>
       </button>
 
-      {isOpen.value && (
+      {isOpen && (
         <div className="model-selector-dropdown">
-          {error.value && (
+          {error && (
             <div className="model-selector-error">
-              {error.value}
+              {error}
               <button 
                 className="model-selector-retry"
                 onClick={() => fetchModels()}
@@ -233,8 +227,8 @@ export function ModelSelector({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  value={searchTerm.value}
-                  onInput={(e) => searchTerm.value = e.currentTarget.value}
+                  value={searchTerm}
+                  onInput={(e) => setSearchTerm(e.currentTarget.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Search models..."
                   className="model-selector-search-input"
@@ -242,15 +236,15 @@ export function ModelSelector({
               </div>
               
               <div className="model-selector-list" ref={listRef}>
-                {filteredModels.value.length > 0 ? (
-                  filteredModels.value.map((model, index) => (
+                {filteredModels.length > 0 ? (
+                  filteredModels.map((model, index) => (
                     <button
                       key={model.id}
                       className={`model-selector-option ${
                         selectedModel === model.id ? 'selected' : ''
-                      } ${index === highlightedIndex.value ? 'highlighted' : ''}`}
+                      } ${index === highlightedIndex ? 'highlighted' : ''}`}
                       onClick={() => handleModelSelect(model.id)}
-                      onMouseEnter={() => highlightedIndex.value = index}
+                      onMouseEnter={() => setHighlightedIndex(index)}
                     >
                       <div className="model-selector-option-name">{model.name}</div>
                       {model.description && (
@@ -262,7 +256,7 @@ export function ModelSelector({
                   ))
                 ) : (
                   <div className="model-selector-no-results">
-                    No models found matching "{searchTerm.value}"
+                    No models found matching "{searchTerm}"
                   </div>
                 )}
               </div>
