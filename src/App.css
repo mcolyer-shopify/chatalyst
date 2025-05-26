@@ -95,6 +95,35 @@ button {
   margin-right: 5px;
 }
 
+.gear-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+.gear-button:hover {
+  background-color: #f0f0f0;
+  border-color: transparent;
+}
+
+.gear-icon {
+  width: 24px;
+  height: 24px;
+  fill: #666;
+  transition: fill 0.2s;
+}
+
+.gear-button:hover .gear-icon {
+  fill: #396cd8;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
@@ -112,5 +141,17 @@ button {
   }
   button:active {
     background-color: #0f0f0f69;
+  }
+
+  .gear-button:hover {
+    background-color: #333;
+  }
+
+  .gear-icon {
+    fill: #999;
+  }
+
+  .gear-button:hover .gear-icon {
+    fill: #24c8db;
   }
 }

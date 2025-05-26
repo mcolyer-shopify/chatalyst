@@ -1,15 +1,13 @@
-# Tauri + Preact + Typescript
+# Chatalyst
 
-This template should help get you started developing with Tauri, Preact and Typescript in Vite.
+A native MCP llm client.
 
-## Recommended IDE Setup
+## Development
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-Template created! To get started run:
-  cd chatalyst
-  pnpm install
-  pnpm tauri android init
-  pnpm tauri ios init
+Use `claude` for development. Create PRs with feature branches and ensure they are rebased with the latest `main` branch before merging.
 
-For Desktop development, run:
-  pnpm tauri dev
+```
+cd chatalyst
+pnpm install
+pnpm tauri dev
+```
