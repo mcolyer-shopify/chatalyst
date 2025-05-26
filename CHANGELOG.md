@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Models are sorted alphabetically for improved user experience
 - Dropdown menu interaction bug where only the last conversation could be renamed or deleted
 - Conversation scrolling no longer auto-scrolls when users are reading older messages
+- Fixed localStorage persistence issue where settings and conversations were being overwritten with default values on app reload
+- Fixed conversation model updates not properly triggering localStorage saves
 
 ## [0.1.0] - 2025-01-26
 

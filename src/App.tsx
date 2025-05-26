@@ -13,6 +13,7 @@ import {
   createConversation,
   deleteConversation,
   updateConversationTitle,
+  updateConversationModel,
   addMessage,
   updateMessage,
   updateSettings
@@ -109,12 +110,12 @@ function App() {
       }
     } catch (err) {
       setError(err as Error);
-      // Remove the assistant message on error by resetting messages
-      const conv = conversations.value.find(c => c.id === conversation.id);
-      if (conv) {
-        conv.messages = conv.messages.filter(m => m.id !== assistantMessage.id);
-        conversations.value = [...conversations.value];
-      }
+      // Remove the assistant message on error
+      conversations.value = conversations.value.map(c => 
+        c.id === conversation.id
+          ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
+          : c
+      );
     } finally {
       isStreaming.value = false;
     }
@@ -138,12 +139,7 @@ function App() {
     const conversation = selectedConversation.value;
     if (!conversation) return;
     
-    const conv = conversations.value.find(c => c.id === conversation.id);
-    if (conv) {
-      conv.model = modelId;
-      conv.updatedAt = Date.now();
-      conversations.value = [...conversations.value];
-    }
+    updateConversationModel(conversation.id, modelId);
   };
 
   return (

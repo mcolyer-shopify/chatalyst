@@ -63,7 +63,7 @@ export function ModelSelector({
   }, []);
 
   const loadModels = async () => {
-    const { baseURL, apiKey } = settings.value;
+    const { baseURL } = settings.value;
     
     // Try to get from cache first
     const cachedModels = getCachedModels(baseURL);

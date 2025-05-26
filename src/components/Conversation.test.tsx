@@ -184,7 +184,7 @@ describe('Conversation', () => {
     />);
 
     // Look for the scroll button
-    const scrollButton = container.querySelector('.scroll-to-bottom');
+    const _scrollButton = container.querySelector('.scroll-to-bottom');
     
     // The button may or may not be visible depending on scroll state
     // Just verify the component renders without errors
