@@ -30,10 +30,7 @@ pnpm test:coverage
 
 ## TODO
 
-# GitHub Actions
-- Add a eslint action
-- Add an action which runs all unit tests
-- Add a release workflow to build a macos release and upload it to the releases page when a new tag is pushed.
+Using Github actions, add a release workflow to build a macos release using `pnpm tauri build` and upload it to the releases page when a new tag is pushed.
 
 ## Model Selection
 - Add a model attribute to a conversation object.

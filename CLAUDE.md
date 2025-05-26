@@ -86,6 +86,32 @@ The CI pipeline runs on:
 - All pushes to `main` branch
 - All pull requests targeting `main`
 
+### Documentation Maintenance
+
+#### Changelog (`CHANGELOG.md`)
+The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format:
+
+**When making changes, always update the changelog:**
+1. Add new entries under `## [Unreleased]` section
+2. Use appropriate categories: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
+3. Write clear, user-focused descriptions of changes
+4. When releasing, move unreleased changes to a new version section
+5. Update version links at the bottom of the file
+
+**Example entry format:**
+```markdown
+## [Unreleased]
+
+### Added
+- New feature description
+
+### Changed  
+- Modified feature description
+
+### Fixed
+- Bug fix description
+```
+
 ## Architecture
 
 ### Directory Structure
