@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard navigation support in model selector (arrow keys, Enter, Escape)
 - Auto-selection of first available model when no default is set
 - Comprehensive test suite for model selection with 13+ test cases
+- Cmd+N keyboard shortcut to create new conversations instantly
+- Auto-focus functionality for message input when conversations are selected
 
 ### Changed
 - Streamlined UI by removing app header and moving settings to sidebar footer

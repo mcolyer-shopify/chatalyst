@@ -64,6 +64,8 @@ pnpm lint:fix          # Automatically fix linting errors
 
 **Note:** Only run linting directly before committing code. During development and iterative changes, focus on functionality first and address linting issues as a final step before commit.
 
+**IMPORTANT:** When committing changes, always update CHANGELOG.md first by adding user-facing changes under the `## [Unreleased]` section before creating the commit.
+
 ESLint is configured with:
 - **TypeScript ESLint** - TypeScript-specific linting rules
 - **Preact ESLint Plugin** - Preact-specific rules
