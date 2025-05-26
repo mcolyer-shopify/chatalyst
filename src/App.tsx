@@ -1,7 +1,6 @@
 import { useState, useEffect } from "preact/hooks";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { streamText } from "ai";
-import "./App.css";
 
 interface Message {
   id: string;
@@ -115,29 +114,12 @@ function App() {
   };
 
   return (
-    <main class="container">
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "20px",
-        }}
-      >
-        <h1 style={{ margin: 0 }}>Chatalyst</h1>
+    <main class="m-0 pt-[10vh] flex flex-col justify-center text-center">
+      <div class="flex items-center justify-between mb-5">
+        <h1 class="m-0 text-center">Chatalyst</h1>
         <button
           onClick={() => setShowSettings(true)}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "24px",
-            padding: "8px",
-            borderRadius: "4px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          class="bg-transparent border-none cursor-pointer text-2xl p-2 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Settings"
         >
           ⚙️
@@ -147,35 +129,14 @@ function App() {
       {showSettings && (
         <>
           <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              zIndex: 999,
-            }}
+            class="fixed inset-0 bg-black/50 z-[999]"
             onClick={handleCancelSettings}
           />
-          <div
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "white",
-              padding: "24px",
-              borderRadius: "8px",
-              boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
-              zIndex: 1000,
-              minWidth: "400px",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>Settings</h2>
+          <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.2)] z-[1000] min-w-[400px]">
+            <h2 class="mt-0">Settings</h2>
 
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", marginBottom: "8px" }}>
+            <div class="mb-4">
+              <label class="block mb-2">
                 Base URL:
               </label>
               <input
@@ -187,17 +148,12 @@ function App() {
                     baseURL: (e.target as HTMLInputElement).value,
                   })
                 }
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
+                class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
               />
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
-              <label style={{ display: "block", marginBottom: "8px" }}>
+            <div class="mb-6">
+              <label class="block mb-2">
                 API Key:
               </label>
               <input
@@ -210,44 +166,20 @@ function App() {
                   })
                 }
                 placeholder="Leave blank to use 'openrouter'"
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
+                class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
               />
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                justifyContent: "flex-end",
-              }}
-            >
+            <div class="flex gap-2 justify-end">
               <button
                 onClick={handleCancelSettings}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                  background: "white",
-                  cursor: "pointer",
-                }}
+                class="px-4 py-2 rounded border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveSettings}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "4px",
-                  border: "none",
-                  background: "#007bff",
-                  color: "white",
-                  cursor: "pointer",
-                }}
+                class="px-4 py-2 rounded border-none bg-blue-500 text-white cursor-pointer hover:bg-blue-600"
               >
                 Save
               </button>
@@ -256,43 +188,24 @@ function App() {
         </>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "calc(100vh - 200px)",
-          maxWidth: "800px",
-          margin: "0 auto",
-        }}
-      >
-        <div
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "20px",
-            border: "1px solid #ccc",
-            borderRadius: "8px",
-            marginBottom: "20px",
-          }}
-        >
+      <div class="flex flex-col h-[calc(100vh-200px)] max-w-[800px] mx-auto">
+        <div class="flex-1 overflow-y-auto p-5 border border-gray-300 dark:border-gray-600 rounded-lg mb-5 bg-white dark:bg-gray-800">
           {messages.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#666" }}>
+            <p class="text-center text-gray-600 dark:text-gray-400">
               Start a conversation...
             </p>
           ) : (
             messages.map((message) => (
               <div
                 key={message.id}
-                style={{
-                  marginBottom: "16px",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  backgroundColor:
-                    message.role === "user" ? "#e3f2fd" : "#f5f5f5",
-                }}
+                class={`mb-4 p-3 rounded-lg ${
+                  message.role === "user"
+                    ? "bg-blue-100 dark:bg-blue-900/30"
+                    : "bg-gray-100 dark:bg-gray-700"
+                }`}
               >
                 <strong>{message.role === "user" ? "You" : "AI"}:</strong>
-                <p style={{ margin: "8px 0 0 0" }}>
+                <p class="mt-2 mb-0">
                   {message.content || <em>Typing...</em>}
                 </p>
               </div>
@@ -301,28 +214,20 @@ function App() {
         </div>
 
         {error && (
-          <div
-            style={{
-              color: "red",
-              marginBottom: "10px",
-              padding: "10px",
-              backgroundColor: "#ffebee",
-              borderRadius: "4px",
-            }}
-          >
+          <div class="text-red-600 dark:text-red-400 mb-2.5 p-2.5 bg-red-50 dark:bg-red-900/20 rounded">
             Error: {error.message || error.toString()}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} class="row">
+        <form onSubmit={handleSubmit} class="flex justify-center gap-2">
           <input
             value={input}
             onInput={(e) => setInput((e.target as HTMLInputElement).value)}
             placeholder="Type your message..."
-            style={{ flex: 1 }}
+            class="flex-1 rounded-lg border border-transparent px-3 py-2 text-base font-medium bg-white dark:bg-gray-800 shadow-sm transition-colors duration-200 outline-none focus:border-blue-500 dark:focus:border-blue-400"
             disabled={isLoading}
           />
-          <button type="submit" disabled={isLoading || !input.trim()}>
+          <button type="submit" disabled={isLoading || !input.trim()} class="rounded-lg border border-transparent px-4 py-2 text-base font-medium bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 active:bg-gray-100 dark:active:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
             {isLoading ? "Sending..." : "Send"}
           </button>
         </form>
