@@ -2,7 +2,7 @@
 
 A native MCP llm client.
 
-![Screenshot v0.1.0](https://github.com/user-attachments/assets/f7421edd-dcdf-4060-86d0-8a3aa876f259)
+![Screenshot v0.2.1](https://github.com/user-attachments/assets/7eec8c4a-150f-44dd-8d7a-99b06854ad17)
 
 ## Development
 
