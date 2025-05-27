@@ -3,6 +3,7 @@ export interface Message {
   content: string;
   role: 'user' | 'assistant';
   timestamp: number;
+  isGenerating?: boolean;
 }
 
 export interface Conversation {

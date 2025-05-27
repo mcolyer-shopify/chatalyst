@@ -87,7 +87,8 @@ function App() {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
       content: '',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      isGenerating: true
     };
 
     try {
@@ -111,6 +112,9 @@ function App() {
         fullContent += chunk;
         updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
       }
+      
+      // Mark as finished generating
+      updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
     } catch (err) {
       showError((err as Error).message || 'Failed to send message');
       // Remove the assistant message on error
