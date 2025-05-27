@@ -5,6 +5,12 @@ import type {
   Settings,
   Model
 } from '../types';
+import {
+  loadConversations,
+  saveConversations,
+  loadSelectedConversationId,
+  saveSelectedConversationId
+} from '../utils/storage';
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
@@ -43,9 +49,13 @@ export const defaultModel = computed(() => settings.value.defaultModel);
 // Initialize from localStorage
 function initializeFromStorage() {
   try {
-    const savedConversations = localStorage.getItem('chatalyst-conversations');
-    if (savedConversations) {
-      conversations.value = JSON.parse(savedConversations);
+    // Load conversations using utility function
+    conversations.value = loadConversations();
+    
+    // Load selected conversation ID and validate it exists
+    const savedSelectedId = loadSelectedConversationId();
+    if (savedSelectedId && conversations.value.some(c => c.id === savedSelectedId)) {
+      selectedConversationId.value = savedSelectedId;
     }
 
     const savedSettings = localStorage.getItem('chatalyst-settings');
@@ -71,10 +81,15 @@ effect(() => {
   // Always access .value to ensure subscription
   const conversationsData = conversations.value;
   if (isInitialized) {
-    localStorage.setItem(
-      'chatalyst-conversations',
-      JSON.stringify(conversationsData)
-    );
+    saveConversations(conversationsData);
+  }
+});
+
+effect(() => {
+  // Always access .value to ensure subscription
+  const selectedId = selectedConversationId.value;
+  if (isInitialized) {
+    saveSelectedConversationId(selectedId);
   }
 });
 

@@ -32,7 +32,6 @@ pnpm test:coverage
 
 ## TODO
 
-- remember the last selected conversation between application restarts
 - remember the window size between application restarts
 
 ## MCP MVP
