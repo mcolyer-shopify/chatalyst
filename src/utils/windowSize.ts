@@ -1,5 +1,6 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { PhysicalSize, PhysicalPosition } from '@tauri-apps/api/dpi';
+import { showError } from '../store';
 
 // Check if we're running in a Tauri environment
 function isTauri(): boolean {
@@ -54,7 +55,7 @@ export function saveWindowGeometry(geometry: WindowGeometry): void {
   try {
     localStorage.setItem(WINDOW_GEOMETRY_KEY, JSON.stringify(geometry));
   } catch (error) {
-    console.error('Failed to save window geometry to localStorage:', error);
+    showError(`Failed to save window geometry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -66,7 +67,7 @@ export function loadWindowGeometry(): WindowGeometry | null {
     }
     return null;
   } catch (error) {
-    console.error('Failed to load window geometry from localStorage:', error);
+    showError(`Failed to load window geometry: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return null;
   }
 }
@@ -76,7 +77,7 @@ export async function saveCurrentWindowGeometry(): Promise<void> {
     const geometry = await getWindowGeometry();
     saveWindowGeometry(geometry);
   } catch (error) {
-    console.error('Failed to save current window geometry:', error);
+    showError(`Failed to save current window geometry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -91,7 +92,7 @@ export async function restoreWindowGeometry(): Promise<void> {
       await setWindowGeometry(savedGeometry);
     }
   } catch (error) {
-    console.error('Failed to restore window geometry:', error);
+    showError(`Failed to restore window geometry: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
