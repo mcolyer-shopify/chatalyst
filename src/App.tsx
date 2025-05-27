@@ -21,6 +21,7 @@ import {
   showError,
   clearError
 } from './store';
+import { restoreWindowGeometry, setupWindowGeometryPersistence } from './utils/windowSize';
 import './App.css';
 
 function App() {
@@ -41,6 +42,26 @@ function App() {
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Handle window geometry persistence (size and position)
+  useEffect(() => {
+    // Restore window geometry on startup
+    restoreWindowGeometry();
+
+    // Setup window geometry persistence (resize and move listeners)
+    let unlistenGeometry: (() => void) | null = null;
+
+    setupWindowGeometryPersistence().then(unlisten => {
+      unlistenGeometry = unlisten;
+    });
+
+    return () => {
+      // Cleanup geometry listeners
+      if (unlistenGeometry) {
+        unlistenGeometry();
+      }
     };
   }, []);
 

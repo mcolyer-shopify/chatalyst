@@ -32,8 +32,6 @@ pnpm test:coverage
 
 ## TODO
 
-- remember the window size between application restarts
-
 ## MCP MVP
 - Add a mcp configuration textarea to the settings page and persist it.
     - Validate that mcp configuration is valid JSON. If there's an error, show an error message.
