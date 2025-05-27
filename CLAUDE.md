@@ -123,12 +123,12 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-**After the automated release is created, update the GitHub release notes:**
+**Create the GitHub release with changelog content:**
 1. Extract the relevant changelog section from `CHANGELOG.md` for the version
-2. Update the GitHub release with the changelog content:
+2. Create the GitHub release with the changelog content:
 ```bash
 # Example for v1.0.0 - replace with actual changelog content
-gh release edit v1.0.0 --notes "$(cat <<'EOF'
+gh release create v1.0.0 --title "v1.0.0" --notes "$(cat <<'EOF'
 ## What's New in v1.0.0
 
 ### Added
@@ -142,6 +142,8 @@ gh release edit v1.0.0 --notes "$(cat <<'EOF'
 EOF
 )"
 ```
+
+**Note:** The automated release workflow may create binaries and attach them to the release, or you can manually build and upload them if needed.
 
 ### Documentation Maintenance
 
