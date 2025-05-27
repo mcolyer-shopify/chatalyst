@@ -1,7 +1,23 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import App from './App';
 import * as store from './store';
-import type { Conversation } from './types';
+import type { Conversation, Message } from './types';
+
+// Type definitions for mock components
+interface ConversationListProps {
+  conversations: Conversation[];
+  _selectedId: string | null;
+  onSelect: (id: string) => void;
+  onCreate: () => void;
+  onRename: (id: string, title: string) => void;
+  onDelete: (id: string) => void;
+  onSettingsClick: () => void;
+}
+
+interface ConversationProps {
+  conversation: Conversation | null;
+  onSendMessage: (message: string) => void;
+}
 
 // Mock dependencies
 vi.mock('@ai-sdk/openai-compatible');
@@ -18,22 +34,26 @@ vi.mock('./store', () => {
     selectedConversation: { value: null },
     settings: signal({ baseURL: 'https://openrouter.ai/api/v1', apiKey: '', defaultModel: '' }),
     isStreaming: signal(false),
+    errorMessage: signal(null),
+    errorTimestamp: signal(null),
     createConversation: vi.fn(),
     deleteConversation: vi.fn(),
     updateConversationTitle: vi.fn(),
     addMessage: vi.fn(),
     updateMessage: vi.fn(),
-    updateSettings: vi.fn()
+    updateSettings: vi.fn(),
+    showError: vi.fn(),
+    clearError: vi.fn()
   };
 });
 
 // Mock child components with basic functionality
 vi.mock('./components/ConversationList', () => ({
-  ConversationList: ({ conversations, _selectedId, onSelect, onCreate, onRename, onDelete, onSettingsClick }: any) => (
+  ConversationList: ({ conversations, _selectedId, onSelect, onCreate, onRename, onDelete, onSettingsClick }: ConversationListProps) => (
     <div data-testid="conversation-list">
       <button onClick={onCreate}>Create New</button>
       <button onClick={onSettingsClick} title="Settings">Settings</button>
-      {conversations.map((conv: any) => (
+      {conversations.map((conv: Conversation) => (
         <div key={conv.id} data-testid={`conv-${conv.id}`}>
           <span onClick={() => onSelect(conv.id)}>{conv.title}</span>
           <button onClick={() => onRename(conv.id, 'Renamed')}>Rename</button>
@@ -45,13 +65,13 @@ vi.mock('./components/ConversationList', () => ({
 }));
 
 vi.mock('./components/Conversation', () => ({
-  Conversation: ({ conversation, onSendMessage }: any) => (
+  Conversation: ({ conversation, onSendMessage }: ConversationProps) => (
     <div data-testid="conversation">
       {conversation ? (
         <>
           <h2>{conversation.title}</h2>
           <div data-testid="messages">
-            {conversation.messages.map((msg: any) => (
+            {conversation.messages.map((msg: Message) => (
               <div key={msg.id} data-testid={`msg-${msg.id}`}>
                 {msg.role}: {msg.content}
               </div>
@@ -91,8 +111,10 @@ describe('App Integration', () => {
     // Reset store values
     store.conversations.value = [];
     store.selectedConversationId.value = null;
-    (store as any).selectedConversation = { value: null };
+    (store as { selectedConversation: { value: Conversation | null } }).selectedConversation = { value: null };
     store.settings.value = { baseURL: 'https://openrouter.ai/api/v1', apiKey: '', defaultModel: '' };
+    store.errorMessage.value = null;
+    store.errorTimestamp.value = null;
   });
 
   it('renders main app structure', () => {
@@ -105,7 +127,7 @@ describe('App Integration', () => {
   it('loads conversations on mount', () => {
     store.conversations.value = mockConversations;
     store.selectedConversationId.value = mockConversations[0].id;
-    (store as any).selectedConversation = { value: mockConversations[0] };
+    (store as { selectedConversation: { value: Conversation | null } }).selectedConversation = { value: mockConversations[0] };
     
     render(<App />);
     
@@ -113,7 +135,7 @@ describe('App Integration', () => {
   });
 
   it('creates conversation when create button is clicked', async () => {
-    const mockCreateConversation = store.createConversation as any;
+    const mockCreateConversation = store.createConversation as ReturnType<typeof vi.fn>;
     mockCreateConversation.mockImplementation((title: string) => {
       const newConv = {
         id: Date.now().toString(),
@@ -137,7 +159,7 @@ describe('App Integration', () => {
   });
 
   it('creates new conversation with correct title', async () => {
-    const mockCreateConversation = store.createConversation as any;
+    const mockCreateConversation = store.createConversation as ReturnType<typeof vi.fn>;
     
     render(<App />);
     
@@ -166,7 +188,7 @@ describe('App Integration', () => {
 
   it('renames conversation', async () => {
     store.conversations.value = mockConversations;
-    const mockUpdateTitle = store.updateConversationTitle as any;
+    const mockUpdateTitle = store.updateConversationTitle as ReturnType<typeof vi.fn>;
     
     render(<App />);
     
@@ -179,7 +201,7 @@ describe('App Integration', () => {
 
   it('deletes conversation', async () => {
     store.conversations.value = mockConversations;
-    const mockDeleteConversation = store.deleteConversation as any;
+    const mockDeleteConversation = store.deleteConversation as ReturnType<typeof vi.fn>;
     
     render(<App />);
     
@@ -195,13 +217,13 @@ describe('App Integration', () => {
     
     fireEvent.click(screen.getByTitle('Settings'));
     
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.getByText('Base URL:')).toBeInTheDocument();
     expect(screen.getByText('API Key:')).toBeInTheDocument();
   });
 
   it('saves settings', () => {
-    const mockUpdateSettings = store.updateSettings as any;
+    const mockUpdateSettings = store.updateSettings as ReturnType<typeof vi.fn>;
     
     render(<App />);
     
@@ -220,7 +242,7 @@ describe('App Integration', () => {
   });
 
   it('cancels settings changes', () => {
-    const mockUpdateSettings = store.updateSettings as any;
+    const mockUpdateSettings = store.updateSettings as ReturnType<typeof vi.fn>;
     
     render(<App />);
     
@@ -257,7 +279,7 @@ describe('App Integration', () => {
   it('shows selected conversation', () => {
     store.conversations.value = mockConversations;
     store.selectedConversationId.value = mockConversations[0].id;
-    (store as any).selectedConversation = { value: mockConversations[0] };
+    (store as { selectedConversation: { value: Conversation | null } }).selectedConversation = { value: mockConversations[0] };
     
     render(<App />);
     
@@ -297,7 +319,7 @@ describe('App Integration', () => {
     ];
     
     store.conversations.value = multipleConversations;
-    const mockDeleteConversation = store.deleteConversation as any;
+    const mockDeleteConversation = store.deleteConversation as ReturnType<typeof vi.fn>;
     
     const { container } = render(<App />);
     

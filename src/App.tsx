@@ -10,18 +10,20 @@ import {
   selectedConversation,
   settings,
   isStreaming,
+  errorMessage,
   createConversation,
   deleteConversation,
   updateConversationTitle,
   updateConversationModel,
   addMessage,
   updateMessage,
-  updateSettings
+  updateSettings,
+  showError,
+  clearError
 } from './store';
 import './App.css';
 
 function App() {
-  const [error, setError] = useState<Error | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [tempSettings, setTempSettings] = useState(settings.value);
 
@@ -78,7 +80,7 @@ function App() {
     addMessage(conversation.id, userMessage);
 
     isStreaming.value = true;
-    setError(null);
+    clearError();
 
     // Create assistant message placeholder
     const assistantMessage: Message = {
@@ -110,7 +112,7 @@ function App() {
         updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
       }
     } catch (err) {
-      setError(err as Error);
+      showError((err as Error).message || 'Failed to send message');
       // Remove the assistant message on error
       conversations.value = conversations.value.map(c => 
         c.id === conversation.id
@@ -214,9 +216,10 @@ function App() {
             onSendMessage={sendMessage}
             onModelChange={handleConversationModelChange}
           />
-          {error && (
+          {errorMessage.value && (
             <div class="error-message">
-              Error: {error.message || error.toString()}
+              <span>{errorMessage.value}</span>
+              <button onClick={clearError} class="error-close">×</button>
             </div>
           )}
         </div>

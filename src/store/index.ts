@@ -2,7 +2,8 @@ import { signal, computed, effect, batch } from '@preact/signals';
 import type {
   Conversation as ConversationType,
   Message,
-  Settings
+  Settings,
+  Model
 } from '../types';
 
 // Default settings
@@ -22,11 +23,15 @@ export const settings = signal<Settings>(DEFAULT_SETTINGS);
 export const isLoadingModels = signal(false);
 export const isStreaming = signal(false);
 
+// Error state signals
+export const errorMessage = signal<string | null>(null);
+export const errorTimestamp = signal<number | null>(null);
+
 // Model-related signals
 export const modelsCache = signal<
-  Map<string, { models: any[]; timestamp: number }>
+  Map<string, { models: Model[]; timestamp: number }>
 >(new Map());
-export const availableModels = signal<any[]>([]);
+export const availableModels = signal<Model[]>([]);
 
 // Computed values
 export const selectedConversation = computed(() =>
@@ -164,7 +169,7 @@ export function updateSettings(updates: Partial<Settings>) {
   settings.value = { ...settings.value, ...updates };
 }
 
-export function getCachedModels(baseURL: string): any[] | null {
+export function getCachedModels(baseURL: string): Model[] | null {
   const cached = modelsCache.value.get(baseURL);
   if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
     // 5 minutes
@@ -173,10 +178,25 @@ export function getCachedModels(baseURL: string): any[] | null {
   return null;
 }
 
-export function setCachedModels(baseURL: string, models: any[]) {
+export function setCachedModels(baseURL: string, models: Model[]) {
   const newCache = new Map(modelsCache.value);
   newCache.set(baseURL, { models, timestamp: Date.now() });
   modelsCache.value = newCache;
+}
+
+// Error handling functions
+export function showError(message: string) {
+  batch(() => {
+    errorMessage.value = message;
+    errorTimestamp.value = Date.now();
+  });
+}
+
+export function clearError() {
+  batch(() => {
+    errorMessage.value = null;
+    errorTimestamp.value = null;
+  });
 }
 
 // Initialize on module load

@@ -1,10 +1,20 @@
 import { render, screen } from '@testing-library/preact';
 import { Conversation } from './Conversation';
-import type { Conversation as ConversationType } from '../types';
+import type { Conversation as ConversationType, Message } from '../types';
+
+// Type definitions for mock components
+interface MessageProps {
+  message: Message;
+}
+
+interface MessageInputProps {
+  onSend: (message: string) => void;
+  disabled?: boolean;
+}
 
 // Mock child components
 vi.mock('./Message', () => ({
-  Message: ({ message }: any) => (
+  Message: ({ message }: MessageProps) => (
     <div data-testid={`message-${message.id}`} class={`message message-${message.role}`}>
       {message.content}
     </div>
@@ -12,7 +22,7 @@ vi.mock('./Message', () => ({
 }));
 
 vi.mock('./MessageInput', () => ({
-  MessageInput: ({ onSend, disabled }: any) => (
+  MessageInput: ({ onSend, disabled }: MessageInputProps) => (
     <div data-testid="message-input">
       <button onClick={() => onSend('test message')} disabled={disabled}>
         Send Test

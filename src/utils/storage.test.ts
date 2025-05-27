@@ -1,5 +1,11 @@
 import { loadConversations, saveConversations } from './storage';
 import type { Conversation } from '../types';
+import { showError } from '../store';
+
+// Mock the store module
+vi.mock('../store', () => ({
+  showError: vi.fn()
+}));
 
 // Note: These utilities are now deprecated as we use signals for state management
 describe('Storage utilities (deprecated)', () => {
@@ -55,13 +61,10 @@ describe('Storage utilities (deprecated)', () => {
     it('handles invalid JSON gracefully', () => {
       localStorage.getItem.mockReturnValue('invalid json');
       
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const result = loadConversations();
       
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to load conversations:', expect.any(Error));
+      expect(showError).toHaveBeenCalledWith(expect.stringContaining('Failed to load conversations from storage'));
       expect(result).toEqual([]);
-      
-      consoleSpy.mockRestore();
     });
 
     it('handles localStorage errors gracefully', () => {
@@ -69,13 +72,10 @@ describe('Storage utilities (deprecated)', () => {
         throw new Error('Storage error');
       });
       
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const result = loadConversations();
       
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to load conversations:', expect.any(Error));
+      expect(showError).toHaveBeenCalledWith(expect.stringContaining('Failed to load conversations from storage'));
       expect(result).toEqual([]);
-      
-      consoleSpy.mockRestore();
     });
 
     it('returns empty array for empty string', () => {
@@ -111,13 +111,9 @@ describe('Storage utilities (deprecated)', () => {
         throw new Error('Storage quota exceeded');
       });
       
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
       saveConversations(mockConversations);
       
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to save conversations:', expect.any(Error));
-      
-      consoleSpy.mockRestore();
+      expect(showError).toHaveBeenCalledWith(expect.stringContaining('Failed to save conversations to storage'));
     });
 
     it('preserves conversation structure when saving', () => {

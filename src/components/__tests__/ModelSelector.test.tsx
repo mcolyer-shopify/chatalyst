@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModelSelector } from '../ModelSelector';
+import * as store from '../../store';
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -13,7 +14,11 @@ vi.mock('../../store', () => {
     settings: signal({ baseURL: 'https://api.test.com', apiKey: 'test-key', defaultModel: '' }),
     getCachedModels: vi.fn(),
     setCachedModels: vi.fn(),
-    availableModels: signal([])
+    availableModels: signal([]),
+    errorMessage: signal(null),
+    errorTimestamp: signal(null),
+    showError: vi.fn(),
+    clearError: vi.fn()
   };
 });
 
@@ -33,9 +38,7 @@ describe('ModelSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (global.fetch as ReturnType<typeof vi.fn>).mockClear();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-    const store = require('../../store');
-    store.getCachedModels.mockReturnValue(null);
+    (store.getCachedModels as ReturnType<typeof vi.fn>).mockReturnValue(null);
     store.availableModels.value = [];
   });
 
@@ -278,9 +281,7 @@ describe('ModelSelector', () => {
       { id: 'cached-model', name: 'cached-model', description: 'From cache' }
     ];
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-    const store = require('../../store');
-    store.getCachedModels.mockReturnValue(cachedModels);
+    (store.getCachedModels as ReturnType<typeof vi.fn>).mockReturnValue(cachedModels);
 
     render(<ModelSelector {...{ ...mockProps, selectedModel: 'cached-model' }} />);
 
