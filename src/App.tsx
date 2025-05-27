@@ -26,6 +26,7 @@ import './App.css';
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [tempSettings, setTempSettings] = useState(settings.value);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   // Handle global keyboard shortcuts
   useEffect(() => {
@@ -82,6 +83,10 @@ function App() {
     isStreaming.value = true;
     clearError();
 
+    // Create abort controller for this request
+    const controller = new AbortController();
+    setAbortController(controller);
+
     // Create assistant message placeholder
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
@@ -103,7 +108,8 @@ function App() {
         messages: messages.map((m) => ({
           role: m.role,
           content: m.content
-        }))
+        })),
+        abortSignal: controller.signal
       });
 
       // Stream the response
@@ -116,15 +122,21 @@ function App() {
       // Mark as finished generating
       updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
     } catch (err) {
-      showError((err as Error).message || 'Failed to send message');
-      // Remove the assistant message on error
-      conversations.value = conversations.value.map(c => 
-        c.id === conversation.id
-          ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
-          : c
-      );
+      if ((err as Error).name === 'AbortError') {
+        // Generation was stopped by user
+        updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
+      } else {
+        showError((err as Error).message || 'Failed to send message');
+        // Remove the assistant message on error
+        conversations.value = conversations.value.map(c => 
+          c.id === conversation.id
+            ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
+            : c
+        );
+      }
     } finally {
       isStreaming.value = false;
+      setAbortController(null);
     }
   };
 
@@ -147,6 +159,14 @@ function App() {
     if (!conversation) return;
     
     updateConversationModel(conversation.id, modelId);
+  };
+
+  const stopGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      isStreaming.value = false;
+      setAbortController(null);
+    }
   };
 
   return (
@@ -219,6 +239,7 @@ function App() {
             conversation={selectedConversation.value || null}
             onSendMessage={sendMessage}
             onModelChange={handleConversationModelChange}
+            onStopGeneration={stopGeneration}
           />
           {errorMessage.value && (
             <div class="error-message">

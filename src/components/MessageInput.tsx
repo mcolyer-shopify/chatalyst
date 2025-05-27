@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'preact/hooks';
 
 interface MessageInputProps {
   onSend: (message: string) => void;
+  onStopGeneration?: () => void;
   disabled?: boolean;
+  isGenerating?: boolean;
 }
 
-export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
+export function MessageInput({ onSend, onStopGeneration, disabled = false, isGenerating = false }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -18,7 +20,9 @@ export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
-    if (message.trim() && !disabled) {
+    if (isGenerating && onStopGeneration) {
+      onStopGeneration();
+    } else if (message.trim() && !disabled) {
       onSend(message.trim());
       setMessage('');
     }
@@ -37,10 +41,10 @@ export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
       />
       <button
         type="submit"
-        disabled={disabled || !message.trim()}
-        class="message-send-button"
+        disabled={isGenerating ? false : (disabled || !message.trim())}
+        class={`message-send-button ${isGenerating ? 'stop-button' : ''}`}
       >
-        Send
+        {isGenerating ? 'Stop' : 'Send'}
       </button>
     </form>
   );

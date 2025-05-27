@@ -32,7 +32,6 @@ pnpm test:coverage
 
 ## TODO
 
-- Show . .. ... (looping) in assistant message when generating but no content has been returned yet.
 - remember the last selected conversation between application restarts
 - remember the window size between application restarts
 

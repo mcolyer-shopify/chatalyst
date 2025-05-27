@@ -465,6 +465,14 @@ body {
   cursor: not-allowed;
 }
 
+.message-send-button.stop-button {
+  background: #dc3545;
+}
+
+.message-send-button.stop-button:hover:not(:disabled) {
+  background: #c82333;
+}
+
 /* Error Message Styles */
 .error-message {
   position: absolute;
@@ -987,5 +995,13 @@ body {
 
   .scroll-to-bottom:hover {
     background: #1565c0;
+  }
+
+  .message-send-button.stop-button {
+    background: #e53e3e;
+  }
+
+  .message-send-button.stop-button:hover:not(:disabled) {
+    background: #c53030;
   }
 }

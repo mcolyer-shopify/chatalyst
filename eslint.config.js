@@ -33,6 +33,9 @@ export default [
         process: 'readonly',
         fetch: 'readonly',
         setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        AbortController: 'readonly',
         KeyboardEvent: 'readonly'
       }
     },

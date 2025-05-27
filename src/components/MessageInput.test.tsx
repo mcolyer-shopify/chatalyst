@@ -110,6 +110,18 @@ describe('MessageInput', () => {
     expect(mockOnSend).toHaveBeenCalledWith('Click test');
   });
 
+  it('shows stop button when generating and is always enabled', () => {
+    const mockOnStopGeneration = vi.fn();
+    render(<MessageInput onSend={mockOnSend} onStopGeneration={mockOnStopGeneration} isGenerating={true} />);
+    
+    const stopButton = screen.getByText('Stop');
+    expect(stopButton).not.toBeDisabled();
+    expect(stopButton).toHaveClass('stop-button');
+    
+    fireEvent.click(stopButton);
+    expect(mockOnStopGeneration).toHaveBeenCalled();
+  });
+
   it('updates input value as user types', () => {
     render(<MessageInput onSend={mockOnSend} />);
     

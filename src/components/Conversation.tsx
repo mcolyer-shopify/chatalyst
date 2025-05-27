@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Message } from './Message';
 import { MessageInput } from './MessageInput';
 import { ModelSelector } from './ModelSelector';
+import { isStreaming } from '../store';
 import type { Conversation as ConversationType } from '../types';
 
 interface ConversationProps {
   conversation: ConversationType | null;
   onSendMessage: (message: string) => void;
   onModelChange: (modelId: string) => void;
+  onStopGeneration?: () => void;
 }
 
-export function Conversation({ conversation, onSendMessage, onModelChange }: ConversationProps) {
+export function Conversation({ conversation, onSendMessage, onModelChange, onStopGeneration }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -54,6 +56,18 @@ export function Conversation({ conversation, onSendMessage, onModelChange }: Con
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const [isLastMessageGenerating, setIsLastMessageGenerating] = useState(false);
+
+  // Update generating state when conversation changes
+  useEffect(() => {
+    if (!conversation?.messages.length) {
+      setIsLastMessageGenerating(false);
+      return;
+    }
+    const lastMessage = conversation.messages[conversation.messages.length - 1];
+    setIsLastMessageGenerating(lastMessage.role === 'assistant' && !!lastMessage.isGenerating);
+  }, [conversation?.messages]);
+
   if (!conversation) {
     return (
       <div class="conversation-empty">
@@ -87,7 +101,12 @@ export function Conversation({ conversation, onSendMessage, onModelChange }: Con
           </button>
         )}
       </div>
-      <MessageInput onSend={onSendMessage} />
+      <MessageInput 
+        onSend={onSendMessage} 
+        onStopGeneration={onStopGeneration}
+        disabled={isStreaming.value && !isLastMessageGenerating} 
+        isGenerating={isLastMessageGenerating}
+      />
     </div>
   );
 }
