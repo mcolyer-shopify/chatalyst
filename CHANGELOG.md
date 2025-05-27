@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Stop generation button to halt AI responses mid-stream with immediate response control
+- Conversation selection persistence that remembers the last selected conversation between application restarts
 - Animated loading indicator for assistant message generation with spinning Braille pattern animation
 
 ## [0.2.1] - 2025-01-26
