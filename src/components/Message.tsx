@@ -11,13 +11,14 @@ export function Message({ message }: MessageProps) {
       // Configure marked for safety
       marked.setOptions({
         breaks: true,
-        gfm: true
+        gfm: true,
+        async: false
       });
       
       return (
         <div 
           class="message-content"
-          dangerouslySetInnerHTML={{ __html: marked(message.content) }}
+          dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
         />
       );
     }

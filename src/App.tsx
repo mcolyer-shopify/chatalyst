@@ -212,7 +212,7 @@ function App() {
         />
         <div class="conversation-container">
           <Conversation
-            conversation={selectedConversation.value}
+            conversation={selectedConversation.value || null}
             onSendMessage={sendMessage}
             onModelChange={handleConversationModelChange}
           />
