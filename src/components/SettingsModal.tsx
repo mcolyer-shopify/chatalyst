@@ -42,11 +42,27 @@ const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
 
 export function SettingsModal({ show, settings, onSave, onCancel }: SettingsModalProps) {
   const [tempSettings, setTempSettings] = useState(settings);
+  const [isProviderDropdownOpen, setIsProviderDropdownOpen] = useState(false);
 
   // Update temp settings when props change
   useEffect(() => {
     setTempSettings(settings);
   }, [settings]);
+
+  // Handle clicks outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.provider-selector')) {
+        setIsProviderDropdownOpen(false);
+      }
+    };
+
+    if (show && isProviderDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [show, isProviderDropdownOpen]);
 
   if (!show) return null;
 
@@ -89,16 +105,51 @@ export function SettingsModal({ show, settings, onSave, onCancel }: SettingsModa
 
         <div class="form-group">
           <label>AI Provider:</label>
-          <select
-            value={tempSettings.provider}
-            onChange={(e) => handleProviderChange(e.currentTarget.value as AIProvider)}
-          >
-            {Object.entries(PROVIDER_CONFIGS).map(([key, config]) => (
-              <option key={key} value={key}>
-                {config.name}
-              </option>
-            ))}
-          </select>
+          <div class="provider-selector">
+            <button
+              type="button"
+              class="provider-selector-button"
+              onClick={() => setIsProviderDropdownOpen(!isProviderDropdownOpen)}
+            >
+              <span class="provider-selector-text">
+                {PROVIDER_CONFIGS[tempSettings.provider].name}
+              </span>
+              <span class="provider-selector-arrow">▼</span>
+            </button>
+            
+            {isProviderDropdownOpen && (
+              <div class="provider-selector-dropdown">
+                {Object.entries(PROVIDER_CONFIGS).map(([key, config]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    class={`provider-selector-option ${tempSettings.provider === key ? 'selected' : ''}`}
+                    onClick={() => {
+                      handleProviderChange(key as AIProvider);
+                      setIsProviderDropdownOpen(false);
+                    }}
+                  >
+                    <div class="provider-selector-option-name">{config.name}</div>
+                    {key === 'custom' && (
+                      <div class="provider-selector-option-description">
+                        Connect to any OpenAI-compatible API
+                      </div>
+                    )}
+                    {key === 'openrouter' && (
+                      <div class="provider-selector-option-description">
+                        Access multiple AI models through one API
+                      </div>
+                    )}
+                    {key === 'ollama' && (
+                      <div class="provider-selector-option-description">
+                        Run models locally on your machine
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {currentConfig.showBaseURL && (
