@@ -6,6 +6,41 @@
   "permissions": [
     "core:default",
     "opener:default",
+    "shell:default",
+    "shell:allow-stdin-write",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "sh",
+          "cmd": "sh",
+          "args": [
+            "-c",
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
+        }
+      ]
+    },
+    "shell:allow-kill",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "sh",
+          "cmd": "sh",
+          "args": [
+            "-c",
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
+        }
+      ]
+    },
     "core:window:allow-set-size",
     "core:window:allow-outer-size",
     "core:window:allow-set-position",

@@ -47,9 +47,6 @@ body {
 }
 
 .conversation-list-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
   padding: 1rem;
   border-bottom: 1px solid #e0e0e0;
 }
@@ -60,12 +57,6 @@ body {
   align-items: center;
   padding: 1rem;
   background: white;
-}
-
-.conversation-list-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #333;
 }
 
 .new-conversation-btn {
@@ -278,6 +269,63 @@ body {
   border-bottom-left-radius: 0.25rem;
 }
 
+.message-tool .message-content {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.message-tool .tool-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.message-tool .tool-icon {
+  font-size: 1rem;
+}
+
+.message-tool .tool-name {
+  color: #495057;
+}
+
+.message-tool .tool-call,
+.message-tool .tool-result {
+  margin-top: 0.5rem;
+}
+
+.message-tool .tool-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.message-tool pre {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Error message styling */
+.message-error .message-content {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
 /* Markdown styling for assistant messages */
 .message-assistant .message-content h1,
 .message-assistant .message-content h2,
@@ -429,6 +477,7 @@ body {
   background: white;
   border-top: 1px solid #e0e0e0;
   gap: 0.5rem;
+  align-items: flex-end;
 }
 
 .message-input-field {
@@ -439,6 +488,11 @@ body {
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s;
+  resize: vertical;
+  min-height: 2.5rem;
+  max-height: 10rem;
+  line-height: 1.4;
+  font-family: inherit;
 }
 
 .message-input-field:focus {
@@ -598,6 +652,118 @@ body {
 /* Model Selector Styles */
 .model-selector {
   position: relative;
+}
+
+/* Provider Selector Styles (for settings modal) */
+.provider-selector {
+  position: relative;
+}
+
+.provider-selector-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.provider-selector-button:hover {
+  border-color: #0277bd;
+  background: #f5f5f5;
+}
+
+.provider-selector-button:focus {
+  border-color: #0277bd;
+  box-shadow: 0 0 0 2px rgba(2, 119, 189, 0.1);
+}
+
+.provider-selector-text {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
+}
+
+.provider-selector-arrow {
+  color: #666;
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+
+.provider-selector-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.provider-selector-option {
+  display: block;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.provider-selector-option:last-child {
+  border-bottom: none;
+}
+
+.provider-selector-option:hover {
+  background: #f8f9fa;
+}
+
+.provider-selector-option.selected {
+  background: #e3f2fd;
+}
+
+.provider-selector-option-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.provider-selector-option.selected .provider-selector-option-name {
+  color: #0277bd;
+}
+
+.provider-selector-option-description {
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.provider-selector-option.selected .provider-selector-option-description {
+  color: #0288d1;
 }
 
 .model-selector-button {
@@ -772,15 +938,41 @@ body {
   color: #0288d1;
 }
 
+.sidebar-model-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.sidebar-model-selector .model-selector {
+  flex: 1;
+  min-width: 0;
+}
+
 .sidebar-model-selector .model-selector-button {
   font-size: 0.875rem;
   padding: 0.5rem 0.75rem;
+  width: 100%;
 }
 
 .sidebar-model-selector .model-selector-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sidebar-model-selector .settings-button {
+  padding: 0.25rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-model-selector .settings-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .conversation-model-selector {
@@ -815,7 +1007,6 @@ body {
     border-color: #444;
   }
 
-  .conversation-list-header h2,
   .conversation-header h2,
   .modal h2,
   .conversation-title {
@@ -1003,5 +1194,56 @@ body {
 
   .message-send-button.stop-button:hover:not(:disabled) {
     background: #c53030;
+  }
+
+  /* Provider Selector Dark Mode */
+  .provider-selector-button {
+    background: #3a3a3a;
+    color: #e0e0e0;
+    border-color: #555;
+  }
+
+  .provider-selector-button:hover {
+    background: #444;
+    border-color: #0288d1;
+  }
+
+  .provider-selector-button:focus {
+    border-color: #0288d1;
+    box-shadow: 0 0 0 2px rgba(2, 136, 209, 0.2);
+  }
+
+  .provider-selector-dropdown {
+    background: #3a3a3a;
+    border-color: #555;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  .provider-selector-option {
+    border-bottom-color: #444;
+  }
+
+  .provider-selector-option:hover {
+    background: #444;
+  }
+
+  .provider-selector-option.selected {
+    background: #2c3e50;
+  }
+
+  .provider-selector-option-name {
+    color: #e0e0e0;
+  }
+
+  .provider-selector-option.selected .provider-selector-option-name {
+    color: #03a9f4;
+  }
+
+  .provider-selector-option-description {
+    color: #999;
+  }
+
+  .provider-selector-option.selected .provider-selector-option-description {
+    color: #29b6f6;
   }
 }

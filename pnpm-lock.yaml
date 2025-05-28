@@ -10,13 +10,13 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: 2.0.0-alpha.4
-        version: 2.0.0-alpha.4(zod@3.25.28)
+        version: 2.0.0-alpha.4(zod@3.25.32)
       '@ai-sdk/openai-compatible':
         specifier: 1.0.0-alpha.4
-        version: 1.0.0-alpha.4(zod@3.25.28)
+        version: 1.0.0-alpha.4(zod@3.25.32)
       '@ai-sdk/react':
         specifier: 2.0.0-alpha.4
-        version: 2.0.0-alpha.4(react@19.1.0)(zod@3.25.28)
+        version: 2.0.0-alpha.4(react@19.1.0)(zod@3.25.32)
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.0
         version: 1.12.0
@@ -29,12 +29,12 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: ^2
         version: 2.2.6
-      '@types/marked':
-        specifier: ^6.0.0
-        version: 6.0.0
+      '@tauri-apps/plugin-shell':
+        specifier: ^2.2.1
+        version: 2.2.1
       ai:
-        specifier: 5.0.0-alpha.4
-        version: 5.0.0-alpha.4(zod@3.25.28)
+        specifier: 5.0.0-alpha.7
+        version: 5.0.0-alpha.7(zod@3.25.32)
       marked:
         specifier: ^15.0.12
         version: 15.0.12
@@ -60,6 +60,9 @@ importers:
       '@testing-library/preact':
         specifier: ^3.2.4
         version: 3.2.4(preact@10.26.6)
+      '@types/json-schema':
+        specifier: ^7.0.15
+        version: 7.0.15
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.32.1
         version: 8.32.1(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3)
@@ -102,6 +105,12 @@ packages:
   '@adobe/css-tools@4.4.3':
     resolution: {integrity: sha512-VQKMkwriZbaOgVCby1UDY/LDk5fIjhQicCvVPFqfe+69fWaPWydbWJ3wRt59/YzIwda1I81loas3oCoHxnqvdA==}
 
+  '@ai-sdk/gateway@1.0.0-alpha.7':
+    resolution: {integrity: sha512-gz1V165eiJnQIexfLyKm11vimrmQ3zdcJhPpjeLFmDU9wrvZwLuklfZ0WgfYSb+EjiP1cKypwt6JSGvWkfKIAQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.24.0
+
   '@ai-sdk/openai-compatible@1.0.0-alpha.4':
     resolution: {integrity: sha512-+2G5IPkTqr74cbJpx+NuMWgZ3yzcF16oTD8FHfdmfp3mnIQj4Bf1QLPOy9G7Bg8xfMYn5vtQCAtO6thnjLbBuw==}
     engines: {node: '>=18'}
@@ -120,8 +129,18 @@ packages:
     peerDependencies:
       zod: ^3.23.8
 
+  '@ai-sdk/provider-utils@3.0.0-alpha.7':
+    resolution: {integrity: sha512-AYkT3jskmo7Lwzijo/yHKD1jC+UZizsROO8ULTg9aJZUwR4ABZzAxh4NxDIEy4TWRfBGufp+/9ICHAn6pkU71w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.23.8
+
   '@ai-sdk/provider@2.0.0-alpha.4':
     resolution: {integrity: sha512-g6IVjm0iGasiv4fAv6TtPIDTfeMTqFRQt3J6Jz8skm/Tb2r48qKEtcKNrDSpspDIFrQJ4fuC1Xw/aAPrVCs7tQ==}
+    engines: {node: '>=18'}
+
+  '@ai-sdk/provider@2.0.0-alpha.7':
+    resolution: {integrity: sha512-lhdrARU3SSmt5p/GNNK7VhazvZpKSCIOjpHUfX7f5jIhVGi/vvlxP1rD6Go57nn1MtuGKNqL04AebSRFDQsQbw==}
     engines: {node: '>=18'}
 
   '@ai-sdk/react@2.0.0-alpha.4':
@@ -857,6 +876,9 @@ packages:
   '@tauri-apps/plugin-opener@2.2.6':
     resolution: {integrity: sha512-bSdkuP71ZQRepPOn8BOEdBKYJQvl6+jb160QtJX/i2H9BF6ZySY/kYljh76N2Ne5fJMQRge7rlKoStYQY5Jq1w==}
 
+  '@tauri-apps/plugin-shell@2.2.1':
+    resolution: {integrity: sha512-G1GFYyWe/KlCsymuLiNImUgC8zGY0tI0Y3p8JgBCWduR5IEXlIJS+JuG1qtveitwYXlfJrsExt3enhv5l2/yhA==}
+
   '@testing-library/dom@8.20.1':
     resolution: {integrity: sha512-/DiOQ5xBxgdYRC8LNk7U+RWat0S3qRLeIw3ZIkMQ9kkVlRmwD/Eg8k8CqIpD6GW7u20JIUOfMKbxtiLutpjQ4g==}
     engines: {node: '>=12'}
@@ -879,10 +901,6 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-
-  '@types/marked@6.0.0':
-    resolution: {integrity: sha512-jmjpa4BwUsmhxcfsgUit/7A9KbrC48Q0q8KvnY107ogcjGgTFDlIL3RpihNpx2Mu1hM4mdFQjoVc4O6JoGKHsA==}
-    deprecated: This is a stub types definition. marked provides its own type definitions, so you do not need this installed.
 
   '@typescript-eslint/eslint-plugin@8.32.1':
     resolution: {integrity: sha512-6u6Plg9nP/J1GRpe/vcjjabo6Uc5YQPAMxsgQyGC/I0RuukiG1wIe3+Vtg3IrSCVJDmqK3j8adrtzXSENRtFgg==}
@@ -1009,6 +1027,12 @@ packages:
 
   ai@5.0.0-alpha.4:
     resolution: {integrity: sha512-u2JGxWcmL19knVOhIMMNFp1k2/8Z4VpsT6BBg6YcpL5Vh1rl7y657sFTLQe3U+pao4b5oxwzd8rKR0ETvVRjnw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.23.8
+
+  ai@5.0.0-alpha.7:
+    resolution: {integrity: sha512-ShCk3frIMdVtK9knvWKiFS7N6Vwnf8mLMv670+T//W9oqfoetSVPBhTF6Dy+oDM/bjVSsBf1BuYImLDvHICOIQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.23.8
@@ -2875,45 +2899,62 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.25.28:
-    resolution: {integrity: sha512-/nt/67WYKnr5by3YS7LroZJbtcCBurDKKPBPWWzaxvVCGuG/NOsiKkrjoOhI8mJ+SQUXEbUzeB3S+6XDUEEj7Q==}
+  zod@3.25.32:
+    resolution: {integrity: sha512-OSm2xTIRfW8CV5/QKgngwmQW/8aPfGdaQFlrGoErlgg/Epm7cjb6K6VEyExfe65a3VybUOnu381edLb0dfJl0g==}
 
 snapshots:
 
   '@adobe/css-tools@4.4.3': {}
 
-  '@ai-sdk/openai-compatible@1.0.0-alpha.4(zod@3.25.28)':
+  '@ai-sdk/gateway@1.0.0-alpha.7(zod@3.25.32)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0-alpha.7
+      '@ai-sdk/provider-utils': 3.0.0-alpha.7(zod@3.25.32)
+      zod: 3.25.32
+
+  '@ai-sdk/openai-compatible@1.0.0-alpha.4(zod@3.25.32)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
-      zod: 3.25.28
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
+      zod: 3.25.32
 
-  '@ai-sdk/openai@2.0.0-alpha.4(zod@3.25.28)':
+  '@ai-sdk/openai@2.0.0-alpha.4(zod@3.25.32)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
-      zod: 3.25.28
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
+      zod: 3.25.32
 
-  '@ai-sdk/provider-utils@3.0.0-alpha.4(zod@3.25.28)':
+  '@ai-sdk/provider-utils@3.0.0-alpha.4(zod@3.25.32)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
       '@standard-schema/spec': 1.0.0
-      zod: 3.25.28
-      zod-to-json-schema: 3.24.5(zod@3.25.28)
+      zod: 3.25.32
+      zod-to-json-schema: 3.24.5(zod@3.25.32)
+
+  '@ai-sdk/provider-utils@3.0.0-alpha.7(zod@3.25.32)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0-alpha.7
+      '@standard-schema/spec': 1.0.0
+      zod: 3.25.32
+      zod-to-json-schema: 3.24.5(zod@3.25.32)
 
   '@ai-sdk/provider@2.0.0-alpha.4':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@2.0.0-alpha.4(react@19.1.0)(zod@3.25.28)':
+  '@ai-sdk/provider@2.0.0-alpha.7':
     dependencies:
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
-      ai: 5.0.0-alpha.4(zod@3.25.28)
+      json-schema: 0.4.0
+
+  '@ai-sdk/react@2.0.0-alpha.4(react@19.1.0)(zod@3.25.32)':
+    dependencies:
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
+      ai: 5.0.0-alpha.4(zod@3.25.32)
       react: 19.1.0
       swr: 2.3.3(react@19.1.0)
       throttleit: 2.1.0
     optionalDependencies:
-      zod: 3.25.28
+      zod: 3.25.32
 
   '@ampproject/remapping@2.3.0':
     dependencies:
@@ -3271,8 +3312,8 @@ snapshots:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.25.28
-      zod-to-json-schema: 3.24.5(zod@3.25.28)
+      zod: 3.25.32
+      zod-to-json-schema: 3.24.5(zod@3.25.32)
     transitivePeerDependencies:
       - supports-color
 
@@ -3533,6 +3574,10 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.5.0
 
+  '@tauri-apps/plugin-shell@2.2.1':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
+
   '@testing-library/dom@8.20.1':
     dependencies:
       '@babel/code-frame': 7.27.1
@@ -3564,10 +3609,6 @@ snapshots:
   '@types/estree@1.0.7': {}
 
   '@types/json-schema@7.0.15': {}
-
-  '@types/marked@6.0.0':
-    dependencies:
-      marked: 15.0.12
 
   '@typescript-eslint/eslint-plugin@8.32.1(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3)':
     dependencies:
@@ -3753,12 +3794,20 @@ snapshots:
 
   agent-base@7.1.3: {}
 
-  ai@5.0.0-alpha.4(zod@3.25.28):
+  ai@5.0.0-alpha.4(zod@3.25.32):
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
       '@opentelemetry/api': 1.9.0
-      zod: 3.25.28
+      zod: 3.25.32
+
+  ai@5.0.0-alpha.7(zod@3.25.32):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.0-alpha.7(zod@3.25.32)
+      '@ai-sdk/provider': 2.0.0-alpha.7
+      '@ai-sdk/provider-utils': 3.0.0-alpha.7(zod@3.25.32)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.32
 
   ajv@6.12.6:
     dependencies:
@@ -5920,8 +5969,8 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-to-json-schema@3.24.5(zod@3.25.28):
+  zod-to-json-schema@3.24.5(zod@3.25.32):
     dependencies:
-      zod: 3.25.28
+      zod: 3.25.32
 
-  zod@3.25.28: {}
+  zod@3.25.32: {}

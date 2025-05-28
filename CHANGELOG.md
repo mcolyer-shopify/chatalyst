@@ -7,11 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- TypeScript errors in MCP tool execution with proper type guards for tool results
+- Type assertion for MCP tool arguments to match expected Record<string, unknown> type
+
 ### Added
+- Error message display in conversation when models don't support tools
+  - Shows warning-styled message explaining the issue
+  - Provides guidance to disable tools or switch models
+  - Prevents silent failures with clear user feedback
+- Message history navigation with arrow keys in input field
+  - Press up arrow to recall previous user messages
+  - Press down arrow to navigate forward through history
+  - Only activates when cursor is at position 0 for multi-line support
+  - Preserves current message when navigating history
+
+### Changed
+- Refactored MCP tool integration to use AI SDK's built-in maxSteps feature
+- Simplified tool handling by leveraging SDK's automatic tool execution
+- Tool messages are now excluded from conversation history sent to AI (SDK handles internally)
+- Limited tool calls to maximum 10 per turn using maxSteps parameter
+- Message input now uses a textarea for multi-line message support
+  - Enter key sends the message
+  - Shift+Enter creates a new line
+  - Auto-resizes based on content
+- Moved settings gear icon next to the default model picker to clarify it configures model settings
+- Extracted settings modal from App.tsx into separate SettingsModal component
+- Separated MCP configuration into dedicated MCPSettingsModal component
+- Removed "Conversations" title from the left sidebar for cleaner interface
+- Updated settings to support multiple AI providers with provider dropdown
+- Model fetching now uses provider-aware caching and base URLs
+
+### Added
+- Support for multiple AI providers (Custom OpenAI, OpenRouter, Ollama)
+  - Provider selection dropdown in settings modal
+  - Conditional display of base URL field (only for Custom OpenAI)
+  - Conditional display of API key field (not needed for Ollama)
+  - Provider-specific default base URLs (OpenRouter and Ollama)
+  - Provider-aware model caching using provider and base URL as cache key
+  - Ollama-specific model list parsing with support for different response format
+  - Automatic API key handling for OpenRouter when not provided
+  - Default provider set to OpenRouter for easier onboarding
 - Stop generation button to halt AI responses mid-stream with immediate response control
 - Conversation selection persistence that remembers the last selected conversation between application restarts
 - Animated loading indicator for assistant message generation with spinning Braille pattern animation
 - Window position and size persistence that remembers and restores window geometry between application restarts
+- MCP settings gear icon in the MCP Servers sidebar for quick access to MCP configuration
+- MCP (Model Context Protocol) configuration support in settings
+  - Add textarea for JSON-based MCP server configuration
+  - Real-time JSON validation with error messages
+  - Persist MCP configuration across sessions
+  - Automatic MCP server process management (start/stop/restart)
+  - Initialize MCP connections on app startup
+  - Graceful shutdown of MCP servers on app close
+- MCP servers sidebar showing active servers and their tools
+  - Real-time server status indicators (starting, running, error, stopped)
+  - List of available tools for each server
+  - Toggle individual tools on/off per conversation
+  - Enable/disable all tools for a server with one click
+  - Tools disabled by default for security
+  - Tool enablement state saved with conversation
+  - Visual feedback for server errors
+  - Graceful handling of removed tools
+  - Collapsible tool lists with expand/collapse arrow indicator
+- Integration of MCP tools with AI message generation
+  - Active tools passed to AI based on conversation settings
+  - Tool calls displayed as separate messages in conversation
+  - Tool message type with distinct styling (lighter background)
+  - Shows tool name, call parameters, and results
+  - Mock tool execution for demonstration
+
+### Fixed
+- Switch to using `sh -c` for all MCP server commands instead of individual command permissions
+- Simplify shell permissions to only allow `sh` with proper argument escaping
+- Assistant responses not appearing after tool calls due to missing handling of 'text' stream events
+- Tool results not being properly passed to follow-up AI calls for generating final responses
+- Excessive model fetching requests by implementing failed fetch caching
+- Model fetching errors with better error messages and retry functionality
 
 ## [0.2.1] - 2025-01-26
 

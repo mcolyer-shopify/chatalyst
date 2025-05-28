@@ -3,7 +3,8 @@ import type {
   Conversation as ConversationType,
   Message,
   Settings,
-  Model
+  Model,
+  MCPServerStatus
 } from '../types';
 import {
   loadConversations,
@@ -14,9 +15,11 @@ import {
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
-  baseURL: '',
+  provider: 'openrouter',
+  baseURL: 'https://openrouter.ai/api/v1',
   apiKey: '',
-  defaultModel: ''
+  defaultModel: '',
+  mcpConfiguration: ''
 };
 
 // Flag to track initialization
@@ -38,6 +41,12 @@ export const modelsCache = signal<
   Map<string, { models: Model[]; timestamp: number }>
 >(new Map());
 export const availableModels = signal<Model[]>([]);
+export const failedModelFetchCache = signal<
+  Map<string, { error: string; timestamp: number }>
+>(new Map());
+
+// MCP-related signals
+export const mcpServers = signal<MCPServerStatus[]>([]);
 
 // Computed values
 export const selectedConversation = computed(() =>
@@ -60,7 +69,17 @@ function initializeFromStorage() {
 
     const savedSettings = localStorage.getItem('chatalyst-settings');
     if (savedSettings) {
-      settings.value = JSON.parse(savedSettings);
+      const parsed = JSON.parse(savedSettings);
+      // Migrate old settings without provider
+      if (!parsed.provider) {
+        // If there's a base URL set, assume it's custom, otherwise default to openrouter
+        parsed.provider = parsed.baseURL ? 'custom' : 'openrouter';
+        // Set default base URL for openrouter if not set
+        if (parsed.provider === 'openrouter' && !parsed.baseURL) {
+          parsed.baseURL = 'https://openrouter.ai/api/v1';
+        }
+      }
+      settings.value = parsed;
     }
 
     const savedModelsCache = localStorage.getItem('chatalyst-models-cache');
@@ -197,6 +216,26 @@ export function setCachedModels(baseURL: string, models: Model[]) {
   const newCache = new Map(modelsCache.value);
   newCache.set(baseURL, { models, timestamp: Date.now() });
   modelsCache.value = newCache;
+  
+  // Clear any failed fetch cache for this URL
+  const newFailedCache = new Map(failedModelFetchCache.value);
+  newFailedCache.delete(baseURL);
+  failedModelFetchCache.value = newFailedCache;
+}
+
+export function getFailedFetchError(baseURL: string): string | null {
+  const failed = failedModelFetchCache.value.get(baseURL);
+  // Consider failed fetch cache valid for 1 minute
+  if (failed && Date.now() - failed.timestamp < 60 * 1000) {
+    return failed.error;
+  }
+  return null;
+}
+
+export function setFailedFetch(baseURL: string, error: string) {
+  const newCache = new Map(failedModelFetchCache.value);
+  newCache.set(baseURL, { error, timestamp: Date.now() });
+  failedModelFetchCache.value = newCache;
 }
 
 // Error handling functions
@@ -211,6 +250,84 @@ export function clearError() {
   batch(() => {
     errorMessage.value = null;
     errorTimestamp.value = null;
+  });
+}
+
+// MCP server management functions
+export function updateMCPServerStatus(serverId: string, updates: Partial<MCPServerStatus>) {
+  mcpServers.value = mcpServers.value.map(server =>
+    server.id === serverId ? { ...server, ...updates } : server
+  );
+}
+
+export function addMCPServer(server: MCPServerStatus) {
+  mcpServers.value = [...mcpServers.value, server];
+}
+
+export function removeMCPServer(serverId: string) {
+  mcpServers.value = mcpServers.value.filter(server => server.id !== serverId);
+}
+
+export function clearMCPServers() {
+  mcpServers.value = [];
+}
+
+export function toggleConversationTool(conversationId: string, serverId: string, toolName: string, enabled: boolean) {
+  conversations.value = conversations.value.map(conv => {
+    if (conv.id !== conversationId) return conv;
+    
+    const enabledTools = conv.enabledTools || {};
+    const serverTools = enabledTools[serverId] || [];
+    
+    let updatedServerTools: string[];
+    if (enabled) {
+      // Add tool if not already enabled
+      updatedServerTools = serverTools.includes(toolName) 
+        ? serverTools 
+        : [...serverTools, toolName];
+    } else {
+      // Remove tool
+      updatedServerTools = serverTools.filter(t => t !== toolName);
+    }
+    
+    return {
+      ...conv,
+      enabledTools: {
+        ...enabledTools,
+        [serverId]: updatedServerTools
+      },
+      updatedAt: Date.now()
+    };
+  });
+}
+
+export function enableAllServerTools(conversationId: string, serverId: string, tools: string[]) {
+  conversations.value = conversations.value.map(conv => {
+    if (conv.id !== conversationId) return conv;
+    
+    return {
+      ...conv,
+      enabledTools: {
+        ...conv.enabledTools || {},
+        [serverId]: tools
+      },
+      updatedAt: Date.now()
+    };
+  });
+}
+
+export function disableAllServerTools(conversationId: string, serverId: string) {
+  conversations.value = conversations.value.map(conv => {
+    if (conv.id !== conversationId) return conv;
+    
+    return {
+      ...conv,
+      enabledTools: {
+        ...conv.enabledTools || {},
+        [serverId]: []
+      },
+      updatedAt: Date.now()
+    };
   });
 }
 

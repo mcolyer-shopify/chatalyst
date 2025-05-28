@@ -26,6 +26,7 @@ export default [
         HTMLDivElement: 'readonly',
         HTMLInputElement: 'readonly',
         HTMLButtonElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
         Event: 'readonly',
         MouseEvent: 'readonly',
         Node: 'readonly',
@@ -52,7 +53,7 @@ export default [
       'quotes': ['error', 'single'],
       'indent': ['error', 2],
       'comma-dangle': ['error', 'never'],
-      'no-console': 'warn'
+      'no-console': ['error', { allow: ['log', 'error', 'warn'] }]
     }
   },
   {

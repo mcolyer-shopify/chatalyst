@@ -106,6 +106,9 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
         onStopGeneration={onStopGeneration}
         disabled={isStreaming.value && !isLastMessageGenerating} 
         isGenerating={isLastMessageGenerating}
+        userMessages={conversation.messages
+          .filter(m => m.role === 'user')
+          .map(m => m.content)}
       />
     </div>
   );

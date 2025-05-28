@@ -30,27 +30,8 @@ pnpm test:ui
 pnpm test:coverage
 ```
 
-## TODO
-
-## MCP MVP
-- Add a mcp configuration textarea to the settings page and persist it.
-    - Validate that mcp configuration is valid JSON. If there's an error, show an error message.
-    - Validate when the user unfocuses the textarea or presses configuration save.
-    - Do not allow the user to save invalid JSON.
-    - When it is successfuan mcp configuration is changed, shutdown any existing mcp connections and create a new one with the new configuration.
-
-- Initialize any mcp connections with the configuration from the settings page at app startup.
-- Close any existing mcp connections when the app is closed or reloaded.
-
-## Support for MCP server
-- Have a tab in settings for MCP
-- On each tab, see the cmd, active, options, type.
-  - Also see status, list of tools and log all output and a log of calls and responses.
-  - Clear logs after last 1000 lines
-
 ### Future
 
+- Add support for remote sse MCP servers.
+
 - Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.
-- Support for Ollama
-
-
