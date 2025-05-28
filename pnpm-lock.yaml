@@ -32,12 +32,9 @@ importers:
       '@tauri-apps/plugin-shell':
         specifier: ^2.2.1
         version: 2.2.1
-      '@types/marked':
-        specifier: ^6.0.0
-        version: 6.0.0
       ai:
-        specifier: 5.0.0-alpha.4
-        version: 5.0.0-alpha.4(zod@3.25.32)
+        specifier: 5.0.0-alpha.7
+        version: 5.0.0-alpha.7(zod@3.25.32)
       marked:
         specifier: ^15.0.12
         version: 15.0.12
@@ -108,6 +105,12 @@ packages:
   '@adobe/css-tools@4.4.3':
     resolution: {integrity: sha512-VQKMkwriZbaOgVCby1UDY/LDk5fIjhQicCvVPFqfe+69fWaPWydbWJ3wRt59/YzIwda1I81loas3oCoHxnqvdA==}
 
+  '@ai-sdk/gateway@1.0.0-alpha.7':
+    resolution: {integrity: sha512-gz1V165eiJnQIexfLyKm11vimrmQ3zdcJhPpjeLFmDU9wrvZwLuklfZ0WgfYSb+EjiP1cKypwt6JSGvWkfKIAQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.24.0
+
   '@ai-sdk/openai-compatible@1.0.0-alpha.4':
     resolution: {integrity: sha512-+2G5IPkTqr74cbJpx+NuMWgZ3yzcF16oTD8FHfdmfp3mnIQj4Bf1QLPOy9G7Bg8xfMYn5vtQCAtO6thnjLbBuw==}
     engines: {node: '>=18'}
@@ -126,8 +129,18 @@ packages:
     peerDependencies:
       zod: ^3.23.8
 
+  '@ai-sdk/provider-utils@3.0.0-alpha.7':
+    resolution: {integrity: sha512-AYkT3jskmo7Lwzijo/yHKD1jC+UZizsROO8ULTg9aJZUwR4ABZzAxh4NxDIEy4TWRfBGufp+/9ICHAn6pkU71w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.23.8
+
   '@ai-sdk/provider@2.0.0-alpha.4':
     resolution: {integrity: sha512-g6IVjm0iGasiv4fAv6TtPIDTfeMTqFRQt3J6Jz8skm/Tb2r48qKEtcKNrDSpspDIFrQJ4fuC1Xw/aAPrVCs7tQ==}
+    engines: {node: '>=18'}
+
+  '@ai-sdk/provider@2.0.0-alpha.7':
+    resolution: {integrity: sha512-lhdrARU3SSmt5p/GNNK7VhazvZpKSCIOjpHUfX7f5jIhVGi/vvlxP1rD6Go57nn1MtuGKNqL04AebSRFDQsQbw==}
     engines: {node: '>=18'}
 
   '@ai-sdk/react@2.0.0-alpha.4':
@@ -889,10 +902,6 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/marked@6.0.0':
-    resolution: {integrity: sha512-jmjpa4BwUsmhxcfsgUit/7A9KbrC48Q0q8KvnY107ogcjGgTFDlIL3RpihNpx2Mu1hM4mdFQjoVc4O6JoGKHsA==}
-    deprecated: This is a stub types definition. marked provides its own type definitions, so you do not need this installed.
-
   '@typescript-eslint/eslint-plugin@8.32.1':
     resolution: {integrity: sha512-6u6Plg9nP/J1GRpe/vcjjabo6Uc5YQPAMxsgQyGC/I0RuukiG1wIe3+Vtg3IrSCVJDmqK3j8adrtzXSENRtFgg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -1018,6 +1027,12 @@ packages:
 
   ai@5.0.0-alpha.4:
     resolution: {integrity: sha512-u2JGxWcmL19knVOhIMMNFp1k2/8Z4VpsT6BBg6YcpL5Vh1rl7y657sFTLQe3U+pao4b5oxwzd8rKR0ETvVRjnw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.23.8
+
+  ai@5.0.0-alpha.7:
+    resolution: {integrity: sha512-ShCk3frIMdVtK9knvWKiFS7N6Vwnf8mLMv670+T//W9oqfoetSVPBhTF6Dy+oDM/bjVSsBf1BuYImLDvHICOIQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.23.8
@@ -2891,6 +2906,12 @@ snapshots:
 
   '@adobe/css-tools@4.4.3': {}
 
+  '@ai-sdk/gateway@1.0.0-alpha.7(zod@3.25.32)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0-alpha.7
+      '@ai-sdk/provider-utils': 3.0.0-alpha.7(zod@3.25.32)
+      zod: 3.25.32
+
   '@ai-sdk/openai-compatible@1.0.0-alpha.4(zod@3.25.32)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
@@ -2910,7 +2931,18 @@ snapshots:
       zod: 3.25.32
       zod-to-json-schema: 3.24.5(zod@3.25.32)
 
+  '@ai-sdk/provider-utils@3.0.0-alpha.7(zod@3.25.32)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0-alpha.7
+      '@standard-schema/spec': 1.0.0
+      zod: 3.25.32
+      zod-to-json-schema: 3.24.5(zod@3.25.32)
+
   '@ai-sdk/provider@2.0.0-alpha.4':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@2.0.0-alpha.7':
     dependencies:
       json-schema: 0.4.0
 
@@ -3578,10 +3610,6 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/marked@6.0.0':
-    dependencies:
-      marked: 15.0.12
-
   '@typescript-eslint/eslint-plugin@8.32.1(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.1
@@ -3770,6 +3798,14 @@ snapshots:
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
       '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.32
+
+  ai@5.0.0-alpha.7(zod@3.25.32):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.0-alpha.7(zod@3.25.32)
+      '@ai-sdk/provider': 2.0.0-alpha.7
+      '@ai-sdk/provider-utils': 3.0.0-alpha.7(zod@3.25.32)
       '@opentelemetry/api': 1.9.0
       zod: 3.25.32
 

@@ -24,8 +24,7 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-shell": "^2.2.1",
-    "@types/marked": "^6.0.0",
-    "ai": "5.0.0-alpha.4",
+    "ai": "5.0.0-alpha.7",
     "marked": "^15.0.12",
     "preact": "^10.25.1"
   },
