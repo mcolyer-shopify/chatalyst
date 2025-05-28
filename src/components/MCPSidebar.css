@@ -12,6 +12,10 @@
   padding: 18px 1rem 17px 1rem;
   border-bottom: 1px solid #e0e0e0;
   background-color: white;
+}
+
+.mcp-sidebar-header-content {
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
