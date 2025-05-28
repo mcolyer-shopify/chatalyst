@@ -195,20 +195,17 @@ function App() {
       console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
 
       // Use the AI SDK's built-in tool handling with maxSteps
-      // Filter out tool messages as the SDK handles them internally
-      const conversationMessages = messages
-        .filter(m => m.role !== 'tool')
-        .map((m) => ({
-          role: m.role as 'user' | 'assistant' | 'system',
-          content: m.content || ''
-        }));
+      const conversationMessages = messages.map((m) => ({
+        role: m.role as 'user' | 'assistant' | 'system' | 'tool',
+        content: m.content || ''
+      }));
       
       const result = await streamText({
         model: aiProvider(modelToUse),
         messages: conversationMessages,
         tools: toolsObject,
         maxSteps: 10, // Limit to 10 tool calls per turn
-        system: 'You are a helpful assistant. When you use tools, always provide a natural language response that incorporates the tool results to answer the user\'s question.',
+        system: 'You are a helpful assistant. Always provide a complete, natural language response to the user. If you use tools, incorporate the results into your response.',
         abortSignal: controller.signal,
         onStepFinish: (event) => {
           console.log('[AI] Step finished:', event);
@@ -256,15 +253,60 @@ function App() {
           console.log('[AI] Finish reason:', part.finishReason);
           console.log('[AI] Final content:', fullContent);
           
-          // If the assistant message is empty (only tool calls), remove it
-          if (fullContent.trim() === '') {
+          // Check if we finished with only tool calls and no text response
+          if (part.finishReason === 'tool-calls' && fullContent.trim() === '') {
+            // Remove the empty assistant message
             conversations.value = conversations.value.map(c => 
               c.id === conversation.id
                 ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
                 : c
             );
-          } else {
+            
+            // Get the updated conversation with tool messages
+            const updatedConversation = conversations.value.find(c => c.id === conversation.id);
+            if (updatedConversation) {
+              // Make a follow-up call to get the assistant's response incorporating the tool results
+              const followUpMessage: Message = {
+                id: `${Date.now()}-assistant-followup`,
+                role: 'assistant',
+                content: '',
+                timestamp: Date.now(),
+                isGenerating: true
+              };
+              addMessage(conversation.id, followUpMessage);
+              
+              // Continue with a new streamText call without tools to get the final response
+              const followUpMessages = updatedConversation.messages
+                .filter(m => m.role !== 'tool')
+                .map((m) => ({
+                  role: m.role as 'user' | 'assistant' | 'system',
+                  content: m.content || ''
+                }));
+              
+              const followUpResult = await streamText({
+                model: aiProvider(modelToUse),
+                messages: followUpMessages,
+                system: 'Based on the tool results from the previous interaction, provide a helpful response to the user\'s question.',
+                abortSignal: controller.signal
+              });
+              
+              let followUpContent = '';
+              for await (const chunk of followUpResult.textStream) {
+                followUpContent += chunk;
+                updateMessage(conversation.id, followUpMessage.id, { content: followUpContent });
+              }
+              updateMessage(conversation.id, followUpMessage.id, { isGenerating: false });
+            }
+          } else if (fullContent.trim() !== '') {
+            // Normal finish with text content
             updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
+          } else {
+            // Empty message without tool calls - remove it
+            conversations.value = conversations.value.map(c => 
+              c.id === conversation.id
+                ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
+                : c
+            );
           }
         }
       }
