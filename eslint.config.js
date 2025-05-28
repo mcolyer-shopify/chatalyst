@@ -26,6 +26,7 @@ export default [
         HTMLDivElement: 'readonly',
         HTMLInputElement: 'readonly',
         HTMLButtonElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
         Event: 'readonly',
         MouseEvent: 'readonly',
         Node: 'readonly',
