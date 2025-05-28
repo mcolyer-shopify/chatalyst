@@ -24,7 +24,7 @@ import {
   clearError
 } from './store';
 import { restoreWindowGeometry, setupWindowGeometryPersistence } from './utils/windowSize';
-import { initializeMCPConnections, restartMCPConnections, shutdownMCPConnections, getActiveToolsForConversation } from './utils/mcp';
+import { initializeMCPConnections, restartMCPConnections, shutdownMCPConnections, getActiveToolsForConversation, executeMCPTool } from './utils/mcp';
 import './App.css';
 
 function App() {
@@ -157,11 +157,41 @@ function App() {
       const messages = conversation.messages.concat([userMessage]);
       
       // Get active tools for this conversation
-      const activeTools = getActiveToolsForConversation(conversation);
+      const activeTools = await getActiveToolsForConversation(conversation);
       
       if (activeTools.length > 0) {
-        console.log(`Active tools for conversation:`, activeTools.map(t => t.name));
+        console.log(`[AI] Active tools for conversation:`, activeTools.map(t => t.name));
+        console.log(`[AI] Tool details:`, activeTools.map(t => ({
+          name: t.name,
+          description: t.description,
+          parameters: t.parameters
+        })));
+      } else {
+        console.log(`[AI] No active tools for this conversation`);
       }
+      
+      const toolsObject = activeTools.length > 0 ? activeTools.reduce((acc, tool) => {
+        acc[tool.name] = {
+          description: tool.description,
+          parameters: tool.parameters,
+          execute: async (args: any) => {
+            console.log(`[AI] Executing tool ${tool.name} with args:`, args);
+            
+            try {
+              // Use the real MCP tool execution
+              const result = await executeMCPTool(tool.name, args);
+              console.log(`[AI] Tool ${tool.name} returned:`, result);
+              return result;
+            } catch (error) {
+              console.error(`[AI] Tool ${tool.name} execution failed:`, error);
+              throw error;
+            }
+          }
+        };
+        return acc;
+      }, {} as any) : undefined;
+      
+      console.log(`[AI] Calling streamText with tools:`, toolsObject ? Object.keys(toolsObject) : 'none');
       
       const result = await streamText({
         model: aiProvider(modelToUse),
@@ -169,14 +199,7 @@ function App() {
           role: m.role,
           content: m.content
         })),
-        tools: activeTools.length > 0 ? activeTools.reduce((acc, tool) => {
-          acc[tool.name] = {
-            description: tool.description,
-            parameters: tool.parameters,
-            execute: tool.execute
-          };
-          return acc;
-        }, {} as any) : undefined,
+        tools: toolsObject,
         abortSignal: controller.signal
       });
 
@@ -186,12 +209,22 @@ function App() {
       
       // Check if there are tool calls
       if (activeTools.length > 0) {
+        console.log('[AI] Using fullStream for tool-enabled response');
         // Handle both text and tool calls
         for await (const part of result.fullStream) {
+          console.log('[AI] Stream part type:', part.type);
+          
+          if (part.type === 'error') {
+            console.error('[AI] Stream error:', part.error);
+            // Continue processing other parts
+            continue;
+          }
+          
           if (part.type === 'text-delta') {
             fullContent += part.textDelta;
             updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
           } else if (part.type === 'tool-call') {
+            console.log('[AI] Tool call detected:', part.toolCall);
             // Create a tool message for the call
             const toolCall = part.toolCall;
             if (toolCall) {

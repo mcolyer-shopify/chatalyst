@@ -10,13 +10,13 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: 2.0.0-alpha.4
-        version: 2.0.0-alpha.4(zod@3.25.28)
+        version: 2.0.0-alpha.4(zod@3.25.32)
       '@ai-sdk/openai-compatible':
         specifier: 1.0.0-alpha.4
-        version: 1.0.0-alpha.4(zod@3.25.28)
+        version: 1.0.0-alpha.4(zod@3.25.32)
       '@ai-sdk/react':
         specifier: 2.0.0-alpha.4
-        version: 2.0.0-alpha.4(react@19.1.0)(zod@3.25.28)
+        version: 2.0.0-alpha.4(react@19.1.0)(zod@3.25.32)
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.0
         version: 1.12.0
@@ -37,13 +37,16 @@ importers:
         version: 6.0.0
       ai:
         specifier: 5.0.0-alpha.4
-        version: 5.0.0-alpha.4(zod@3.25.28)
+        version: 5.0.0-alpha.4(zod@3.25.32)
       marked:
         specifier: ^15.0.12
         version: 15.0.12
       preact:
         specifier: ^10.25.1
         version: 10.26.6
+      zod:
+        specifier: ^3.25.32
+        version: 3.25.32
     devDependencies:
       '@eslint/js':
         specifier: ^9.27.0
@@ -2881,45 +2884,45 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.25.28:
-    resolution: {integrity: sha512-/nt/67WYKnr5by3YS7LroZJbtcCBurDKKPBPWWzaxvVCGuG/NOsiKkrjoOhI8mJ+SQUXEbUzeB3S+6XDUEEj7Q==}
+  zod@3.25.32:
+    resolution: {integrity: sha512-OSm2xTIRfW8CV5/QKgngwmQW/8aPfGdaQFlrGoErlgg/Epm7cjb6K6VEyExfe65a3VybUOnu381edLb0dfJl0g==}
 
 snapshots:
 
   '@adobe/css-tools@4.4.3': {}
 
-  '@ai-sdk/openai-compatible@1.0.0-alpha.4(zod@3.25.28)':
+  '@ai-sdk/openai-compatible@1.0.0-alpha.4(zod@3.25.32)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
-      zod: 3.25.28
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
+      zod: 3.25.32
 
-  '@ai-sdk/openai@2.0.0-alpha.4(zod@3.25.28)':
+  '@ai-sdk/openai@2.0.0-alpha.4(zod@3.25.32)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
-      zod: 3.25.28
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
+      zod: 3.25.32
 
-  '@ai-sdk/provider-utils@3.0.0-alpha.4(zod@3.25.28)':
+  '@ai-sdk/provider-utils@3.0.0-alpha.4(zod@3.25.32)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
       '@standard-schema/spec': 1.0.0
-      zod: 3.25.28
-      zod-to-json-schema: 3.24.5(zod@3.25.28)
+      zod: 3.25.32
+      zod-to-json-schema: 3.24.5(zod@3.25.32)
 
   '@ai-sdk/provider@2.0.0-alpha.4':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@2.0.0-alpha.4(react@19.1.0)(zod@3.25.28)':
+  '@ai-sdk/react@2.0.0-alpha.4(react@19.1.0)(zod@3.25.32)':
     dependencies:
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
-      ai: 5.0.0-alpha.4(zod@3.25.28)
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
+      ai: 5.0.0-alpha.4(zod@3.25.32)
       react: 19.1.0
       swr: 2.3.3(react@19.1.0)
       throttleit: 2.1.0
     optionalDependencies:
-      zod: 3.25.28
+      zod: 3.25.32
 
   '@ampproject/remapping@2.3.0':
     dependencies:
@@ -3277,8 +3280,8 @@ snapshots:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.25.28
-      zod-to-json-schema: 3.24.5(zod@3.25.28)
+      zod: 3.25.32
+      zod-to-json-schema: 3.24.5(zod@3.25.32)
     transitivePeerDependencies:
       - supports-color
 
@@ -3763,12 +3766,12 @@ snapshots:
 
   agent-base@7.1.3: {}
 
-  ai@5.0.0-alpha.4(zod@3.25.28):
+  ai@5.0.0-alpha.4(zod@3.25.32):
     dependencies:
       '@ai-sdk/provider': 2.0.0-alpha.4
-      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.28)
+      '@ai-sdk/provider-utils': 3.0.0-alpha.4(zod@3.25.32)
       '@opentelemetry/api': 1.9.0
-      zod: 3.25.28
+      zod: 3.25.32
 
   ajv@6.12.6:
     dependencies:
@@ -5930,8 +5933,8 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-to-json-schema@3.24.5(zod@3.25.28):
+  zod-to-json-schema@3.24.5(zod@3.25.32):
     dependencies:
-      zod: 3.25.28
+      zod: 3.25.32
 
-  zod@3.25.28: {}
+  zod@3.25.32: {}
