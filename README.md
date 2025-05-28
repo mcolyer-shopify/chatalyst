@@ -38,6 +38,7 @@ pnpm test:coverage
 - Allow enabling all tools under a server with one click.
 - Graceful handle if a tool was previously enabled but the server no longer provides that tool.
 
+- Add a max tool call limit of 10
 - Remove jsonSchemaToZod function and use https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema.
 
 

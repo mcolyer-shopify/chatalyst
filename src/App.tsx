@@ -193,171 +193,148 @@ function App() {
       
       console.log(`[AI] Calling streamText with tools:`, toolsObject ? Object.keys(toolsObject) : 'none');
       console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
-      
-      const result = await streamText({
-        model: aiProvider(modelToUse),
-        messages: messages.map((m) => {
-          if (m.role === 'tool') {
-            // Format tool messages properly for AI SDK
-            return {
-              role: 'tool' as const,
-              content: JSON.stringify(m.toolResult || ''),
-              toolCallId: m.id.split('-tool-')[1] || m.id
-            };
-          }
-          // Check if this is an assistant message with tool calls
-          if (m.role === 'assistant' && m.toolCalls) {
-            return {
-              role: 'assistant' as const,
-              content: m.content,
-              toolCalls: m.toolCalls
-            };
-          }
-          return {
-            role: m.role,
-            content: m.content
-          };
-        }),
-        tools: toolsObject,
-        toolChoice: 'auto', // Let the model decide when to use tools
-        abortSignal: controller.signal
-      });
 
-      // Stream the response
-      let fullContent = '';
-      const toolCalls: Array<{id: string, name: string, args: any}> = [];
-      let hasToolCalls = false;
-      
-      // Check if there are tool calls
+      // Handle tool-enabled conversations with potential multiple tool calls
       if (activeTools.length > 0) {
-        console.log('[AI] Using fullStream for tool-enabled response');
-        // Handle both text and tool calls
-        for await (const part of result.fullStream) {
-          console.log('[AI] Stream part type:', part.type);
+        console.log('[AI] Starting tool-enabled conversation');
+        
+        // Function to handle a single round of tool calls
+        const handleToolRound = async (messages: Message[], isFollowUp: boolean = false): Promise<void> => {
+          const currentAssistantMessage = isFollowUp ? {
+            id: `${Date.now()}-assistant-followup`,
+            role: 'assistant' as const,
+            content: '',
+            timestamp: Date.now(),
+            isGenerating: true
+          } : assistantMessage;
           
-          if (part.type === 'error') {
-            console.error('[AI] Stream error:', part.error);
-            // Continue processing other parts
-            continue;
+          if (isFollowUp) {
+            addMessage(conversation.id, currentAssistantMessage);
           }
           
-          if (part.type === 'text-delta') {
-            console.log('[AI] Text delta:', part.textDelta);
-            fullContent += part.textDelta;
-            updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-          } else if (part.type === 'tool-call') {
-            console.log('[AI] Tool call detected:', part);
-            hasToolCalls = true;
-            
-            // Store tool call info
-            if (part.toolCallId && part.toolName) {
-              toolCalls.push({
-                id: part.toolCallId,
-                name: part.toolName,
-                args: part.args
-              });
-            }
-          } else if (part.type === 'tool-result') {
-            console.log('[AI] Tool result detected:', part);
-            
-            // Find the tool call info
-            const toolCall = toolCalls.find(tc => tc.id === part.toolCallId);
-            if (toolCall) {
-              // Create a tool message with the result
-              const toolMessage: Message = {
-                id: `${Date.now()}-tool-${part.toolCallId}`,
-                role: 'tool',
-                content: JSON.stringify(part.result),
-                timestamp: Date.now(),
-                toolName: toolCall.name,
-                toolCall: toolCall.args,
-                toolResult: part.result
+          const result = await streamText({
+            model: aiProvider(modelToUse),
+            messages: messages.filter(m => m.id !== currentAssistantMessage.id).map((m) => {
+              if (m.role === 'tool') {
+                return {
+                  role: 'tool' as const,
+                  content: JSON.stringify(m.toolResult || ''),
+                  toolCallId: m.id.split('-tool-')[1] || m.id
+                };
+              }
+              if (m.role === 'assistant' && m.toolCalls) {
+                return {
+                  role: 'assistant' as const,
+                  content: m.content,
+                  toolCalls: m.toolCalls
+                };
+              }
+              return {
+                role: m.role,
+                content: m.content
               };
-              addMessage(conversation.id, toolMessage);
-            }
-          } else if (part.type === 'finish') {
-            console.log('[AI] Finish event:', part);
+            }),
+            tools: toolsObject,
+            toolChoice: 'auto',
+            abortSignal: controller.signal
+          });
+          
+          let fullContent = '';
+          const toolCalls: Array<{id: string, name: string, args: any}> = [];
+          let hasToolCalls = false;
+          
+          for await (const part of result.fullStream) {
+            console.log('[AI] Stream part type:', part.type);
             
-            // If we have tool calls, update the assistant message with them
-            if (hasToolCalls && toolCalls.length > 0) {
-              const formattedToolCalls = toolCalls.map(tc => ({
-                id: tc.id,
-                type: 'function' as const,
-                function: {
-                  name: tc.name,
-                  arguments: JSON.stringify(tc.args)
-                }
-              }));
+            if (part.type === 'error') {
+              console.error('[AI] Stream error:', part.error);
+              continue;
+            }
+            
+            if (part.type === 'text-delta') {
+              console.log('[AI] Text delta:', part.textDelta);
+              fullContent += part.textDelta;
+              updateMessage(conversation.id, currentAssistantMessage.id, { content: fullContent });
+            } else if (part.type === 'tool-call') {
+              console.log('[AI] Tool call detected:', part);
+              hasToolCalls = true;
               
-              updateMessage(conversation.id, assistantMessage.id, { 
-                toolCalls: formattedToolCalls,
-                isGenerating: false
-              });
-              
-              // If there's no text content with the tool calls, set a placeholder
-              if (fullContent.trim() === '') {
-                updateMessage(conversation.id, assistantMessage.id, { 
-                  content: ' ' // Single space to keep the message visible
+              if (part.toolCallId && part.toolName) {
+                toolCalls.push({
+                  id: part.toolCallId,
+                  name: part.toolName,
+                  args: part.args
                 });
               }
+            } else if (part.type === 'tool-result') {
+              console.log('[AI] Tool result detected:', part);
               
-              // After tools are executed, we need to continue the conversation
-              // Create a new assistant message for the follow-up response
-              const followUpMessage: Message = {
-                id: `${Date.now()}-assistant-followup`,
-                role: 'assistant',
-                content: '',
-                timestamp: Date.now(),
-                isGenerating: true
-              };
-              addMessage(conversation.id, followUpMessage);
-              
-              // Continue the conversation with the tool results
-              const updatedMessages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
-              const continuationResult = await streamText({
-                model: aiProvider(modelToUse),
-                messages: updatedMessages.filter(m => m.id !== followUpMessage.id).map((m) => {
-                  if (m.role === 'tool') {
-                    return {
-                      role: 'tool' as const,
-                      content: JSON.stringify(m.toolResult || ''),
-                      toolCallId: m.id.split('-tool-')[1] || m.id
-                    };
-                  }
-                  if (m.role === 'assistant' && m.toolCalls) {
-                    return {
-                      role: 'assistant' as const,
-                      content: m.content,
-                      toolCalls: m.toolCalls
-                    };
-                  }
-                  return {
-                    role: m.role,
-                    content: m.content
-                  };
-                }),
-                tools: toolsObject,
-                toolChoice: 'none', // Don't use tools in the follow-up
-                abortSignal: controller.signal
-              });
-              
-              // Stream the follow-up response
-              let followUpContent = '';
-              for await (const chunk of continuationResult.textStream) {
-                followUpContent += chunk;
-                updateMessage(conversation.id, followUpMessage.id, { content: followUpContent });
+              const toolCall = toolCalls.find(tc => tc.id === part.toolCallId);
+              if (toolCall) {
+                // Create a tool message with the result
+                const toolMessage: Message = {
+                  id: `${Date.now()}-tool-${part.toolCallId}`,
+                  role: 'tool',
+                  content: JSON.stringify(part.result),
+                  timestamp: Date.now(),
+                  toolName: toolCall.name,
+                  toolCall: toolCall.args,
+                  toolResult: part.result
+                };
+                addMessage(conversation.id, toolMessage);
               }
-              updateMessage(conversation.id, followUpMessage.id, { isGenerating: false });
+            } else if (part.type === 'finish') {
+              console.log('[AI] Finish event:', part);
+              
+              // Update the assistant message with tool calls if any
+              if (hasToolCalls && toolCalls.length > 0) {
+                const formattedToolCalls = toolCalls.map(tc => ({
+                  id: tc.id,
+                  type: 'function' as const,
+                  function: {
+                    name: tc.name,
+                    arguments: JSON.stringify(tc.args)
+                  }
+                }));
+                
+                updateMessage(conversation.id, currentAssistantMessage.id, { 
+                  toolCalls: formattedToolCalls,
+                  isGenerating: false
+                });
+                
+                // If there's no text content, set a minimal placeholder
+                if (fullContent.trim() === '') {
+                  updateMessage(conversation.id, currentAssistantMessage.id, { 
+                    content: ' '
+                  });
+                }
+                
+                // After tools are executed, continue the conversation
+                // The AI might need to call more tools or provide a final response
+                const updatedMessages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
+                await handleToolRound(updatedMessages, true);
+              } else {
+                // No tool calls, just mark as finished
+                updateMessage(conversation.id, currentAssistantMessage.id, { isGenerating: false });
+              }
             }
           }
-        }
+        };
         
-        // Mark the assistant message as finished if it has content
-        if (fullContent.trim() !== '') {
-          updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
-        }
+        // Start the first round
+        await handleToolRound(messages);
       } else {
         // No tools, just stream text
+        const result = await streamText({
+          model: aiProvider(modelToUse),
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.content
+          })),
+          abortSignal: controller.signal
+        });
+        
+        let fullContent = '';
         for await (const chunk of result.textStream) {
           fullContent += chunk;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
