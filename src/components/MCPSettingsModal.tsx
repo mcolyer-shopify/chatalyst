@@ -138,7 +138,11 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
       };
       
       if (server.args && server.args.length > 0) {
-        config[server.id].args = server.args;
+        // Filter out empty args when saving
+        const filteredArgs = server.args.filter(arg => arg.trim());
+        if (filteredArgs.length > 0) {
+          config[server.id].args = filteredArgs;
+        }
       }
       
       if (server.env && Object.keys(server.env).length > 0) {
@@ -160,8 +164,8 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   const handleArgsChange = (value: string) => {
     if (!editingServer) return;
     
-    // Split by newlines and filter empty
-    const args = value.split('\n').filter(arg => arg.trim());
+    // Split by newlines but preserve empty lines for proper textarea behavior
+    const args = value.split('\n');
     handleServerChange('args', args);
   };
 
@@ -169,12 +173,15 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
     if (!editingServer) return;
     
     const env: Record<string, string> = {};
-    const lines = value.split('\n').filter(line => line.trim());
+    const lines = value.split('\n');
     
     for (const line of lines) {
-      const [key, ...valueParts] = line.split('=');
-      if (key && valueParts.length > 0) {
-        env[key.trim()] = valueParts.join('=').trim();
+      // Only process non-empty lines for env vars
+      if (line.trim()) {
+        const [key, ...valueParts] = line.split('=');
+        if (key && valueParts.length > 0) {
+          env[key.trim()] = valueParts.join('=').trim();
+        }
       }
     }
     
