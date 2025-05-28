@@ -3,7 +3,11 @@ import { mcpServers, selectedConversation, toggleConversationTool, enableAllServ
 import type { MCPServerStatus } from '../types';
 import './MCPSidebar.css';
 
-export function MCPSidebar() {
+interface MCPSidebarProps {
+  onSettingsClick?: () => void;
+}
+
+export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
   const servers = mcpServers.value;
   const conversation = selectedConversation.value;
   const [expandedServers, setExpandedServers] = useState<Set<string>>(new Set());
@@ -70,6 +74,15 @@ export function MCPSidebar() {
     <div class="mcp-sidebar">
       <div class="mcp-sidebar-header">
         <h3>MCP Servers</h3>
+        {onSettingsClick && (
+          <button
+            onClick={onSettingsClick}
+            class="mcp-settings-button"
+            title="MCP Settings"
+          >
+            ⚙️
+          </button>
+        )}
       </div>
       
       <div class="mcp-servers-list">

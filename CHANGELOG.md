@@ -13,12 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tool messages are now excluded from conversation history sent to AI (SDK handles internally)
 - Limited tool calls to maximum 10 per turn using maxSteps parameter
 - Moved settings gear icon next to the default model picker to clarify it configures model settings
+- Extracted settings modal from App.tsx into separate SettingsModal component
+- Separated MCP configuration into dedicated MCPSettingsModal component
+- Removed "Conversations" title from the left sidebar for cleaner interface
 
 ### Added
 - Stop generation button to halt AI responses mid-stream with immediate response control
 - Conversation selection persistence that remembers the last selected conversation between application restarts
 - Animated loading indicator for assistant message generation with spinning Braille pattern animation
 - Window position and size persistence that remembers and restores window geometry between application restarts
+- MCP settings gear icon in the MCP Servers sidebar for quick access to MCP configuration
 - MCP (Model Context Protocol) configuration support in settings
   - Add textarea for JSON-based MCP server configuration
   - Real-time JSON validation with error messages

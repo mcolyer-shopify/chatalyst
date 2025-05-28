@@ -65,7 +65,6 @@ export function ConversationList({
   return (
     <div class="conversation-list">
       <div class="conversation-list-header">
-        <h2>Conversations</h2>
         <div class="sidebar-model-selector">
           <ModelSelector
             selectedModel={defaultModel}

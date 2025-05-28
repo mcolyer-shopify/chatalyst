@@ -47,9 +47,6 @@ body {
 }
 
 .conversation-list-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
   padding: 1rem;
   border-bottom: 1px solid #e0e0e0;
 }
@@ -60,12 +57,6 @@ body {
   align-items: center;
   padding: 1rem;
   background: white;
-}
-
-.conversation-list-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #333;
 }
 
 .new-conversation-btn {
@@ -884,7 +875,6 @@ body {
     border-color: #444;
   }
 
-  .conversation-list-header h2,
   .conversation-header h2,
   .modal h2,
   .conversation-title {

@@ -4,6 +4,8 @@ import { streamText } from 'ai';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
 import { MCPSidebar } from './components/MCPSidebar';
+import { SettingsModal } from './components/SettingsModal';
+import { MCPSettingsModal } from './components/MCPSettingsModal';
 import { listen } from '@tauri-apps/api/event';
 import type { Message } from './types';
 import { 
@@ -29,9 +31,8 @@ import './App.css';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
-  const [tempSettings, setTempSettings] = useState(settings.value);
+  const [showMcpSettings, setShowMcpSettings] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
-  const [mcpConfigError, setMcpConfigError] = useState<string | null>(null);
 
   // Handle global keyboard shortcuts
   useEffect(() => {
@@ -329,76 +330,20 @@ function App() {
     }
   };
 
-  const validateMcpConfiguration = (configString: string): boolean => {
-    if (!configString.trim()) {
-      setMcpConfigError(null);
-      return true; // Empty config is valid
-    }
-
-    try {
-      const parsed = JSON.parse(configString);
-      
-      // Validate structure
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        setMcpConfigError('MCP configuration must be a JSON object');
-        return false;
-      }
-
-      // Validate each server config
-      for (const [key, config] of Object.entries(parsed)) {
-        if (typeof config !== 'object' || config === null) {
-          setMcpConfigError(`Server "${key}" must be an object`);
-          return false;
-        }
-
-        const serverConfig = config as any;
-        if (!serverConfig.name || typeof serverConfig.name !== 'string') {
-          setMcpConfigError(`Server "${key}" must have a name`);
-          return false;
-        }
-        if (!serverConfig.description || typeof serverConfig.description !== 'string') {
-          setMcpConfigError(`Server "${key}" must have a description`);
-          return false;
-        }
-        if (!serverConfig.command || typeof serverConfig.command !== 'string') {
-          setMcpConfigError(`Server "${key}" must have a command`);
-          return false;
-        }
-        if (serverConfig.transport !== 'stdio') {
-          setMcpConfigError(`Server "${key}" transport must be "stdio"`);
-          return false;
-        }
-      }
-
-      setMcpConfigError(null);
-      return true;
-    } catch (e) {
-      setMcpConfigError(`Invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
-      return false;
-    }
+  const handleSaveSettings = (newSettings: typeof settings.value) => {
+    updateSettings(newSettings);
+    setShowSettings(false);
   };
 
-  const handleSaveSettings = async () => {
-    if (!validateMcpConfiguration(tempSettings.mcpConfiguration || '')) {
-      return;
-    }
-    
-    // Check if MCP configuration has changed
-    const mcpConfigChanged = settings.value.mcpConfiguration !== tempSettings.mcpConfiguration;
-    
-    updateSettings(tempSettings);
-    setShowSettings(false);
+  const handleSaveMcpSettings = async (mcpConfiguration: string) => {
+    const mcpConfigChanged = settings.value.mcpConfiguration !== mcpConfiguration;
+    updateSettings({ ...settings.value, mcpConfiguration });
+    setShowMcpSettings(false);
     
     // Restart MCP connections if configuration changed
     if (mcpConfigChanged) {
-      await restartMCPConnections(tempSettings.mcpConfiguration);
+      await restartMCPConnections(mcpConfiguration);
     }
-  };
-
-  const handleCancelSettings = () => {
-    setTempSettings(settings.value);
-    setMcpConfigError(null);
-    setShowSettings(false);
   };
 
   const handleDefaultModelChange = (modelId: string) => {
@@ -423,82 +368,19 @@ function App() {
   return (
     <div class="app">
 
-      {showSettings && (
-        <>
-          <div
-            class="modal-backdrop"
-            onClick={handleCancelSettings}
-          />
-          <div class="modal">
-            <h2>Settings</h2>
+      <SettingsModal
+        show={showSettings}
+        settings={settings.value}
+        onSave={handleSaveSettings}
+        onCancel={() => setShowSettings(false)}
+      />
 
-            <div class="form-group">
-              <label>Base URL:</label>
-              <input
-                type="text"
-                value={tempSettings.baseURL}
-                onInput={(e) =>
-                  setTempSettings({
-                    ...tempSettings,
-                    baseURL: (e.target as HTMLInputElement).value
-                  })
-                }
-              />
-            </div>
-
-            <div class="form-group">
-              <label>API Key:</label>
-              <input
-                type="password"
-                value={tempSettings.apiKey}
-                onInput={(e) =>
-                  setTempSettings({
-                    ...tempSettings,
-                    apiKey: (e.target as HTMLInputElement).value
-                  })
-                }
-                placeholder="Leave blank to use 'openrouter'"
-              />
-            </div>
-
-            <div class="form-group">
-              <label>MCP Configuration (JSON):</label>
-              <textarea
-                value={tempSettings.mcpConfiguration || ''}
-                onInput={(e) => {
-                  const value = (e.target as any).value;
-                  setTempSettings({
-                    ...tempSettings,
-                    mcpConfiguration: value
-                  });
-                }}
-                onBlur={() => validateMcpConfiguration(tempSettings.mcpConfiguration || '')}
-                rows={10}
-                style={{
-                  width: '100%',
-                  fontFamily: 'monospace',
-                  fontSize: '12px'
-                }}
-                placeholder='{"server-name": {"name": "...", "description": "...", "transport": "stdio", "command": "..."}}'
-              />
-              {mcpConfigError && (
-                <div style={{ color: 'red', marginTop: '5px', fontSize: '14px' }}>
-                  {mcpConfigError}
-                </div>
-              )}
-            </div>
-
-            <div class="modal-actions">
-              <button onClick={handleCancelSettings} class="button-secondary">
-                Cancel
-              </button>
-              <button onClick={handleSaveSettings} class="button-primary">
-                Save
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <MCPSettingsModal
+        show={showMcpSettings}
+        mcpConfiguration={settings.value.mcpConfiguration}
+        onSave={handleSaveMcpSettings}
+        onCancel={() => setShowMcpSettings(false)}
+      />
 
       <div class="app-content">
         <ConversationList
@@ -526,7 +408,7 @@ function App() {
             </div>
           )}
         </div>
-        <MCPSidebar />
+        <MCPSidebar onSettingsClick={() => setShowMcpSettings(true)} />
       </div>
     </div>
   );
