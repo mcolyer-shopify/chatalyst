@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { streamText } from 'ai';
+import { streamText, tool } from 'ai';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
 import { MCPSidebar } from './components/MCPSidebar';
@@ -190,26 +190,26 @@ function App() {
         console.log('[AI] No active tools for this conversation');
       }
       
-      const toolsObject = activeTools.length > 0 ? activeTools.reduce((acc, tool) => {
-        acc[tool.name] = {
-          description: tool.description,
-          parameters: tool.parameters,
+      const toolsObject = activeTools.length > 0 ? activeTools.reduce((acc, activeTool) => {
+        acc[activeTool.name] = tool({
+          description: activeTool.description || '',
+          parameters: activeTool.parameters,
           execute: async (args: unknown) => {
-            console.log(`[AI] Executing tool ${tool.name} with args:`, args);
+            console.log(`[AI] Executing tool ${activeTool.name} with args:`, args);
             
             try {
               // Use the real MCP tool execution
-              const result = await executeMCPTool(tool.name, args);
-              console.log(`[AI] Tool ${tool.name} returned:`, result);
+              const result = await executeMCPTool(activeTool.name, args);
+              console.log(`[AI] Tool ${activeTool.name} returned:`, result);
               return result;
             } catch (error) {
-              console.error(`[AI] Tool ${tool.name} execution failed:`, error);
+              console.error(`[AI] Tool ${activeTool.name} execution failed:`, error);
               throw error;
             }
           }
-        };
+        });
         return acc;
-      }, {} as Record<string, unknown>) : undefined;
+      }, {} as Record<string, ReturnType<typeof tool>>) : undefined;
       
       console.log('[AI] Calling streamText with tools:', toolsObject ? Object.keys(toolsObject) : 'none');
       console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
