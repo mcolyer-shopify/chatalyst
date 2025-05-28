@@ -262,6 +262,9 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                       ));
                       setSelectedServerId(newId);
                     }}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
 
