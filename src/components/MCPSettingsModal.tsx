@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
+import type { MCPServerConfig } from '../types';
 
 interface MCPServer {
   id: string;
@@ -31,7 +32,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         const serverList: MCPServer[] = [];
         
         for (const [id, config] of Object.entries(parsed)) {
-          const serverConfig = config as any;
+          const serverConfig = config as MCPServerConfig;
           serverList.push({
             id,
             name: serverConfig.name || '',
@@ -48,7 +49,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           setSelectedServerId(serverList[0].id);
           setEditingServer({ ...serverList[0] });
         }
-      } catch (e) {
+      } catch {
         setError('Failed to parse configuration');
       }
     }
@@ -97,7 +98,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
     }
   };
 
-  const handleServerChange = (field: keyof MCPServer, value: any) => {
+  const handleServerChange = (field: keyof MCPServer, value: string | string[] | Record<string, string>) => {
     if (!editingServer) return;
     
     const updated = { ...editingServer, [field]: value };
@@ -127,7 +128,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
     }
 
     // Convert to JSON format
-    const config: Record<string, any> = {};
+    const config: Record<string, MCPServerConfig> = {};
     for (const server of servers) {
       config[server.id] = {
         name: server.name,
