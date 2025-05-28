@@ -224,31 +224,32 @@ function App() {
             fullContent += part.textDelta;
             updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
           } else if (part.type === 'tool-call') {
-            console.log('[AI] Tool call detected:', part.toolCall);
+            console.log('[AI] Tool call detected:', part);
             // Create a tool message for the call
-            const toolCall = part.toolCall;
-            if (toolCall) {
+            // The part itself contains the tool call data
+            if (part.toolCallId && part.toolName) {
               const toolMessage: Message = {
-                id: `${Date.now()}-tool-${toolCall.toolCallId}`,
+                id: `${Date.now()}-tool-${part.toolCallId}`,
                 role: 'tool',
                 content: '',
                 timestamp: Date.now(),
-                toolName: toolCall.toolName,
-                toolCall: toolCall.args
+                toolName: part.toolName,
+                toolCall: part.args
               };
               toolMessages.push(toolMessage);
               addMessage(conversation.id, toolMessage);
             }
           } else if (part.type === 'tool-result') {
+            console.log('[AI] Tool result detected:', part);
             // Update the tool message with the result
-            const toolResult = part.toolResult;
-            if (toolResult && toolMessages.length > 0) {
+            // The part contains toolCallId and result
+            if (part.toolCallId && toolMessages.length > 0) {
               const toolMessage = toolMessages.find(m => 
-                m.id.includes(toolResult.toolCallId)
+                m.id.includes(part.toolCallId)
               );
               if (toolMessage) {
                 updateMessage(conversation.id, toolMessage.id, { 
-                  toolResult: toolResult.result 
+                  toolResult: part.result 
                 });
               }
             }
