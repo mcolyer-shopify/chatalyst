@@ -198,8 +198,28 @@ function App() {
       if (activeTools.length > 0) {
         console.log('[AI] Starting tool-enabled conversation');
         
+        // Track total tool calls to prevent infinite loops
+        let totalToolCalls = 0;
+        const MAX_TOOL_CALLS = 10;
+        
         // Function to handle a single round of tool calls
         const handleToolRound = async (messages: Message[], isFollowUp: boolean = false): Promise<void> => {
+          // Check if we've hit the tool call limit
+          if (totalToolCalls >= MAX_TOOL_CALLS) {
+            console.warn(`[AI] Reached maximum tool call limit (${MAX_TOOL_CALLS}), stopping tool execution`);
+            if (isFollowUp) {
+              // Create a final message explaining the limit
+              const limitMessage: Message = {
+                id: `${Date.now()}-assistant-limit`,
+                role: 'assistant',
+                content: `I've reached the maximum number of tool calls (${MAX_TOOL_CALLS}) for this response. Please ask me to continue if you need more information.`,
+                timestamp: Date.now(),
+                isGenerating: false
+              };
+              addMessage(conversation.id, limitMessage);
+            }
+            return;
+          }
           const currentAssistantMessage = isFollowUp ? {
             id: `${Date.now()}-assistant-followup`,
             role: 'assistant' as const,
@@ -265,6 +285,8 @@ function App() {
                   name: part.toolName,
                   args: part.args
                 });
+                totalToolCalls++;
+                console.log(`[AI] Tool call #${totalToolCalls}: ${part.toolName}`);
               }
             } else if (part.type === 'tool-result') {
               console.log('[AI] Tool result detected:', part);
