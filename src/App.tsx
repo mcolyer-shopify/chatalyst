@@ -208,6 +208,7 @@ function App() {
         messages: conversationMessages,
         tools: toolsObject,
         maxSteps: 10, // Limit to 10 tool calls per turn
+        system: 'You are a helpful assistant. When you use tools, always provide a natural language response that incorporates the tool results to answer the user\'s question.',
         abortSignal: controller.signal,
         onStepFinish: (event) => {
           console.log('[AI] Step finished:', event);
@@ -252,7 +253,19 @@ function App() {
           // Each step represents a complete tool call/response cycle
         } else if (part.type === 'finish') {
           console.log('[AI] Finish event:', part);
-          updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
+          console.log('[AI] Finish reason:', part.finishReason);
+          console.log('[AI] Final content:', fullContent);
+          
+          // If the assistant message is empty (only tool calls), remove it
+          if (fullContent.trim() === '') {
+            conversations.value = conversations.value.map(c => 
+              c.id === conversation.id
+                ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
+                : c
+            );
+          } else {
+            updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
+          }
         }
       }
     } catch (err) {
