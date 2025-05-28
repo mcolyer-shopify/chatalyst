@@ -826,11 +826,18 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
+}
+
+.sidebar-model-selector .model-selector {
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-model-selector .model-selector-button {
   font-size: 0.875rem;
   padding: 0.5rem 0.75rem;
+  width: 100%;
 }
 
 .sidebar-model-selector .model-selector-text {
@@ -841,7 +848,7 @@ body {
 
 .sidebar-model-selector .settings-button {
   font-size: 1.25rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem;
   flex-shrink: 0;
 }
 
