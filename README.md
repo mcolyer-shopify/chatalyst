@@ -33,10 +33,13 @@ pnpm test:coverage
 ## TODO
 
 - Scope the tool enablement to a conversation. 
+- Save the tool enablement state in the conversation.
 - By default, tools should be disabled.
 - Allow enabling all tools under a server with one click.
-- Save the tool enablement state in the conversation.
 - Graceful handle if a tool was previously enabled but the server no longer provides that tool.
+
+- Remove jsonSchemaToZod function and use https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema.
+
 
 
 ## Support for MCP server

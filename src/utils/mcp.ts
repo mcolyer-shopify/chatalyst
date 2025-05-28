@@ -1,7 +1,6 @@
-import { Child, Command } from '@tauri-apps/plugin-shell';
 import { z } from 'zod';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { TauriStdioTransport } from './TauriStdioTransport';
 import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation } from '../types';
 import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, mcpServers } from '../store';
 
@@ -9,7 +8,7 @@ interface MCPConnection {
   serverId: string;
   config: MCPServerConfig;
   client: Client;
-  transport: StdioClientTransport;
+  transport: TauriStdioTransport;
 }
 
 // Store active MCP connections
@@ -61,9 +60,8 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     
     console.log(`MCP server ${serverId} starting...`);
 
-    // Create MCP client and transport
-    // The transport will handle spawning the process
-    const transport = new StdioClientTransport({
+    // Create MCP client and custom Tauri transport
+    const transport = new TauriStdioTransport({
       command: config.command,
       args: config.args,
       cwd: config.cwd
@@ -75,6 +73,10 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     }, {
       capabilities: {}
     });
+
+    // Start the transport first
+    await transport.start();
+    console.log(`MCP transport started for ${serverId}`);
 
     // Connect the client to the transport
     await client.connect(transport);

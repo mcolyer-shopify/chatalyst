@@ -7,6 +7,7 @@
     "core:default",
     "opener:default",
     "shell:default",
+    "shell:allow-stdin-write",
     {
       "identifier": "shell:allow-spawn",
       "allow": [
