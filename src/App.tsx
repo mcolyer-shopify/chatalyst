@@ -228,6 +228,12 @@ function App() {
         if (part.type === 'text-delta') {
           console.log('[AI] Text delta:', part.textDelta);
           fullContent += part.textDelta;
+          console.log('[AI] Full content so far:', fullContent);
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'text') {
+          console.log('[AI] Text:', part.text);
+          fullContent += part.text;
+          console.log('[AI] Full content so far:', fullContent);
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'tool-call') {
           console.log('[AI] Tool call detected:', part);
@@ -252,7 +258,9 @@ function App() {
         } else if (part.type === 'finish') {
           console.log('[AI] Finish event:', part);
           console.log('[AI] Finish reason:', part.finishReason);
+          console.log('[AI] Final content length:', fullContent.length);
           console.log('[AI] Final content:', fullContent);
+          console.log('[AI] Final content trimmed empty?', fullContent.trim() === '');
           
           // Check if we finished with only tool calls and no text response
           if (part.finishReason === 'tool-calls' && fullContent.trim() === '') {
@@ -277,17 +285,25 @@ function App() {
               addMessage(conversation.id, followUpMessage);
               
               // Continue with a new streamText call without tools to get the final response
-              const followUpMessages = updatedConversation.messages
-                .filter(m => m.role !== 'tool')
-                .map((m) => ({
+              // Include tool messages by mapping them to assistant messages with tool results
+              const followUpMessages = updatedConversation.messages.map((m) => {
+                if (m.role === 'tool') {
+                  // Convert tool messages to assistant messages that describe the tool results
+                  return {
+                    role: 'assistant' as const,
+                    content: `Tool ${m.toolName} returned: ${JSON.stringify(m.toolResult)}`
+                  };
+                }
+                return {
                   role: m.role as 'user' | 'assistant' | 'system',
                   content: m.content || ''
-                }));
+                };
+              });
               
               const followUpResult = await streamText({
                 model: aiProvider(modelToUse),
                 messages: followUpMessages,
-                system: 'Based on the tool results from the previous interaction, provide a helpful response to the user\'s question.',
+                system: 'You are a helpful assistant. Based on the tool results provided, give a natural language response to the user\'s question.',
                 abortSignal: controller.signal
               });
               
