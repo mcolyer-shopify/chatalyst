@@ -44,9 +44,6 @@ importers:
       preact:
         specifier: ^10.25.1
         version: 10.26.6
-      zod:
-        specifier: ^3.25.32
-        version: 3.25.32
     devDependencies:
       '@eslint/js':
         specifier: ^9.27.0
