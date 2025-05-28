@@ -194,181 +194,66 @@ function App() {
       console.log(`[AI] Calling streamText with tools:`, toolsObject ? Object.keys(toolsObject) : 'none');
       console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
 
-      // Handle tool-enabled conversations with potential multiple tool calls
-      if (activeTools.length > 0) {
-        console.log('[AI] Starting tool-enabled conversation');
-        
-        // Track total tool calls to prevent infinite loops
-        let totalToolCalls = 0;
-        const MAX_TOOL_CALLS = 10;
-        
-        // Function to handle a single round of tool calls
-        const handleToolRound = async (messages: Message[], isFollowUp: boolean = false): Promise<void> => {
-          // Check if we've hit the tool call limit
-          if (totalToolCalls >= MAX_TOOL_CALLS) {
-            console.warn(`[AI] Reached maximum tool call limit (${MAX_TOOL_CALLS}), stopping tool execution`);
-            if (isFollowUp) {
-              // Create a final message explaining the limit
-              const limitMessage: Message = {
-                id: `${Date.now()}-assistant-limit`,
-                role: 'assistant',
-                content: `I've reached the maximum number of tool calls (${MAX_TOOL_CALLS}) for this response. Please ask me to continue if you need more information.`,
-                timestamp: Date.now(),
-                isGenerating: false
-              };
-              addMessage(conversation.id, limitMessage);
-            }
-            return;
-          }
-          const currentAssistantMessage = isFollowUp ? {
-            id: `${Date.now()}-assistant-followup`,
-            role: 'assistant' as const,
-            content: '',
-            timestamp: Date.now(),
-            isGenerating: true
-          } : assistantMessage;
-          
-          if (isFollowUp) {
-            addMessage(conversation.id, currentAssistantMessage);
-          }
-          
-          const formattedMessages = messages.filter(m => m.id !== currentAssistantMessage.id).map((m) => {
-            if (m.role === 'tool') {
-              return {
-                role: 'tool' as const,
-                content: m.toolResult ? JSON.stringify(m.toolResult) : '',
-                toolCallId: m.id.split('-tool-')[1] || m.id
-              };
-            }
-            if (m.role === 'assistant' && m.toolCalls) {
-              return {
-                role: 'assistant' as const,
-                content: m.content || '',
-                toolCalls: m.toolCalls
-              };
-            }
-            // Handle all other roles
-            return {
-              role: m.role as 'user' | 'assistant' | 'system' | 'tool',
-              content: m.content || ''
-            };
-          });
-          
-          console.log('[AI] Formatted messages for streamText:', JSON.stringify(formattedMessages, null, 2));
-          console.log('[AI] Message roles:', formattedMessages.map(m => m.role));
-          
-          const result = await streamText({
-            model: aiProvider(modelToUse),
-            messages: formattedMessages,
-            tools: toolsObject,
-            toolChoice: 'auto',
-            abortSignal: controller.signal
-          });
-          
-          let fullContent = '';
-          const toolCalls: Array<{id: string, name: string, args: any}> = [];
-          let hasToolCalls = false;
-          
-          for await (const part of result.fullStream) {
-            console.log('[AI] Stream part type:', part.type);
-            
-            if (part.type === 'error') {
-              console.error('[AI] Stream error:', part.error);
-              continue;
-            }
-            
-            if (part.type === 'text-delta') {
-              console.log('[AI] Text delta:', part.textDelta);
-              fullContent += part.textDelta;
-              updateMessage(conversation.id, currentAssistantMessage.id, { content: fullContent });
-            } else if (part.type === 'tool-call') {
-              console.log('[AI] Tool call detected:', part);
-              hasToolCalls = true;
-              
-              if (part.toolCallId && part.toolName) {
-                toolCalls.push({
-                  id: part.toolCallId,
-                  name: part.toolName,
-                  args: part.args
-                });
-                totalToolCalls++;
-                console.log(`[AI] Tool call #${totalToolCalls}: ${part.toolName}`);
-              }
-            } else if (part.type === 'tool-result') {
-              console.log('[AI] Tool result detected:', part);
-              
-              const toolCall = toolCalls.find(tc => tc.id === part.toolCallId);
-              if (toolCall) {
-                // Create a tool message with the result
-                const toolMessage: Message = {
-                  id: `${Date.now()}-tool-${part.toolCallId}`,
-                  role: 'tool',
-                  content: JSON.stringify(part.result),
-                  timestamp: Date.now(),
-                  toolName: toolCall.name,
-                  toolCall: toolCall.args,
-                  toolResult: part.result
-                };
-                addMessage(conversation.id, toolMessage);
-              }
-            } else if (part.type === 'finish') {
-              console.log('[AI] Finish event:', part);
-              
-              // Update the assistant message with tool calls if any
-              if (hasToolCalls && toolCalls.length > 0) {
-                const formattedToolCalls = toolCalls.map(tc => ({
-                  id: tc.id,
-                  type: 'function' as const,
-                  function: {
-                    name: tc.name,
-                    arguments: JSON.stringify(tc.args)
-                  }
-                }));
-                
-                updateMessage(conversation.id, currentAssistantMessage.id, { 
-                  toolCalls: formattedToolCalls,
-                  isGenerating: false
-                });
-                
-                // If there's no text content, set a minimal placeholder
-                if (fullContent.trim() === '') {
-                  updateMessage(conversation.id, currentAssistantMessage.id, { 
-                    content: ' '
-                  });
-                }
-                
-                // After tools are executed, continue the conversation
-                // The AI might need to call more tools or provide a final response
-                const updatedMessages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
-                await handleToolRound(updatedMessages, true);
-              } else {
-                // No tool calls, just mark as finished
-                updateMessage(conversation.id, currentAssistantMessage.id, { isGenerating: false });
-              }
-            }
-          }
-        };
-        
-        // Start the first round
-        await handleToolRound(messages);
-      } else {
-        // No tools, just stream text
-        const result = await streamText({
-          model: aiProvider(modelToUse),
-          messages: messages.map((m) => ({
-            role: m.role as 'user' | 'assistant' | 'system' | 'tool',
-            content: m.content || ''
-          })),
-          abortSignal: controller.signal
-        });
-        
-        let fullContent = '';
-        for await (const chunk of result.textStream) {
-          fullContent += chunk;
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+      // Use the AI SDK's built-in tool handling with maxSteps
+      // Filter out tool messages as the SDK handles them internally
+      const conversationMessages = messages
+        .filter(m => m.role !== 'tool')
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant' | 'system',
+          content: m.content || ''
+        }));
+      
+      const result = await streamText({
+        model: aiProvider(modelToUse),
+        messages: conversationMessages,
+        tools: toolsObject,
+        maxSteps: 10, // Limit to 10 tool calls per turn
+        abortSignal: controller.signal,
+        onStepFinish: (event) => {
+          console.log('[AI] Step finished:', event);
         }
-        // Mark as finished generating
-        updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
+      });
+      
+      // Stream the response
+      let fullContent = '';
+      let currentStepIndex = 0;
+      
+      for await (const part of result.fullStream) {
+        console.log('[AI] Stream part type:', part.type);
+        
+        if (part.type === 'error') {
+          console.error('[AI] Stream error:', part.error);
+          continue;
+        }
+        
+        if (part.type === 'text-delta') {
+          console.log('[AI] Text delta:', part.textDelta);
+          fullContent += part.textDelta;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'tool-call') {
+          console.log('[AI] Tool call detected:', part);
+          // The SDK handles tool execution automatically, we just need to track for UI
+        } else if (part.type === 'tool-result') {
+          console.log('[AI] Tool result:', part);
+          // Create a tool message for UI display
+          const toolMessage: Message = {
+            id: `${Date.now()}-tool-${part.toolCallId}`,
+            role: 'tool',
+            content: JSON.stringify(part.result),
+            timestamp: Date.now(),
+            toolName: part.toolName || 'unknown',
+            toolCall: part.args,
+            toolResult: part.result
+          };
+          addMessage(conversation.id, toolMessage);
+        } else if (part.type === 'step-finish') {
+          console.log('[AI] Step finished:', part);
+          currentStepIndex++;
+          // Each step represents a complete tool call/response cycle
+        } else if (part.type === 'finish') {
+          console.log('[AI] Finish event:', part);
+          updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
+        }
       }
     } catch (err) {
       if ((err as Error).name === 'AbortError') {

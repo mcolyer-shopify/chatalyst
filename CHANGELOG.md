@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Improved MCP tool integration to support multiple tool calls in a single assistant response
-- Assistant can now call tools iteratively based on previous tool results
-- Limited tool calls to maximum 10 per turn to prevent infinite loops
+- Refactored MCP tool integration to use AI SDK's built-in maxSteps feature
+- Simplified tool handling by leveraging SDK's automatic tool execution
+- Tool messages are now excluded from conversation history sent to AI (SDK handles internally)
+- Limited tool calls to maximum 10 per turn using maxSteps parameter
 
 ### Added
 - Stop generation button to halt AI responses mid-stream with immediate response control
