@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add textarea for JSON-based MCP server configuration
   - Real-time JSON validation with error messages
   - Persist MCP configuration across sessions
+  - Automatic MCP server process management (start/stop/restart)
+  - Initialize MCP connections on app startup
+  - Graceful shutdown of MCP servers on app close
 
 ## [0.2.1] - 2025-01-26
 

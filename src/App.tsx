@@ -3,6 +3,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { streamText } from 'ai';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
+import { listen } from '@tauri-apps/api/event';
 import type { Message } from './types';
 import { 
   conversations, 
@@ -22,6 +23,7 @@ import {
   clearError
 } from './store';
 import { restoreWindowGeometry, setupWindowGeometryPersistence } from './utils/windowSize';
+import { initializeMCPConnections, restartMCPConnections, shutdownMCPConnections } from './utils/mcp';
 import './App.css';
 
 function App() {
@@ -62,6 +64,33 @@ function App() {
       // Cleanup geometry listeners
       if (unlistenGeometry) {
         unlistenGeometry();
+      }
+    };
+  }, []);
+
+  // Initialize MCP connections on startup and cleanup on unmount
+  useEffect(() => {
+    // Initialize MCP connections with saved configuration
+    initializeMCPConnections(settings.value.mcpConfiguration);
+
+    // Listen for window close event to cleanup MCP connections
+    const setupCloseListener = async () => {
+      const unlisten = await listen('tauri://close-requested', async () => {
+        await shutdownMCPConnections();
+      });
+      return unlisten;
+    };
+
+    let unlistenClose: (() => void) | null = null;
+    setupCloseListener().then(unlisten => {
+      unlistenClose = unlisten;
+    });
+
+    // Cleanup function to shutdown connections
+    return () => {
+      shutdownMCPConnections();
+      if (unlistenClose) {
+        unlistenClose();
       }
     };
   }, []);
@@ -211,12 +240,21 @@ function App() {
     }
   };
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     if (!validateMcpConfiguration(tempSettings.mcpConfiguration || '')) {
       return;
     }
+    
+    // Check if MCP configuration has changed
+    const mcpConfigChanged = settings.value.mcpConfiguration !== tempSettings.mcpConfiguration;
+    
     updateSettings(tempSettings);
     setShowSettings(false);
+    
+    // Restart MCP connections if configuration changed
+    if (mcpConfigChanged) {
+      await restartMCPConnections(tempSettings.mcpConfiguration);
+    }
   };
 
   const handleCancelSettings = () => {
