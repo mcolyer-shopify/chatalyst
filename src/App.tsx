@@ -243,7 +243,28 @@ function App() {
         
         if (part.type === 'error') {
           console.error('[AI] Stream error:', part.error);
-          continue;
+          const errorMsg = part.error?.message || 'An error occurred';
+          
+          // Check if the error is about tools not being supported
+          if (errorMsg.includes('does not support tools')) {
+            // Update the assistant message with error content
+            updateMessage(conversation.id, assistantMessage.id, {
+              content: `⚠️ ${errorMsg}\n\nYou can disable tools for this conversation in the MCP sidebar, or switch to a model that supports tools.`,
+              isGenerating: false,
+              isError: true
+            });
+            break; // Exit the stream
+          } else {
+            // For other errors, show in error banner
+            showError(errorMsg);
+            // Remove the assistant message
+            conversations.value = conversations.value.map(c => 
+              c.id === conversation.id
+                ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
+                : c
+            );
+            break; // Exit the stream
+          }
         }
         
         if (part.type === 'text-delta') {
@@ -352,13 +373,34 @@ function App() {
         // Generation was stopped by user
         updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
       } else {
-        showError((err as Error).message || 'Failed to send message');
-        // Remove the assistant message on error
-        conversations.value = conversations.value.map(c => 
-          c.id === conversation.id
-            ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
-            : c
-        );
+        const errorMsg = (err as Error).message || 'Failed to send message';
+        
+        // Check if the error is about tools not being supported
+        if (errorMsg.includes('does not support tools')) {
+          // Add an error message to the conversation
+          const errorMessage: Message = {
+            id: `${Date.now()}-error`,
+            role: 'assistant',
+            content: `⚠️ ${errorMsg}\n\nYou can disable tools for this conversation in the MCP sidebar, or switch to a model that supports tools.`,
+            timestamp: Date.now(),
+            isError: true
+          };
+          
+          // Replace the empty assistant message with the error message
+          updateMessage(conversation.id, assistantMessage.id, {
+            content: errorMessage.content,
+            isGenerating: false,
+            isError: true
+          });
+        } else {
+          showError(errorMsg);
+          // Remove the assistant message on error
+          conversations.value = conversations.value.map(c => 
+            c.id === conversation.id
+              ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
+              : c
+          );
+        }
       }
     } finally {
       isStreaming.value = false;

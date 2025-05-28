@@ -80,7 +80,7 @@ export function Message({ message }: MessageProps) {
   };
 
   return (
-    <div class={`message message-${message.role}`}>
+    <div class={`message message-${message.role}${message.isError ? ' message-error' : ''}`}>
       {renderContent()}
       <div class="message-timestamp">
         {new Date(message.timestamp).toLocaleTimeString()}

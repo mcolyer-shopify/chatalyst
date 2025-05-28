@@ -319,6 +319,13 @@ body {
   word-break: break-word;
 }
 
+/* Error message styling */
+.message-error .message-content {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
 /* Markdown styling for assistant messages */
 .message-assistant .message-content h1,
 .message-assistant .message-content h2,

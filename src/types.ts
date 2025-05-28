@@ -4,6 +4,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'tool' | 'system';
   timestamp: number;
   isGenerating?: boolean;
+  isError?: boolean; // For error messages
   toolName?: string; // For tool messages
   toolCall?: unknown; // Tool call parameters
   toolResult?: unknown; // Tool execution result
