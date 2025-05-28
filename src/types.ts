@@ -7,6 +7,14 @@ export interface Message {
   toolName?: string; // For tool messages
   toolCall?: any; // Tool call parameters
   toolResult?: any; // Tool execution result
+  toolCalls?: Array<{ // For assistant messages that call tools
+    id: string;
+    type: 'function';
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }>;
 }
 
 export interface Conversation {

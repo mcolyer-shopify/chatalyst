@@ -192,13 +192,32 @@ function App() {
       }, {} as any) : undefined;
       
       console.log(`[AI] Calling streamText with tools:`, toolsObject ? Object.keys(toolsObject) : 'none');
+      console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
       
       const result = await streamText({
         model: aiProvider(modelToUse),
-        messages: messages.map((m) => ({
-          role: m.role,
-          content: m.content
-        })),
+        messages: messages.map((m) => {
+          if (m.role === 'tool') {
+            // Format tool messages properly for AI SDK
+            return {
+              role: 'tool' as const,
+              content: JSON.stringify(m.toolResult || ''),
+              toolCallId: m.id.split('-tool-')[1] || m.id
+            };
+          }
+          // Check if this is an assistant message with tool calls
+          if (m.role === 'assistant' && m.toolCalls) {
+            return {
+              role: 'assistant' as const,
+              content: m.content,
+              toolCalls: m.toolCalls
+            };
+          }
+          return {
+            role: m.role,
+            content: m.content
+          };
+        }),
         tools: toolsObject,
         toolChoice: 'auto', // Let the model decide when to use tools
         abortSignal: controller.signal
@@ -237,48 +256,98 @@ function App() {
                 name: part.toolName,
                 args: part.args
               });
-              
-              // Create a tool message for the call
-              const toolMessage: Message = {
-                id: `${Date.now()}-tool-${part.toolCallId}`,
-                role: 'tool',
-                content: '',
-                timestamp: Date.now(),
-                toolName: part.toolName,
-                toolCall: part.args
-              };
-              addMessage(conversation.id, toolMessage);
             }
           } else if (part.type === 'tool-result') {
             console.log('[AI] Tool result detected:', part);
-            // Find the corresponding tool message and update it
-            const messages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
-            const toolMessage = messages.find(m => 
-              m.role === 'tool' && m.id.includes(part.toolCallId)
-            );
-            if (toolMessage) {
-              updateMessage(conversation.id, toolMessage.id, { 
-                toolResult: part.result 
-              });
+            
+            // Find the tool call info
+            const toolCall = toolCalls.find(tc => tc.id === part.toolCallId);
+            if (toolCall) {
+              // Create a tool message with the result
+              const toolMessage: Message = {
+                id: `${Date.now()}-tool-${part.toolCallId}`,
+                role: 'tool',
+                content: JSON.stringify(part.result),
+                timestamp: Date.now(),
+                toolName: toolCall.name,
+                toolCall: toolCall.args,
+                toolResult: part.result
+              };
+              addMessage(conversation.id, toolMessage);
             }
           } else if (part.type === 'finish') {
             console.log('[AI] Finish event:', part);
-            // Check if we have text in the finish event
-            if (part.finishReason === 'stop' && hasToolCalls) {
-              // The AI finished after using tools
-              // If there's no follow-up text, we should keep just the tool messages
-              if (fullContent.trim() === '') {
-                // Remove the empty assistant message
-                const messages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
-                const assistantMessageIndex = messages.findIndex(m => m.id === assistantMessage.id);
-                if (assistantMessageIndex !== -1) {
-                  conversations.value = conversations.value.map(c => 
-                    c.id === conversation.id 
-                      ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
-                      : c
-                  );
+            
+            // If we have tool calls, update the assistant message with them
+            if (hasToolCalls && toolCalls.length > 0) {
+              const formattedToolCalls = toolCalls.map(tc => ({
+                id: tc.id,
+                type: 'function' as const,
+                function: {
+                  name: tc.name,
+                  arguments: JSON.stringify(tc.args)
                 }
+              }));
+              
+              updateMessage(conversation.id, assistantMessage.id, { 
+                toolCalls: formattedToolCalls,
+                isGenerating: false
+              });
+              
+              // If there's no text content with the tool calls, set a placeholder
+              if (fullContent.trim() === '') {
+                updateMessage(conversation.id, assistantMessage.id, { 
+                  content: ' ' // Single space to keep the message visible
+                });
               }
+              
+              // After tools are executed, we need to continue the conversation
+              // Create a new assistant message for the follow-up response
+              const followUpMessage: Message = {
+                id: `${Date.now()}-assistant-followup`,
+                role: 'assistant',
+                content: '',
+                timestamp: Date.now(),
+                isGenerating: true
+              };
+              addMessage(conversation.id, followUpMessage);
+              
+              // Continue the conversation with the tool results
+              const updatedMessages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
+              const continuationResult = await streamText({
+                model: aiProvider(modelToUse),
+                messages: updatedMessages.filter(m => m.id !== followUpMessage.id).map((m) => {
+                  if (m.role === 'tool') {
+                    return {
+                      role: 'tool' as const,
+                      content: JSON.stringify(m.toolResult || ''),
+                      toolCallId: m.id.split('-tool-')[1] || m.id
+                    };
+                  }
+                  if (m.role === 'assistant' && m.toolCalls) {
+                    return {
+                      role: 'assistant' as const,
+                      content: m.content,
+                      toolCalls: m.toolCalls
+                    };
+                  }
+                  return {
+                    role: m.role,
+                    content: m.content
+                  };
+                }),
+                tools: toolsObject,
+                toolChoice: 'none', // Don't use tools in the follow-up
+                abortSignal: controller.signal
+              });
+              
+              // Stream the follow-up response
+              let followUpContent = '';
+              for await (const chunk of continuationResult.textStream) {
+                followUpContent += chunk;
+                updateMessage(conversation.id, followUpMessage.id, { content: followUpContent });
+              }
+              updateMessage(conversation.id, followUpMessage.id, { isGenerating: false });
             }
           }
         }
@@ -452,7 +521,7 @@ function App() {
               <textarea
                 value={tempSettings.mcpConfiguration || ''}
                 onInput={(e) => {
-                  const value = (e.target as HTMLTextAreaElement).value;
+                  const value = (e.target as any).value;
                   setTempSettings({
                     ...tempSettings,
                     mcpConfiguration: value
