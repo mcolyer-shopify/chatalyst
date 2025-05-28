@@ -40,6 +40,9 @@ export const modelsCache = signal<
   Map<string, { models: Model[]; timestamp: number }>
 >(new Map());
 export const availableModels = signal<Model[]>([]);
+export const failedModelFetchCache = signal<
+  Map<string, { error: string; timestamp: number }>
+>(new Map());
 
 // MCP-related signals
 export const mcpServers = signal<MCPServerStatus[]>([]);
@@ -202,6 +205,26 @@ export function setCachedModels(baseURL: string, models: Model[]) {
   const newCache = new Map(modelsCache.value);
   newCache.set(baseURL, { models, timestamp: Date.now() });
   modelsCache.value = newCache;
+  
+  // Clear any failed fetch cache for this URL
+  const newFailedCache = new Map(failedModelFetchCache.value);
+  newFailedCache.delete(baseURL);
+  failedModelFetchCache.value = newFailedCache;
+}
+
+export function getFailedFetchError(baseURL: string): string | null {
+  const failed = failedModelFetchCache.value.get(baseURL);
+  // Consider failed fetch cache valid for 1 minute
+  if (failed && Date.now() - failed.timestamp < 60 * 1000) {
+    return failed.error;
+  }
+  return null;
+}
+
+export function setFailedFetch(baseURL: string, error: string) {
+  const newCache = new Map(failedModelFetchCache.value);
+  newCache.set(baseURL, { error, timestamp: Date.now() });
+  failedModelFetchCache.value = newCache;
 }
 
 // Error handling functions

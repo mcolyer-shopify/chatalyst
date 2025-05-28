@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Model } from '../types';
-import { settings, getCachedModels, setCachedModels, availableModels } from '../store';
+import { settings, getCachedModels, setCachedModels, availableModels, getFailedFetchError, setFailedFetch, failedModelFetchCache } from '../store';
 
 interface ModelSelectorProps {
   selectedModel?: string;
@@ -37,7 +37,12 @@ export function ModelSelector({
 
   useEffect(() => {
     if (settings.value.baseURL && settings.value.apiKey) {
-      loadModels();
+      // Use a small delay to debounce rapid setting changes
+      const timeoutId = setTimeout(() => {
+        loadModels();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [settings.value.baseURL, settings.value.apiKey]);
 
@@ -75,6 +80,20 @@ export function ModelSelector({
       return;
     }
 
+    // Check if we recently failed to fetch from this URL
+    const recentError = getFailedFetchError(baseURL);
+    if (recentError) {
+      console.log('[ModelSelector] Recent failed fetch, showing cached error:', recentError);
+      setError(recentError);
+      return;
+    }
+
+    // Check if we're already loading to prevent duplicate requests
+    if (isLoading) {
+      console.log('[ModelSelector] Already loading models, skipping duplicate request');
+      return;
+    }
+
     // Cache miss or stale, fetch from API
     await fetchModels();
   };
@@ -84,6 +103,9 @@ export function ModelSelector({
     setIsLoading(true);
     setError(null);
     
+    console.log('[ModelSelector] Fetching models from:', `${baseURL}/models`);
+    console.log('[ModelSelector] Using API key:', apiKey ? 'present' : 'missing');
+    
     try {
       const response = await fetch(`${baseURL}/models`, {
         headers: {
@@ -92,11 +114,31 @@ export function ModelSelector({
         }
       });
 
+      console.log('[ModelSelector] Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.statusText}`);
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch {
+          errorText = 'Unable to read error response';
+        }
+        console.error('[ModelSelector] Error response:', errorText);
+        
+        if (response.status >= 500) {
+          throw new Error(`Server error (${response.status}): The API server is experiencing issues. Please try again later.`);
+        } else if (response.status === 401) {
+          throw new Error('Authentication failed: Check your API key');
+        } else if (response.status === 404) {
+          throw new Error('Models endpoint not found: Check your Base URL');
+        } else {
+          throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
+      console.log('[ModelSelector] Raw response data:', data);
+      
       const fetchedModels: Model[] = data.data?.map((model: unknown) => {
         const modelData = model as { id: string; description?: string };
         return {
@@ -106,6 +148,8 @@ export function ModelSelector({
         };
       }) || [];
 
+      console.log('[ModelSelector] Parsed models count:', fetchedModels.length);
+      
       // Sort models alphabetically for better UX
       fetchedModels.sort((a, b) => a.name.localeCompare(b.name));
       
@@ -117,7 +161,17 @@ export function ModelSelector({
         onModelChange(fetchedModels[0].id);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch models');
+      console.error('[ModelSelector] Failed to fetch models:', err);
+      let errorMessage: string;
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error: Unable to connect to API. Check your Base URL and internet connection.';
+      } else {
+        errorMessage = err instanceof Error ? err.message : 'Failed to fetch models';
+      }
+      
+      setError(errorMessage);
+      // Cache the failure to prevent repeated requests
+      setFailedFetch(baseURL, errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -214,7 +268,14 @@ export function ModelSelector({
               {error}
               <button 
                 className="model-selector-retry"
-                onClick={() => fetchModels()}
+                onClick={() => {
+                  // Clear the failed cache entry before retrying
+                  const { baseURL } = settings.value;
+                  const newFailedCache = new Map(failedModelFetchCache.value);
+                  newFailedCache.delete(baseURL);
+                  failedModelFetchCache.value = newFailedCache;
+                  fetchModels();
+                }}
               >
                 Retry
               </button>
