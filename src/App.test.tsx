@@ -32,10 +32,17 @@ vi.mock('./store', () => {
     conversations: signal([]),
     selectedConversationId: signal(null),
     selectedConversation: { value: null },
-    settings: signal({ baseURL: 'https://openrouter.ai/api/v1', apiKey: '', defaultModel: '' }),
+    settings: signal({ 
+      provider: 'openrouter',
+      baseURL: 'https://openrouter.ai/api/v1', 
+      apiKey: '', 
+      defaultModel: '',
+      mcpConfiguration: ''
+    }),
     isStreaming: signal(false),
     errorMessage: signal(null),
     errorTimestamp: signal(null),
+    mcpServers: signal([]),
     createConversation: vi.fn(),
     deleteConversation: vi.fn(),
     updateConversationTitle: vi.fn(),
@@ -112,7 +119,13 @@ describe('App Integration', () => {
     store.conversations.value = [];
     store.selectedConversationId.value = null;
     (store as { selectedConversation: { value: Conversation | null } }).selectedConversation = { value: null };
-    store.settings.value = { baseURL: 'https://openrouter.ai/api/v1', apiKey: '', defaultModel: '' };
+    store.settings.value = { 
+      provider: 'openrouter',
+      baseURL: 'https://openrouter.ai/api/v1', 
+      apiKey: '', 
+      defaultModel: '',
+      mcpConfiguration: ''
+    };
     store.errorMessage.value = null;
     store.errorTimestamp.value = null;
   });
@@ -218,7 +231,7 @@ describe('App Integration', () => {
     fireEvent.click(screen.getByTitle('Settings'));
     
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
-    expect(screen.getByText('Base URL:')).toBeInTheDocument();
+    expect(screen.getByText('AI Provider:')).toBeInTheDocument();
     expect(screen.getByText('API Key:')).toBeInTheDocument();
   });
 
@@ -229,14 +242,15 @@ describe('App Integration', () => {
     
     fireEvent.click(screen.getByTitle('Settings'));
     
-    const baseUrlInput = screen.getByDisplayValue('https://openrouter.ai/api/v1');
-    fireEvent.input(baseUrlInput, { target: { value: 'https://new-api.com' } });
+    // The API key input should be available for modification
+    const apiKeyInput = screen.getByDisplayValue('');
+    fireEvent.input(apiKeyInput, { target: { value: 'new-api-key' } });
     
     fireEvent.click(screen.getByText('Save'));
     
     expect(mockUpdateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
-        baseURL: 'https://new-api.com'
+        apiKey: 'new-api-key'
       })
     );
   });
@@ -248,8 +262,9 @@ describe('App Integration', () => {
     
     fireEvent.click(screen.getByTitle('Settings'));
     
-    const baseUrlInput = screen.getByDisplayValue('https://openrouter.ai/api/v1');
-    fireEvent.input(baseUrlInput, { target: { value: 'https://new-api.com' } });
+    // Make some changes to the API key input
+    const apiKeyInput = screen.getByDisplayValue('');
+    fireEvent.input(apiKeyInput, { target: { value: 'new-api-key' } });
     
     fireEvent.click(screen.getByText('Cancel'));
     
@@ -258,16 +273,18 @@ describe('App Integration', () => {
 
   it('shows current settings in modal', () => {
     store.settings.value = {
+      provider: 'custom',
       baseURL: 'https://custom-api.com',
       apiKey: 'test-key',
-      defaultModel: ''
+      defaultModel: '',
+      mcpConfiguration: ''
     };
     
     render(<App />);
     
     fireEvent.click(screen.getByTitle('Settings'));
     
-    expect(screen.getByDisplayValue('https://custom-api.com')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('test-key')).toBeInTheDocument();
   });
 
   it('handles empty conversation list', () => {

@@ -9,6 +9,13 @@ import {
   setupWindowGeometryPersistence
 } from './windowSize';
 
+// Mock the store showError function
+vi.mock('../store', () => ({
+  showError: vi.fn()
+}));
+
+import { showError } from '../store';
+
 // Mock localStorage
 const mockLocalStorage = {
   getItem: vi.fn(),
@@ -25,6 +32,7 @@ describe('Window Geometry Utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLocalStorage.getItem.mockReturnValue(null);
+    (showError as ReturnType<typeof vi.fn>).mockClear();
   });
 
   describe('saveWindowGeometry', () => {
@@ -39,7 +47,6 @@ describe('Window Geometry Utilities', () => {
     });
 
     it('handles localStorage errors gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockLocalStorage.setItem.mockImplementation(() => {
         throw new Error('Storage error');
       });
@@ -47,12 +54,9 @@ describe('Window Geometry Utilities', () => {
       const geometry = { width: 1024, height: 768, x: 100, y: 50 };
       saveWindowGeometry(geometry);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to save window geometry to localStorage:',
-        expect.any(Error)
+      expect(showError).toHaveBeenCalledWith(
+        'Failed to save window geometry: Storage error'
       );
-
-      consoleSpy.mockRestore();
     });
   });
 
@@ -76,22 +80,17 @@ describe('Window Geometry Utilities', () => {
     });
 
     it('handles invalid JSON gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockLocalStorage.getItem.mockReturnValue('invalid json');
 
       const result = loadWindowGeometry();
 
       expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to load window geometry from localStorage:',
-        expect.any(Error)
+      expect(showError).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to load window geometry:')
       );
-
-      consoleSpy.mockRestore();
     });
 
     it('handles localStorage errors gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockLocalStorage.getItem.mockImplementation(() => {
         throw new Error('Storage error');
       });
@@ -99,12 +98,9 @@ describe('Window Geometry Utilities', () => {
       const result = loadWindowGeometry();
 
       expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to load window geometry from localStorage:',
-        expect.any(Error)
+      expect(showError).toHaveBeenCalledWith(
+        'Failed to load window geometry: Storage error'
       );
-
-      consoleSpy.mockRestore();
     });
   });
 

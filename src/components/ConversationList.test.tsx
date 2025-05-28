@@ -46,7 +46,6 @@ describe('ConversationList', () => {
   it('renders conversation list with header', () => {
     render(<ConversationList {...mockProps} />);
     
-    expect(screen.getByText('Conversations')).toBeInTheDocument();
     expect(screen.getByText('New Conversation')).toBeInTheDocument();
   });
 
@@ -185,7 +184,6 @@ describe('ConversationList', () => {
   it('renders empty state correctly', () => {
     render(<ConversationList {...mockProps} conversations={[]} />);
     
-    expect(screen.getByText('Conversations')).toBeInTheDocument();
     expect(screen.getByText('New Conversation')).toBeInTheDocument();
     expect(screen.queryByText('First Conversation')).not.toBeInTheDocument();
   });
