@@ -232,29 +232,34 @@ function App() {
             addMessage(conversation.id, currentAssistantMessage);
           }
           
+          const formattedMessages = messages.filter(m => m.id !== currentAssistantMessage.id).map((m) => {
+            if (m.role === 'tool') {
+              return {
+                role: 'tool' as const,
+                content: m.toolResult ? JSON.stringify(m.toolResult) : '',
+                toolCallId: m.id.split('-tool-')[1] || m.id
+              };
+            }
+            if (m.role === 'assistant' && m.toolCalls) {
+              return {
+                role: 'assistant' as const,
+                content: m.content || '',
+                toolCalls: m.toolCalls
+              };
+            }
+            // Handle all other roles
+            return {
+              role: m.role as 'user' | 'assistant' | 'system' | 'tool',
+              content: m.content || ''
+            };
+          });
+          
+          console.log('[AI] Formatted messages for streamText:', JSON.stringify(formattedMessages, null, 2));
+          console.log('[AI] Message roles:', formattedMessages.map(m => m.role));
+          
           const result = await streamText({
             model: aiProvider(modelToUse),
-            messages: messages.filter(m => m.id !== currentAssistantMessage.id).map((m) => {
-              if (m.role === 'tool') {
-                return {
-                  role: 'tool' as const,
-                  content: JSON.stringify(m.toolResult || ''),
-                  toolCallId: m.id.split('-tool-')[1] || m.id
-                };
-              }
-              if (m.role === 'assistant' && m.toolCalls) {
-                return {
-                  role: 'assistant' as const,
-                  content: m.content,
-                  toolCalls: m.toolCalls
-                };
-              }
-              // Explicitly cast role to ensure it's a valid ModelMessage role
-              return {
-                role: m.role as 'user' | 'assistant' | 'system',
-                content: m.content || ''
-              };
-            }),
+            messages: formattedMessages,
             tools: toolsObject,
             toolChoice: 'auto',
             abortSignal: controller.signal
@@ -351,7 +356,7 @@ function App() {
         const result = await streamText({
           model: aiProvider(modelToUse),
           messages: messages.map((m) => ({
-            role: m.role as 'user' | 'assistant' | 'system',
+            role: m.role as 'user' | 'assistant' | 'system' | 'tool',
             content: m.content || ''
           })),
           abortSignal: controller.signal

@@ -1,7 +1,7 @@
 export interface Message {
   id: string;
   content: string;
-  role: 'user' | 'assistant' | 'tool';
+  role: 'user' | 'assistant' | 'tool' | 'system';
   timestamp: number;
   isGenerating?: boolean;
   toolName?: string; // For tool messages
