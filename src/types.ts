@@ -5,8 +5,8 @@ export interface Message {
   timestamp: number;
   isGenerating?: boolean;
   toolName?: string; // For tool messages
-  toolCall?: any; // Tool call parameters
-  toolResult?: any; // Tool execution result
+  toolCall?: unknown; // Tool call parameters
+  toolResult?: unknown; // Tool execution result
   toolCalls?: Array<{ // For assistant messages that call tools
     id: string;
     type: 'function';

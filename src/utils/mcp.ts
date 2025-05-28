@@ -163,7 +163,11 @@ export async function getActiveToolsForConversation(conversation: Conversation |
   console.log('[MCP] Getting active tools for conversation:', conversation.id);
   console.log('[MCP] Enabled tools:', conversation.enabledTools);
 
-  const activeTools: any[] = [];
+  const activeTools: Array<{
+    name: string;
+    description?: string;
+    parameters: unknown;
+  }> = [];
   const servers = mcpServers.value;
   console.log('[MCP] Available servers:', servers.map(s => ({ id: s.id, status: s.status })));
 
@@ -237,7 +241,7 @@ export async function getActiveToolsForConversation(conversation: Conversation |
 /**
  * Execute an MCP tool
  */
-export async function executeMCPTool(toolName: string, args: any) {
+export async function executeMCPTool(toolName: string, args: unknown) {
   console.log(`[MCP] Executing tool ${toolName} with args:`, args);
   
   // Parse the tool name to get serverId and actual tool name

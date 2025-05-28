@@ -22,7 +22,7 @@ export class TauriStdioTransport implements Transport {
   private _readBuffer: string = '';
 
   // Transport callbacks
-  onclose?: (reason?: any) => void;
+  onclose?: (reason?: unknown) => void;
   onerror?: (error: Error) => void;
   onmessage?: (message: JSONRPCMessage) => void;
 

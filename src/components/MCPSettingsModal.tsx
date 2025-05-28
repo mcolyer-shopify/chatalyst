@@ -39,7 +39,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           return false;
         }
 
-        const serverConfig = config as any;
+        const serverConfig = config as Record<string, unknown>;
         if (!serverConfig.name || typeof serverConfig.name !== 'string') {
           setMcpConfigError(`Server "${key}" must have a name`);
           return false;

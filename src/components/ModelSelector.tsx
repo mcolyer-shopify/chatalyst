@@ -178,7 +178,7 @@ export function ModelSelector({
       
       if (provider === 'ollama' && data.models) {
         // Ollama has a different response format
-        fetchedModels = data.models.map((model: any) => ({
+        fetchedModels = data.models.map((model: { name: string; details?: { description?: string } }) => ({
           id: model.name,
           name: model.name,
           description: model.details?.description || ''

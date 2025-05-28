@@ -194,7 +194,7 @@ function App() {
         acc[tool.name] = {
           description: tool.description,
           parameters: tool.parameters,
-          execute: async (args: any) => {
+          execute: async (args: unknown) => {
             console.log(`[AI] Executing tool ${tool.name} with args:`, args);
             
             try {
@@ -209,16 +209,19 @@ function App() {
           }
         };
         return acc;
-      }, {} as any) : undefined;
+      }, {} as Record<string, unknown>) : undefined;
       
       console.log('[AI] Calling streamText with tools:', toolsObject ? Object.keys(toolsObject) : 'none');
       console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
 
       // Use the AI SDK's built-in tool handling with maxSteps
-      const conversationMessages = messages.map((m) => ({
-        role: m.role as 'user' | 'assistant' | 'system' | 'tool',
-        content: m.content || ''
-      }));
+      // Filter out tool messages as they're handled internally by the SDK
+      const conversationMessages = messages
+        .filter(m => m.role !== 'tool')
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant' | 'system',
+          content: m.content || ''
+        }));
       
       const result = await streamText({
         model: aiProvider(modelToUse),
