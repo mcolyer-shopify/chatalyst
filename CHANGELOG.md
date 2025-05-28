@@ -31,7 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Collapsible tool lists with expand/collapse arrow indicator
 - Integration of MCP tools with AI message generation
   - Active tools passed to AI based on conversation settings
-  - Tool calls displayed in message stream
+  - Tool calls displayed as separate messages in conversation
+  - Tool message type with distinct styling (lighter background)
+  - Shows tool name, call parameters, and results
   - Mock tool execution for demonstration
 
 ### Fixed

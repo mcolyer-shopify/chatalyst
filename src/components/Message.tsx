@@ -24,6 +24,29 @@ export function Message({ message }: MessageProps) {
   };
 
   const renderContent = () => {
+    if (message.role === 'tool') {
+      return (
+        <div class="message-content tool-message">
+          <div class="tool-header">
+            <span class="tool-icon">🔧</span>
+            <span class="tool-name">{message.toolName || 'Tool'}</span>
+          </div>
+          {message.toolCall && (
+            <div class="tool-call">
+              <div class="tool-label">Call:</div>
+              <pre>{JSON.stringify(message.toolCall, null, 2)}</pre>
+            </div>
+          )}
+          {message.toolResult !== undefined && (
+            <div class="tool-result">
+              <div class="tool-label">Result:</div>
+              <pre>{JSON.stringify(message.toolResult, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
     if (message.role === 'assistant') {
       // Show loading animation if generating and no content
       if (message.isGenerating && !message.content) {

@@ -182,6 +182,7 @@ function App() {
 
       // Stream the response
       let fullContent = '';
+      const toolMessages: Message[] = [];
       
       // Check if there are tool calls
       if (activeTools.length > 0) {
@@ -191,18 +192,32 @@ function App() {
             fullContent += part.textDelta;
             updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
           } else if (part.type === 'tool-call') {
-            // Handle tool calls
+            // Create a tool message for the call
             const toolCall = part.toolCall;
             if (toolCall) {
-              fullContent += `\n[Calling tool: ${toolCall.toolName}]\n`;
-              updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+              const toolMessage: Message = {
+                id: `${Date.now()}-tool-${toolCall.toolCallId}`,
+                role: 'tool',
+                content: '',
+                timestamp: Date.now(),
+                toolName: toolCall.toolName,
+                toolCall: toolCall.args
+              };
+              toolMessages.push(toolMessage);
+              addMessage(conversation.id, toolMessage);
             }
           } else if (part.type === 'tool-result') {
-            // Handle tool results
+            // Update the tool message with the result
             const toolResult = part.toolResult;
-            if (toolResult) {
-              fullContent += `[Tool result: ${JSON.stringify(toolResult.result)}]\n`;
-              updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+            if (toolResult && toolMessages.length > 0) {
+              const toolMessage = toolMessages.find(m => 
+                m.id.includes(toolResult.toolCallId)
+              );
+              if (toolMessage) {
+                updateMessage(conversation.id, toolMessage.id, { 
+                  toolResult: toolResult.result 
+                });
+              }
             }
           }
         }

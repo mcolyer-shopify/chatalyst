@@ -278,6 +278,56 @@ body {
   border-bottom-left-radius: 0.25rem;
 }
 
+.message-tool .message-content {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.message-tool .tool-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.message-tool .tool-icon {
+  font-size: 1rem;
+}
+
+.message-tool .tool-name {
+  color: #495057;
+}
+
+.message-tool .tool-call,
+.message-tool .tool-result {
+  margin-top: 0.5rem;
+}
+
+.message-tool .tool-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.message-tool pre {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* Markdown styling for assistant messages */
 .message-assistant .message-content h1,
 .message-assistant .message-content h2,

@@ -1,9 +1,12 @@
 export interface Message {
   id: string;
   content: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'tool';
   timestamp: number;
   isGenerating?: boolean;
+  toolName?: string; // For tool messages
+  toolCall?: any; // Tool call parameters
+  toolResult?: any; // Tool execution result
 }
 
 export interface Conversation {
