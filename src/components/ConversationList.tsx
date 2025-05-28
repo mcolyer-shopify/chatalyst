@@ -73,6 +73,13 @@ export function ConversationList({
             className="sidebar-model-selector"
             showAsDefault={true}
           />
+          <button
+            onClick={onSettingsClick}
+            class="settings-button"
+            title="Settings"
+          >
+            ⚙️
+          </button>
         </div>
       </div>
       <div class="conversations">
@@ -134,13 +141,6 @@ export function ConversationList({
       <div class="conversation-list-footer">
         <button class="new-conversation-btn" onClick={onCreate}>
           New Conversation
-        </button>
-        <button
-          onClick={onSettingsClick}
-          class="settings-button"
-          title="Settings"
-        >
-          ⚙️
         </button>
       </div>
     </div>

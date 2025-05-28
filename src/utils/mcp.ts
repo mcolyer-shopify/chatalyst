@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { jsonSchema } from 'ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { TauriStdioTransport } from './TauriStdioTransport';
 import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation } from '../types';
@@ -150,61 +150,6 @@ export async function restartMCPConnections(newConfigString: string | undefined)
   await initializeMCPConnections(newConfigString);
 }
 
-/**
- * Convert MCP JSON Schema to Zod schema
- */
-function jsonSchemaToZod(schema: any): z.ZodType<any> {
-  if (!schema || typeof schema !== 'object') {
-    return z.any();
-  }
-
-  switch (schema.type) {
-    case 'string':
-      let stringSchema = z.string();
-      if (schema.description) stringSchema = stringSchema.describe(schema.description);
-      return stringSchema;
-    
-    case 'number':
-      let numberSchema = z.number();
-      if (schema.description) numberSchema = numberSchema.describe(schema.description);
-      return numberSchema;
-    
-    case 'boolean':
-      let booleanSchema = z.boolean();
-      if (schema.description) booleanSchema = booleanSchema.describe(schema.description);
-      return booleanSchema;
-    
-    case 'array':
-      const itemSchema = schema.items ? jsonSchemaToZod(schema.items) : z.any();
-      let arraySchema = z.array(itemSchema);
-      if (schema.description) arraySchema = arraySchema.describe(schema.description);
-      return arraySchema;
-    
-    case 'object':
-      if (schema.properties) {
-        const shape: Record<string, z.ZodType<any>> = {};
-        for (const [key, propSchema] of Object.entries(schema.properties)) {
-          shape[key] = jsonSchemaToZod(propSchema);
-        }
-        let objectSchema = z.object(shape);
-        if (schema.required && Array.isArray(schema.required)) {
-          // Mark non-required fields as optional
-          for (const key of Object.keys(shape)) {
-            if (!schema.required.includes(key)) {
-              shape[key] = shape[key].optional();
-            }
-          }
-          objectSchema = z.object(shape);
-        }
-        if (schema.description) objectSchema = objectSchema.describe(schema.description);
-        return objectSchema;
-      }
-      return z.record(z.any());
-    
-    default:
-      return z.any();
-  }
-}
 
 /**
  * Get active tools for a conversation
@@ -269,14 +214,13 @@ export async function getActiveToolsForConversation(conversation: Conversation |
         
         console.log(`[MCP] Tool ${toolName} schema:`, mcpTool.inputSchema);
         
-        // Convert JSON Schema to Zod schema
-        const zodSchema = mcpTool.inputSchema ? jsonSchemaToZod(mcpTool.inputSchema) : z.object({});
+        // Create a tool definition that the AI SDK can use with JSON schema
+        const toolSchema = mcpTool.inputSchema || { type: 'object', properties: {} };
         
-        // Create a tool definition that the AI SDK can use
         activeTools.push({
           name: `${serverId}_${toolName}`,
           description: mcpTool.description || tool.description || `Tool ${toolName} from ${server.name}`,
-          parameters: zodSchema
+          parameters: jsonSchema(toolSchema)
         });
         
         console.log(`[MCP] Added tool: ${serverId}_${toolName}`);
