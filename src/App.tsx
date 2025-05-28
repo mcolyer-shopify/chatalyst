@@ -243,7 +243,7 @@ function App() {
         
         if (part.type === 'error') {
           console.error('[AI] Stream error:', part.error);
-          const errorMsg = part.error?.message || 'An error occurred';
+          const errorMsg = (part.error as Error)?.message || 'An error occurred';
           
           // Check if the error is about tools not being supported
           if (errorMsg.includes('does not support tools')) {
@@ -267,12 +267,7 @@ function App() {
           }
         }
         
-        if (part.type === 'text-delta') {
-          console.log('[AI] Text delta:', part.textDelta);
-          fullContent += part.textDelta;
-          console.log('[AI] Full content so far:', fullContent);
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'text') {
+        if (part.type === 'text') {
           console.log('[AI] Text:', part.text);
           fullContent += part.text;
           console.log('[AI] Full content so far:', fullContent);
@@ -293,9 +288,6 @@ function App() {
             toolResult: part.result
           };
           addMessage(conversation.id, toolMessage);
-        } else if (part.type === 'step-finish') {
-          console.log('[AI] Step finished:', part);
-          // Each step represents a complete tool call/response cycle
         } else if (part.type === 'finish') {
           console.log('[AI] Finish event:', part);
           console.log('[AI] Finish reason:', part.finishReason);
