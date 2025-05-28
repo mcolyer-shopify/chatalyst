@@ -2,7 +2,7 @@ import { jsonSchema } from 'ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { TauriStdioTransport } from './TauriStdioTransport';
 import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation } from '../types';
-import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, mcpServers } from '../store';
+import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, clearMCPServers, mcpServers } from '../store';
 
 interface MCPConnection {
   serverId: string;
@@ -64,7 +64,8 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     const transport = new TauriStdioTransport({
       command: config.command,
       args: config.args,
-      cwd: config.cwd
+      cwd: config.cwd,
+      env: config.env
     });
 
     const client = new Client({
@@ -146,8 +147,94 @@ export async function shutdownMCPConnections() {
  * Restart MCP connections with new configuration
  */
 export async function restartMCPConnections(newConfigString: string | undefined) {
-  await shutdownMCPConnections();
-  await initializeMCPConnections(newConfigString);
+  if (!newConfigString?.trim()) {
+    // If new config is empty, just shutdown all connections
+    await shutdownMCPConnections();
+    clearMCPServers();
+    return;
+  }
+
+  try {
+    const newConfig: MCPConfiguration = JSON.parse(newConfigString);
+    const currentServerIds = new Set(activeConnections.keys());
+    const newServerIds = new Set(Object.keys(newConfig));
+    
+    // Find servers to remove (in current but not in new)
+    const serversToRemove = Array.from(currentServerIds).filter(id => !newServerIds.has(id));
+    
+    // Find servers to add (in new but not in current)
+    const serversToAdd = Array.from(newServerIds).filter(id => !currentServerIds.has(id));
+    
+    // Find servers that might need updating (in both)
+    const serversToCheck = Array.from(newServerIds).filter(id => currentServerIds.has(id));
+    
+    // Remove servers that are no longer in config
+    for (const serverId of serversToRemove) {
+      const connection = activeConnections.get(serverId);
+      if (connection) {
+        try {
+          await connection.client.close();
+          await connection.transport.close();
+          activeConnections.delete(serverId);
+          removeMCPServer(serverId);
+        } catch (error) {
+          console.error(`Failed to shutdown MCP server ${serverId}:`, error);
+        }
+      }
+    }
+    
+    // Check if existing servers need to be restarted due to config changes
+    for (const serverId of serversToCheck) {
+      const connection = activeConnections.get(serverId);
+      const newServerConfig = newConfig[serverId];
+      
+      if (connection && hasServerConfigChanged(connection.config, newServerConfig)) {
+        // Config changed, restart this server
+        try {
+          await connection.client.close();
+          await connection.transport.close();
+          activeConnections.delete(serverId);
+          removeMCPServer(serverId);
+          
+          // Start with new config
+          if (newServerConfig.enabled !== false) {
+            await startMCPServer(serverId, newServerConfig);
+          }
+        } catch (error) {
+          console.error(`Failed to restart MCP server ${serverId}:`, error);
+        }
+      }
+    }
+    
+    // Add new servers
+    for (const serverId of serversToAdd) {
+      const serverConfig = newConfig[serverId];
+      if (serverConfig.enabled !== false) {
+        await startMCPServer(serverId, serverConfig);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to restart MCP connections:', error);
+    // On error, do a full restart
+    await shutdownMCPConnections();
+    clearMCPServers();
+    await initializeMCPConnections(newConfigString);
+  }
+}
+
+/**
+ * Check if server configuration has changed
+ */
+function hasServerConfigChanged(oldConfig: MCPServerConfig, newConfig: MCPServerConfig): boolean {
+  return (
+    oldConfig.name !== newConfig.name ||
+    oldConfig.description !== newConfig.description ||
+    oldConfig.command !== newConfig.command ||
+    JSON.stringify(oldConfig.args) !== JSON.stringify(newConfig.args) ||
+    JSON.stringify(oldConfig.env) !== JSON.stringify(newConfig.env) ||
+    oldConfig.cwd !== newConfig.cwd ||
+    oldConfig.enabled !== newConfig.enabled
+  );
 }
 
 

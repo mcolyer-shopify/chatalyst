@@ -82,12 +82,17 @@
   gap: 8px;
 }
 
-.mcp-status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-top: 4px;
+.mcp-status-indicator {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  margin-top: 2px;
+}
+
+.mcp-status-icon {
+  display: block;
 }
 
 .mcp-server-details {

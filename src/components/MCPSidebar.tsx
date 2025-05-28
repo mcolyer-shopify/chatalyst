@@ -27,6 +27,65 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
     }
   };
 
+  const getStatusTooltip = (status: MCPServerStatus['status']) => {
+    switch (status) {
+    case 'running':
+      return 'Server is running';
+    case 'starting':
+      return 'Server is starting...';
+    case 'error':
+      return 'Server error';
+    case 'stopped':
+      return 'Server is stopped';
+    default:
+      return 'Unknown status';
+    }
+  };
+
+  const getStatusShape = (status: MCPServerStatus['status']) => {
+    // Return different SVG shapes for accessibility
+    const color = getStatusColor(status);
+    const size = 12;
+    
+    switch (status) {
+    case 'running':
+      // Circle for running
+      return (
+        <svg width={size} height={size} viewBox="0 0 12 12" class="mcp-status-icon">
+          <circle cx="6" cy="6" r="5" fill={color} />
+        </svg>
+      );
+    case 'starting':
+      // Diamond for starting
+      return (
+        <svg width={size} height={size} viewBox="0 0 12 12" class="mcp-status-icon">
+          <path d="M6 1 L11 6 L6 11 L1 6 Z" fill={color} />
+        </svg>
+      );
+    case 'error':
+      // Triangle for error
+      return (
+        <svg width={size} height={size} viewBox="0 0 12 12" class="mcp-status-icon">
+          <path d="M6 1 L11 10 L1 10 Z" fill={color} />
+        </svg>
+      );
+    case 'stopped':
+      // Square for stopped
+      return (
+        <svg width={size} height={size} viewBox="0 0 12 12" class="mcp-status-icon">
+          <rect x="1" y="1" width="10" height="10" fill={color} />
+        </svg>
+      );
+    default:
+      // Default circle
+      return (
+        <svg width={size} height={size} viewBox="0 0 12 12" class="mcp-status-icon">
+          <circle cx="6" cy="6" r="5" fill={color} />
+        </svg>
+      );
+    }
+  };
+
   const handleToolToggle = (serverId: string, toolName: string, enabled: boolean) => {
     if (!conversation) return;
     toggleConversationTool(conversation.id, serverId, toolName, enabled);
@@ -105,10 +164,12 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
               <div class="mcp-server-header">
                 <div class="mcp-server-info">
                   <div 
-                    class="mcp-status-dot" 
-                    style={{ backgroundColor: getStatusColor(server.status) }}
-                    title={server.status}
-                  />
+                    class="mcp-status-indicator" 
+                    title={getStatusTooltip(server.status)}
+                    aria-label={getStatusTooltip(server.status)}
+                  >
+                    {getStatusShape(server.status)}
+                  </div>
                   <div class="mcp-server-details">
                     <div class="mcp-server-name">{server.name}</div>
                     {server.description && (

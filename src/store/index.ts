@@ -268,6 +268,10 @@ export function removeMCPServer(serverId: string) {
   mcpServers.value = mcpServers.value.filter(server => server.id !== serverId);
 }
 
+export function clearMCPServers() {
+  mcpServers.value = [];
+}
+
 export function toggleConversationTool(conversationId: string, serverId: string, toolName: string, enabled: boolean) {
   conversations.value = conversations.value.map(conv => {
     if (conv.id !== conversationId) return conv;
