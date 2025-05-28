@@ -32,18 +32,13 @@ pnpm test:coverage
 
 ## TODO
 
-- Scope the tool enablement to a conversation. 
-- Save the tool enablement state in the conversation.
-- By default, tools should be disabled.
-- Allow enabling all tools under a server with one click.
-- Graceful handle if a tool was previously enabled but the server no longer provides that tool.
+### Support for multiple providers
+- Update the model settings modal to include a dropdown for the type of provider.
+    - See https://ai-sdk.dev/docs/foundations/providers-and-models for all the list of possible provicers
+    - Only include Custom Open AI, OpenRouter or Ollama.
+- Allow base url for custom ai provider, otherwise just allow setting the api key.
 
-- Add a max tool call limit of 10
-- Remove jsonSchemaToZod function and use https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema.
-
-
-
-## Support for MCP server
+### Improved MCP Settings interface
 - Have a tab in settings for MCP
 - On each tab, see the cmd, active, options, type.
   - Also see status, list of tools and log all output and a log of calls and responses.
@@ -52,6 +47,5 @@ pnpm test:coverage
 ### Future
 
 - Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.
-- Support for Ollama
 
 
