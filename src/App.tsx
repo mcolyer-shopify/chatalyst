@@ -200,12 +200,14 @@ function App() {
           content: m.content
         })),
         tools: toolsObject,
+        toolChoice: 'auto', // Let the model decide when to use tools
         abortSignal: controller.signal
       });
 
       // Stream the response
       let fullContent = '';
-      const toolMessages: Message[] = [];
+      const toolCalls: Array<{id: string, name: string, args: any}> = [];
+      let hasToolCalls = false;
       
       // Check if there are tool calls
       if (activeTools.length > 0) {
@@ -221,13 +223,22 @@ function App() {
           }
           
           if (part.type === 'text-delta') {
+            console.log('[AI] Text delta:', part.textDelta);
             fullContent += part.textDelta;
             updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
           } else if (part.type === 'tool-call') {
             console.log('[AI] Tool call detected:', part);
-            // Create a tool message for the call
-            // The part itself contains the tool call data
+            hasToolCalls = true;
+            
+            // Store tool call info
             if (part.toolCallId && part.toolName) {
+              toolCalls.push({
+                id: part.toolCallId,
+                name: part.toolName,
+                args: part.args
+              });
+              
+              // Create a tool message for the call
               const toolMessage: Message = {
                 id: `${Date.now()}-tool-${part.toolCallId}`,
                 role: 'tool',
@@ -236,24 +247,45 @@ function App() {
                 toolName: part.toolName,
                 toolCall: part.args
               };
-              toolMessages.push(toolMessage);
               addMessage(conversation.id, toolMessage);
             }
           } else if (part.type === 'tool-result') {
             console.log('[AI] Tool result detected:', part);
-            // Update the tool message with the result
-            // The part contains toolCallId and result
-            if (part.toolCallId && toolMessages.length > 0) {
-              const toolMessage = toolMessages.find(m => 
-                m.id.includes(part.toolCallId)
-              );
-              if (toolMessage) {
-                updateMessage(conversation.id, toolMessage.id, { 
-                  toolResult: part.result 
-                });
+            // Find the corresponding tool message and update it
+            const messages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
+            const toolMessage = messages.find(m => 
+              m.role === 'tool' && m.id.includes(part.toolCallId)
+            );
+            if (toolMessage) {
+              updateMessage(conversation.id, toolMessage.id, { 
+                toolResult: part.result 
+              });
+            }
+          } else if (part.type === 'finish') {
+            console.log('[AI] Finish event:', part);
+            // Check if we have text in the finish event
+            if (part.finishReason === 'stop' && hasToolCalls) {
+              // The AI finished after using tools
+              // If there's no follow-up text, we should keep just the tool messages
+              if (fullContent.trim() === '') {
+                // Remove the empty assistant message
+                const messages = conversations.value.find(c => c.id === conversation.id)?.messages || [];
+                const assistantMessageIndex = messages.findIndex(m => m.id === assistantMessage.id);
+                if (assistantMessageIndex !== -1) {
+                  conversations.value = conversations.value.map(c => 
+                    c.id === conversation.id 
+                      ? { ...c, messages: c.messages.filter(m => m.id !== assistantMessage.id) }
+                      : c
+                  );
+                }
               }
             }
           }
+        }
+        
+        // Mark the assistant message as finished if it has content
+        if (fullContent.trim() !== '') {
+          updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
         }
       } else {
         // No tools, just stream text
@@ -261,10 +293,9 @@ function App() {
           fullContent += chunk;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         }
+        // Mark as finished generating
+        updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
       }
-      
-      // Mark as finished generating
-      updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
     } catch (err) {
       if ((err as Error).name === 'AbortError') {
         // Generation was stopped by user
