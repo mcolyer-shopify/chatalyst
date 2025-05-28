@@ -13,34 +13,64 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "uv",
+          "name": "run-uv",
           "cmd": "uv",
-          "args": true
+          "args": [
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
         },
         {
-          "name": "uvx",
+          "name": "run-uvx",
           "cmd": "uvx",
-          "args": true
+          "args": [
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
         },
         {
-          "name": "npx",
+          "name": "run-npx",
           "cmd": "npx",
-          "args": true
+          "args": [
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
         },
         {
-          "name": "npm",
+          "name": "run-npm",
           "cmd": "npm",
-          "args": true
+          "args": [
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
         },
         {
-          "name": "pnpm",
+          "name": "run-pnpm",
           "cmd": "pnpm",
-          "args": true
+          "args": [
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
         },
         {
-          "name": "imcp-server",
+          "name": "run-imcp",
           "cmd": "/Applications/iMCP.app/Contents/MacOS/imcp-server",
-          "args": true
+          "args": [
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
         }
       ]
     },
