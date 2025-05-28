@@ -290,6 +290,9 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     value={editingServer.command}
                     onInput={(e) => handleServerChange('command', e.currentTarget.value)}
                     placeholder="e.g., npx, python, node"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
 
@@ -300,6 +303,9 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     onInput={(e) => handleArgsChange(e.currentTarget.value)}
                     rows={3}
                     placeholder="e.g., @modelcontextprotocol/server-github"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
 
@@ -310,6 +316,9 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     onInput={(e) => handleEnvChange(e.currentTarget.value)}
                     rows={3}
                     placeholder="e.g., GITHUB_TOKEN=your-token"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
 
