@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Graceful shutdown of MCP servers on app close
 
 ### Fixed
-- Add shell permissions for MCP server commands (uv, uvx, npx, npm, pnpm, iMCP)
-- Simplify shell permission scope names to match command names directly
+- Switch to using `sh -c` for all MCP server commands instead of individual command permissions
+- Simplify shell permissions to only allow `sh` with proper argument escaping
 
 ## [0.2.1] - 2025-01-26
 

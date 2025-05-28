@@ -45,8 +45,22 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
 
     console.log(`Starting MCP server: ${serverId}`);
     
-    // Create command
-    const command = Command.create(config.command, config.args || [], {
+    // Build the full command string
+    let fullCommand = config.command;
+    if (config.args && config.args.length > 0) {
+      // Properly escape arguments
+      const escapedArgs = config.args.map(arg => {
+        // If arg contains spaces or special characters, wrap in quotes
+        if (/[\s"'\\$`]/.test(arg)) {
+          return `"${arg.replace(/["\\$`]/g, '\\$&')}"`;
+        }
+        return arg;
+      });
+      fullCommand = `${config.command} ${escapedArgs.join(' ')}`;
+    }
+    
+    // Create command using sh -c
+    const command = Command.create('sh', ['-c', fullCommand], {
       cwd: config.cwd
     });
 

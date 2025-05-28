@@ -7,65 +7,31 @@
     "core:default",
     "opener:default",
     "shell:default",
-    "shell:allow-spawn",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "sh",
+          "cmd": "sh",
+          "args": [
+            "-c",
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
+        }
+      ]
+    },
     "shell:allow-kill",
     {
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "uv",
-          "cmd": "uv",
+          "name": "sh",
+          "cmd": "sh",
           "args": [
-            {
-              "validator": ".*"
-            }
-          ],
-          "sidecar": false
-        },
-        {
-          "name": "uvx",
-          "cmd": "uvx",
-          "args": [
-            {
-              "validator": ".*"
-            }
-          ],
-          "sidecar": false
-        },
-        {
-          "name": "npx",
-          "cmd": "npx",
-          "args": [
-            {
-              "validator": ".*"
-            }
-          ],
-          "sidecar": false
-        },
-        {
-          "name": "npm",
-          "cmd": "npm",
-          "args": [
-            {
-              "validator": ".*"
-            }
-          ],
-          "sidecar": false
-        },
-        {
-          "name": "pnpm",
-          "cmd": "pnpm",
-          "args": [
-            {
-              "validator": ".*"
-            }
-          ],
-          "sidecar": false
-        },
-        {
-          "name": "/Applications/iMCP.app/Contents/MacOS/imcp-server",
-          "cmd": "/Applications/iMCP.app/Contents/MacOS/imcp-server",
-          "args": [
+            "-c",
             {
               "validator": ".*"
             }
