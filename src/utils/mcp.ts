@@ -253,7 +253,7 @@ export async function getActiveToolsForConversation(conversation: Conversation |
   const activeTools: Array<{
     name: string;
     description?: string;
-    parameters: unknown;
+    parameters: ReturnType<typeof jsonSchema>;
   }> = [];
   const servers = mcpServers.value;
   console.log('[MCP] Available servers:', servers.map(s => ({ id: s.id, status: s.status })));
