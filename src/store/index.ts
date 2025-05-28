@@ -3,7 +3,8 @@ import type {
   Conversation as ConversationType,
   Message,
   Settings,
-  Model
+  Model,
+  MCPServerStatus
 } from '../types';
 import {
   loadConversations,
@@ -39,6 +40,10 @@ export const modelsCache = signal<
   Map<string, { models: Model[]; timestamp: number }>
 >(new Map());
 export const availableModels = signal<Model[]>([]);
+
+// MCP-related signals
+export const mcpServers = signal<MCPServerStatus[]>([]);
+export const mcpToolSettings = signal<{ [serverId: string]: { [toolName: string]: boolean } }>({});
 
 // Computed values
 export const selectedConversation = computed(() =>
@@ -213,6 +218,32 @@ export function clearError() {
     errorMessage.value = null;
     errorTimestamp.value = null;
   });
+}
+
+// MCP server management functions
+export function updateMCPServerStatus(serverId: string, updates: Partial<MCPServerStatus>) {
+  mcpServers.value = mcpServers.value.map(server =>
+    server.id === serverId ? { ...server, ...updates } : server
+  );
+}
+
+export function addMCPServer(server: MCPServerStatus) {
+  mcpServers.value = [...mcpServers.value, server];
+}
+
+export function removeMCPServer(serverId: string) {
+  mcpServers.value = mcpServers.value.filter(server => server.id !== serverId);
+}
+
+export function toggleMCPTool(serverId: string, toolName: string, enabled: boolean) {
+  const currentSettings = mcpToolSettings.value;
+  mcpToolSettings.value = {
+    ...currentSettings,
+    [serverId]: {
+      ...currentSettings[serverId],
+      [toolName]: enabled
+    }
+  };
 }
 
 // Initialize on module load

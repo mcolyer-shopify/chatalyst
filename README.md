@@ -32,74 +32,12 @@ pnpm test:coverage
 
 ## TODO
 
-## MCP MVP
-- Create a feature branch, and logical commits as you work.
+- Scope the tool enablement to a conversation. 
+- By default, tools should be disabled.
+- Allow enabling all tools under a server with one click.
+- Save the tool enablement state in the conversation.
+- Graceful handle if a tool was previously enabled but the server no longer provides that tool.
 
-- Add a mcp configuration textarea to the settings page and persist it.
-
-Here's a valid example:
-
-```json
-{
-  "iMCP": {
-    "enabled": false,
-    "name": "iMCP",
-    "description": "Provides access to local information",
-    "transport": "stdio",
-    "command": "/Applications/iMCP.app/Contents/MacOS/imcp-server"
-  },
-  "sequential-thinking": {
-    "name": "sequential-thinking",
-    "description": "Fetches urls",
-    "transport": "stdio",
-    "command": "npx",
-    "args": [
-      "-y",
-      "@modelcontextprotocol/server-sequential-thinking"
-    ]
-  },
-  "webfetch": {
-    "name": "webfetch",
-    "description": "Fetches urls",
-    "transport": "stdio",
-    "command": "uvx",
-    "args": [
-      "mcp-server-fetch"
-    ]
-  },
-  "time": {
-    "name": "Time",
-    "description": "Provides current time",
-    "transport": "stdio",
-    "command": "uvx",
-    "args": [
-      "mcp-server-time",
-      "--local-timezone=America/Los_Angeles"
-    ]
-  },
-  "prompt": {
-    "name": "Prompt",
-    "description": "Provides a customized prompt",
-    "transport": "stdio",
-    "command": "uv",
-    "args": [
-      "run",
-      "mcp",
-      "run",
-      "server.py"
-    ],
-    "cwd": "/Users/mcolyer/src/github.com/mcolyer-shopify/mcp-server"
-  }
-}
-```
-
-    - Validate that mcp configuration is valid JSON. If there's an error, show an error message.
-    - Validate when the user unfocuses the textarea or presses configuration save.
-    - Do not allow the user to save invalid JSON.
-    - When it is successfuan mcp configuration is changed, shutdown any existing mcp connections and create a new one with the new configuration.
-
-- Initialize any mcp connections with the configuration from the settings page at app startup.
-- Close any existing mcp connections when the app is closed or reloaded.
 
 ## Support for MCP server
 - Have a tab in settings for MCP

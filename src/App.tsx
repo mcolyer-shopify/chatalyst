@@ -3,6 +3,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { streamText } from 'ai';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
+import { MCPSidebar } from './components/MCPSidebar';
 import { listen } from '@tauri-apps/api/event';
 import type { Message } from './types';
 import { 
@@ -388,6 +389,7 @@ function App() {
             </div>
           )}
         </div>
+        <MCPSidebar />
       </div>
     </div>
   );

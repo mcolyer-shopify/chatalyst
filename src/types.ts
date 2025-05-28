@@ -35,6 +35,21 @@ export interface MCPConfiguration {
   [key: string]: MCPServerConfig;
 }
 
+export interface MCPTool {
+  name: string;
+  description?: string;
+  enabled: boolean;
+}
+
+export interface MCPServerStatus {
+  id: string;
+  name: string;
+  description: string;
+  status: 'starting' | 'running' | 'error' | 'stopped';
+  error?: string;
+  tools: MCPTool[];
+}
+
 export interface Settings {
   baseURL: string;
   apiKey: string;
