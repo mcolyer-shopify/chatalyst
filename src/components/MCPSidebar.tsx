@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks';
 import { mcpServers, selectedConversation, toggleConversationTool, enableAllServerTools, disableAllServerTools } from '../store';
 import type { MCPServerStatus } from '../types';
 import './MCPSidebar.css';
@@ -5,6 +6,7 @@ import './MCPSidebar.css';
 export function MCPSidebar() {
   const servers = mcpServers.value;
   const conversation = selectedConversation.value;
+  const [expandedServers, setExpandedServers] = useState<Set<string>>(new Set());
 
   const getStatusColor = (status: MCPServerStatus['status']) => {
     switch (status) {
@@ -51,6 +53,18 @@ export function MCPSidebar() {
       disableAllServerTools(conversation.id, server.id);
     }
   };
+  
+  const toggleServerExpanded = (serverId: string) => {
+    const newExpanded = new Set(expandedServers);
+    if (newExpanded.has(serverId)) {
+      newExpanded.delete(serverId);
+    } else {
+      newExpanded.add(serverId);
+    }
+    setExpandedServers(newExpanded);
+  };
+  
+  const isServerExpanded = (serverId: string) => expandedServers.has(serverId);
 
   return (
     <div class="mcp-sidebar">
@@ -92,6 +106,22 @@ export function MCPSidebar() {
               {server.tools.length > 0 && (
                 <div class="mcp-tools-section">
                   <div class="mcp-tools-header">
+                    <button
+                      class="mcp-expand-button"
+                      onClick={() => toggleServerExpanded(server.id)}
+                      aria-expanded={isServerExpanded(server.id)}
+                      aria-label={isServerExpanded(server.id) ? 'Collapse tools' : 'Expand tools'}
+                    >
+                      <svg 
+                        class="mcp-expand-icon" 
+                        width="12" 
+                        height="12" 
+                        viewBox="0 0 12 12"
+                        style={{ transform: isServerExpanded(server.id) ? 'rotate(90deg)' : 'rotate(0)' }}
+                      >
+                        <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
                     <span class="mcp-tools-title">
                       Tools ({getEnabledToolCount(server.id)}/{server.tools.length})
                     </span>
@@ -103,7 +133,8 @@ export function MCPSidebar() {
                       {getEnabledToolCount(server.id) === 0 ? 'Enable All' : 'Disable All'}
                     </button>
                   </div>
-                  <div class="mcp-tools-list">
+                  {isServerExpanded(server.id) && (
+                    <div class="mcp-tools-list">
                   {server.tools.map(tool => (
                     <div key={tool.name} class="mcp-tool">
                       <label class="mcp-tool-label">
@@ -124,7 +155,8 @@ export function MCPSidebar() {
                       )}
                     </div>
                   ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tool enablement state saved with conversation
   - Visual feedback for server errors
   - Graceful handling of removed tools
+  - Collapsible tool lists with expand/collapse arrow indicator
 
 ### Fixed
 - Switch to using `sh -c` for all MCP server commands instead of individual command permissions

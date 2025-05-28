@@ -92,17 +92,39 @@
 
 .mcp-tools-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
   background-color: #f3f4f6;
+}
+
+.mcp-expand-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.mcp-expand-button:hover {
+  color: #374151;
+}
+
+.mcp-expand-icon {
+  transition: transform 0.2s ease;
 }
 
 .mcp-tools-title {
   font-size: 13px;
   font-weight: 500;
   color: #374151;
+  flex: 1;
 }
 
 .mcp-toggle-all-button {
