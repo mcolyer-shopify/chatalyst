@@ -350,14 +350,18 @@ export async function executeMCPTool(toolName: string, args: unknown) {
     
     console.log(`[MCP] Tool ${toolName} result:`, result);
     
-    // Return the result content
-    if (result.content && result.content.length > 0) {
-      // MCP returns content as an array, we'll join text content
-      const textContent = result.content
-        .filter(c => c.type === 'text')
-        .map(c => c.text)
-        .join('\n');
-      return textContent || result.content;
+    // Type guard to check if result has content property
+    if (result && typeof result === 'object' && 'content' in result) {
+      const contentResult = result as { content: Array<{ type: string; text?: string }> };
+      
+      if (Array.isArray(contentResult.content) && contentResult.content.length > 0) {
+        // MCP returns content as an array, we'll join text content
+        const textContent = contentResult.content
+          .filter((c): c is { type: string; text: string } => c.type === 'text' && typeof c.text === 'string')
+          .map(c => c.text)
+          .join('\n');
+        return textContent || contentResult.content;
+      }
     }
     
     return result;
