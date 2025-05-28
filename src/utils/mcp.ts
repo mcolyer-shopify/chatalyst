@@ -306,12 +306,12 @@ export async function getActiveToolsForConversation(conversation: Conversation |
         console.log(`[MCP] Tool ${toolName} schema:`, mcpTool.inputSchema);
         
         // Create a tool definition that the AI SDK can use with JSON schema
-        const toolSchema = mcpTool.inputSchema || { type: 'object', properties: {} };
+        const toolSchema = mcpTool.inputSchema;
         
         activeTools.push({
           name: `${serverId}_${toolName}`,
           description: mcpTool.description || tool.description || `Tool ${toolName} from ${server.name}`,
-          parameters: jsonSchema(toolSchema)
+          parameters: jsonSchema(toolSchema as import('json-schema').JSONSchema7)
         });
         
         console.log(`[MCP] Added tool: ${serverId}_${toolName}`);

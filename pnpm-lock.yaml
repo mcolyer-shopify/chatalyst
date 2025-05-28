@@ -63,6 +63,9 @@ importers:
       '@testing-library/preact':
         specifier: ^3.2.4
         version: 3.2.4(preact@10.26.6)
+      '@types/json-schema':
+        specifier: ^7.0.15
+        version: 7.0.15
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.32.1
         version: 8.32.1(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3))(eslint@9.27.0(jiti@2.4.2))(typescript@5.6.3)
