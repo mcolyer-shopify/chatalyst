@@ -7,11 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Error message display in conversation when models don't support tools
+  - Shows warning-styled message explaining the issue
+  - Provides guidance to disable tools or switch models
+  - Prevents silent failures with clear user feedback
+- Message history navigation with arrow keys in input field
+  - Press up arrow to recall previous user messages
+  - Press down arrow to navigate forward through history
+  - Only activates when cursor is at position 0 for multi-line support
+  - Preserves current message when navigating history
+
 ### Changed
 - Refactored MCP tool integration to use AI SDK's built-in maxSteps feature
 - Simplified tool handling by leveraging SDK's automatic tool execution
 - Tool messages are now excluded from conversation history sent to AI (SDK handles internally)
 - Limited tool calls to maximum 10 per turn using maxSteps parameter
+- Message input now uses a textarea for multi-line message support
+  - Enter key sends the message
+  - Shift+Enter creates a new line
+  - Auto-resizes based on content
 - Moved settings gear icon next to the default model picker to clarify it configures model settings
 - Extracted settings modal from App.tsx into separate SettingsModal component
 - Separated MCP configuration into dedicated MCPSettingsModal component

@@ -477,6 +477,7 @@ body {
   background: white;
   border-top: 1px solid #e0e0e0;
   gap: 0.5rem;
+  align-items: flex-end;
 }
 
 .message-input-field {
@@ -487,6 +488,11 @@ body {
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s;
+  resize: vertical;
+  min-height: 2.5rem;
+  max-height: 10rem;
+  line-height: 1.4;
+  font-family: inherit;
 }
 
 .message-input-field:focus {
