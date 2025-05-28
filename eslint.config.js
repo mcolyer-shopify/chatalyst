@@ -52,7 +52,7 @@ export default [
       'quotes': ['error', 'single'],
       'indent': ['error', 2],
       'comma-dangle': ['error', 'never'],
-      'no-console': 'warn'
+      'no-console': ['error', { allow: ['log', 'error', 'warn'] }]
     }
   },
   {
