@@ -30,16 +30,8 @@ pnpm test:ui
 pnpm test:coverage
 ```
 
-### Improved MCP Settings interface
-- Have a tab in settings for MCP
-- On each tab, see the cmd, active, options, type.
-  - Also see status, list of tools and log all output and a log of calls and responses.
-  - Clear logs after last 1000 lines
-
 ### Future
 
 - Add support for remote sse MCP servers.
 
 - Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.
-
-

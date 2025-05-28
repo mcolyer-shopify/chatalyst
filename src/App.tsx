@@ -227,7 +227,7 @@ function App() {
         model: aiProvider(modelToUse),
         messages: conversationMessages,
         tools: toolsObject,
-        // @ts-ignore For some reason this isn't recognized as a valid option https://github.com/vercel/ai/blob/9b09f85143986636570e597c31903daf160608cd/packages/ai/core/generate-text/stream-text.ts#L252
+        // @ts-expect-error For some reason this isn't recognized as a valid option https://github.com/vercel/ai/blob/9b09f85143986636570e597c31903daf160608cd/packages/ai/core/generate-text/stream-text.ts#L252
         maxSteps: 10, // Limit to 10 tool calls per turn
         system: 'You are a helpful assistant. Always provide a complete, natural language response to the user. If you use tools, incorporate the results into your response.',
         abortSignal: controller.signal,
