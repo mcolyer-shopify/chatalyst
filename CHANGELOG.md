@@ -22,8 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP servers sidebar showing active servers and their tools
   - Real-time server status indicators (starting, running, error, stopped)
   - List of available tools for each server
-  - Toggle individual tools on/off
+  - Toggle individual tools on/off per conversation
+  - Enable/disable all tools for a server with one click
+  - Tools disabled by default for security
+  - Tool enablement state saved with conversation
   - Visual feedback for server errors
+  - Graceful handling of removed tools
 
 ### Fixed
 - Switch to using `sh -c` for all MCP server commands instead of individual command permissions

@@ -43,7 +43,6 @@ export const availableModels = signal<Model[]>([]);
 
 // MCP-related signals
 export const mcpServers = signal<MCPServerStatus[]>([]);
-export const mcpToolSettings = signal<{ [serverId: string]: { [toolName: string]: boolean } }>({});
 
 // Computed values
 export const selectedConversation = computed(() =>
@@ -235,15 +234,63 @@ export function removeMCPServer(serverId: string) {
   mcpServers.value = mcpServers.value.filter(server => server.id !== serverId);
 }
 
-export function toggleMCPTool(serverId: string, toolName: string, enabled: boolean) {
-  const currentSettings = mcpToolSettings.value;
-  mcpToolSettings.value = {
-    ...currentSettings,
-    [serverId]: {
-      ...currentSettings[serverId],
-      [toolName]: enabled
+export function toggleConversationTool(conversationId: string, serverId: string, toolName: string, enabled: boolean) {
+  conversations.value = conversations.value.map(conv => {
+    if (conv.id !== conversationId) return conv;
+    
+    const enabledTools = conv.enabledTools || {};
+    const serverTools = enabledTools[serverId] || [];
+    
+    let updatedServerTools: string[];
+    if (enabled) {
+      // Add tool if not already enabled
+      updatedServerTools = serverTools.includes(toolName) 
+        ? serverTools 
+        : [...serverTools, toolName];
+    } else {
+      // Remove tool
+      updatedServerTools = serverTools.filter(t => t !== toolName);
     }
-  };
+    
+    return {
+      ...conv,
+      enabledTools: {
+        ...enabledTools,
+        [serverId]: updatedServerTools
+      },
+      updatedAt: Date.now()
+    };
+  });
+}
+
+export function enableAllServerTools(conversationId: string, serverId: string, tools: string[]) {
+  conversations.value = conversations.value.map(conv => {
+    if (conv.id !== conversationId) return conv;
+    
+    return {
+      ...conv,
+      enabledTools: {
+        ...conv.enabledTools || {},
+        [serverId]: tools
+      },
+      updatedAt: Date.now()
+    };
+  });
+}
+
+export function disableAllServerTools(conversationId: string, serverId: string) {
+  conversations.value = conversations.value.map(conv => {
+    if (conv.id !== conversationId) return conv;
+    
+    return {
+      ...conv,
+      enabledTools: {
+        ...conv.enabledTools || {},
+        [serverId]: []
+      },
+      updatedAt: Date.now()
+    };
+  });
 }
 
 // Initialize on module load

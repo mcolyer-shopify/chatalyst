@@ -108,25 +108,25 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
 function getExampleTools(serverId: string): MCPServerStatus['tools'] {
   const toolsMap: { [key: string]: MCPServerStatus['tools'] } = {
     'time': [
-      { name: 'get_current_time', description: 'Get the current time in a specific timezone', enabled: true }
+      { name: 'get_current_time', description: 'Get the current time in a specific timezone', enabled: false }
     ],
     'webfetch': [
-      { name: 'fetch_url', description: 'Fetch and process web content', enabled: true }
+      { name: 'fetch_url', description: 'Fetch and process web content', enabled: false }
     ],
     'sequential-thinking': [
-      { name: 'think_step_by_step', description: 'Break down problems into steps', enabled: true }
+      { name: 'think_step_by_step', description: 'Break down problems into steps', enabled: false }
     ],
     'prompt': [
-      { name: 'get_custom_prompt', description: 'Get a customized prompt', enabled: true }
+      { name: 'get_custom_prompt', description: 'Get a customized prompt', enabled: false }
     ],
     'iMCP': [
-      { name: 'get_local_info', description: 'Access local system information', enabled: true },
-      { name: 'run_command', description: 'Execute system commands', enabled: true }
+      { name: 'get_local_info', description: 'Access local system information', enabled: false },
+      { name: 'run_command', description: 'Execute system commands', enabled: false }
     ]
   };
   
   return toolsMap[serverId] || [
-    { name: 'default_tool', description: 'Default tool for ' + serverId, enabled: true }
+    { name: 'default_tool', description: 'Default tool for ' + serverId, enabled: false }
   ];
 }
 

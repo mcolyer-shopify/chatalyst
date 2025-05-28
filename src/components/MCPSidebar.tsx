@@ -1,10 +1,10 @@
-import { mcpServers, toggleMCPTool, mcpToolSettings } from '../store';
+import { mcpServers, selectedConversation, toggleConversationTool, enableAllServerTools, disableAllServerTools } from '../store';
 import type { MCPServerStatus } from '../types';
 import './MCPSidebar.css';
 
 export function MCPSidebar() {
   const servers = mcpServers.value;
-  const toolSettings = mcpToolSettings.value;
+  const conversation = selectedConversation.value;
 
   const getStatusColor = (status: MCPServerStatus['status']) => {
     switch (status) {
@@ -22,11 +22,34 @@ export function MCPSidebar() {
   };
 
   const handleToolToggle = (serverId: string, toolName: string, enabled: boolean) => {
-    toggleMCPTool(serverId, toolName, enabled);
+    if (!conversation) return;
+    toggleConversationTool(conversation.id, serverId, toolName, enabled);
   };
 
   const isToolEnabled = (serverId: string, toolName: string) => {
-    return toolSettings[serverId]?.[toolName] !== false; // Default to enabled
+    if (!conversation) return false;
+    const enabledTools = conversation.enabledTools?.[serverId] || [];
+    return enabledTools.includes(toolName);
+  };
+  
+  const getEnabledToolCount = (serverId: string): number => {
+    if (!conversation) return 0;
+    return conversation.enabledTools?.[serverId]?.length || 0;
+  };
+  
+  const handleToggleAllTools = (server: MCPServerStatus) => {
+    if (!conversation) return;
+    
+    const enabledCount = getEnabledToolCount(server.id);
+    const availableTools = server.tools.map(t => t.name);
+    
+    if (enabledCount === 0) {
+      // Enable all tools
+      enableAllServerTools(conversation.id, server.id, availableTools);
+    } else {
+      // Disable all tools
+      disableAllServerTools(conversation.id, server.id);
+    }
   };
 
   return (
@@ -36,7 +59,11 @@ export function MCPSidebar() {
       </div>
       
       <div class="mcp-servers-list">
-        {servers.length === 0 ? (
+        {!conversation ? (
+          <div class="mcp-empty-state">
+            Select a conversation to manage tools
+          </div>
+        ) : servers.length === 0 ? (
           <div class="mcp-empty-state">
             No MCP servers configured
           </div>
@@ -63,7 +90,20 @@ export function MCPSidebar() {
               </div>
               
               {server.tools.length > 0 && (
-                <div class="mcp-tools-list">
+                <div class="mcp-tools-section">
+                  <div class="mcp-tools-header">
+                    <span class="mcp-tools-title">
+                      Tools ({getEnabledToolCount(server.id)}/{server.tools.length})
+                    </span>
+                    <button 
+                      class="mcp-toggle-all-button"
+                      onClick={() => handleToggleAllTools(server)}
+                      disabled={server.status !== 'running'}
+                    >
+                      {getEnabledToolCount(server.id) === 0 ? 'Enable All' : 'Disable All'}
+                    </button>
+                  </div>
+                  <div class="mcp-tools-list">
                   {server.tools.map(tool => (
                     <div key={tool.name} class="mcp-tool">
                       <label class="mcp-tool-label">
@@ -84,6 +124,7 @@ export function MCPSidebar() {
                       )}
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </div>

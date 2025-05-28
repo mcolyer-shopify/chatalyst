@@ -86,9 +86,48 @@
   line-height: 1.4;
 }
 
+.mcp-tools-section {
+  background-color: #f9fafb;
+}
+
+.mcp-tools-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f3f4f6;
+}
+
+.mcp-tools-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.mcp-toggle-all-button {
+  font-size: 12px;
+  padding: 4px 8px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mcp-toggle-all-button:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.mcp-toggle-all-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .mcp-tools-list {
   padding: 12px;
-  background-color: #f9fafb;
 }
 
 .mcp-tool {

@@ -13,6 +13,7 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   model?: string;
+  enabledTools?: { [serverId: string]: string[] }; // serverId -> array of enabled tool names
 }
 
 export interface Model {
