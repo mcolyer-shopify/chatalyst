@@ -7,9 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- TypeScript errors in MCP tool execution with proper type guards for tool results
-- Type assertion for MCP tool arguments to match expected Record<string, unknown> type
+## [0.3.0] - 2025-01-28
 
 ### Added
 - Error message display in conversation when models don't support tools
@@ -21,24 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Press down arrow to navigate forward through history
   - Only activates when cursor is at position 0 for multi-line support
   - Preserves current message when navigating history
-
-### Changed
-- Refactored MCP tool integration to use AI SDK's built-in maxSteps feature
-- Simplified tool handling by leveraging SDK's automatic tool execution
-- Tool messages are now excluded from conversation history sent to AI (SDK handles internally)
-- Limited tool calls to maximum 10 per turn using maxSteps parameter
-- Message input now uses a textarea for multi-line message support
-  - Enter key sends the message
-  - Shift+Enter creates a new line
-  - Auto-resizes based on content
-- Moved settings gear icon next to the default model picker to clarify it configures model settings
-- Extracted settings modal from App.tsx into separate SettingsModal component
-- Separated MCP configuration into dedicated MCPSettingsModal component
-- Removed "Conversations" title from the left sidebar for cleaner interface
-- Updated settings to support multiple AI providers with provider dropdown
-- Model fetching now uses provider-aware caching and base URLs
-
-### Added
 - Support for multiple AI providers (Custom OpenAI, OpenRouter, Ollama)
   - Provider selection dropdown in settings modal
   - Conditional display of base URL field (only for Custom OpenAI)
@@ -77,7 +57,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shows tool name, call parameters, and results
   - Mock tool execution for demonstration
 
+### Changed
+- Refactored MCP tool integration to use AI SDK's built-in maxSteps feature
+- Simplified tool handling by leveraging SDK's automatic tool execution
+- Tool messages are now excluded from conversation history sent to AI (SDK handles internally)
+- Limited tool calls to maximum 10 per turn using maxSteps parameter
+- Message input now uses a textarea for multi-line message support
+  - Enter key sends the message
+  - Shift+Enter creates a new line
+  - Auto-resizes based on content
+- Moved settings gear icon next to the default model picker to clarify it configures model settings
+- Extracted settings modal from App.tsx into separate SettingsModal component
+- Separated MCP configuration into dedicated MCPSettingsModal component
+- Removed "Conversations" title from the left sidebar for cleaner interface
+- Updated settings to support multiple AI providers with provider dropdown
+- Model fetching now uses provider-aware caching and base URLs
+
 ### Fixed
+- TypeScript errors in MCP tool execution with proper type guards for tool results
+- Type assertion for MCP tool arguments to match expected Record<string, unknown> type
 - Switch to using `sh -c` for all MCP server commands instead of individual command permissions
 - Simplify shell permissions to only allow `sh` with proper argument escaping
 - Assistant responses not appearing after tool calls due to missing handling of 'text' stream events
@@ -166,6 +164,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conversation persistence across app restarts
 - Type-safe interfaces for all data models
 
-[Unreleased]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mcolyer-shopify/chatalyst/releases/tag/v0.1.0
