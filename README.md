@@ -33,7 +33,66 @@ pnpm test:coverage
 ## TODO
 
 ## MCP MVP
+- Create a feature branch, and logical commits as you work.
+
 - Add a mcp configuration textarea to the settings page and persist it.
+
+Here's a valid example:
+
+```json
+{
+  "iMCP": {
+    "enabled": false,
+    "name": "iMCP",
+    "description": "Provides access to local information",
+    "transport": "stdio",
+    "command": "/Applications/iMCP.app/Contents/MacOS/imcp-server"
+  },
+  "sequential-thinking": {
+    "name": "sequential-thinking",
+    "description": "Fetches urls",
+    "transport": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-sequential-thinking"
+    ]
+  },
+  "webfetch": {
+    "name": "webfetch",
+    "description": "Fetches urls",
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "mcp-server-fetch"
+    ]
+  },
+  "time": {
+    "name": "Time",
+    "description": "Provides current time",
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "mcp-server-time",
+      "--local-timezone=America/Los_Angeles"
+    ]
+  },
+  "prompt": {
+    "name": "Prompt",
+    "description": "Provides a customized prompt",
+    "transport": "stdio",
+    "command": "uv",
+    "args": [
+      "run",
+      "mcp",
+      "run",
+      "server.py"
+    ],
+    "cwd": "/Users/mcolyer/src/github.com/mcolyer-shopify/mcp-server"
+  }
+}
+```
+
     - Validate that mcp configuration is valid JSON. If there's an error, show an error message.
     - Validate when the user unfocuses the textarea or presses configuration save.
     - Do not allow the user to save invalid JSON.

@@ -21,8 +21,23 @@ export interface Model {
   description?: string;
 }
 
+export interface MCPServerConfig {
+  enabled?: boolean;
+  name: string;
+  description: string;
+  transport: 'stdio';
+  command: string;
+  args?: string[];
+  cwd?: string;
+}
+
+export interface MCPConfiguration {
+  [key: string]: MCPServerConfig;
+}
+
 export interface Settings {
   baseURL: string;
   apiKey: string;
   defaultModel: string;
+  mcpConfiguration?: string; // JSON string of MCPConfiguration
 }

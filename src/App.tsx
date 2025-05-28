@@ -28,6 +28,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [tempSettings, setTempSettings] = useState(settings.value);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [mcpConfigError, setMcpConfigError] = useState<string | null>(null);
 
   // Handle global keyboard shortcuts
   useEffect(() => {
@@ -161,13 +162,66 @@ function App() {
     }
   };
 
+  const validateMcpConfiguration = (configString: string): boolean => {
+    if (!configString.trim()) {
+      setMcpConfigError(null);
+      return true; // Empty config is valid
+    }
+
+    try {
+      const parsed = JSON.parse(configString);
+      
+      // Validate structure
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        setMcpConfigError('MCP configuration must be a JSON object');
+        return false;
+      }
+
+      // Validate each server config
+      for (const [key, config] of Object.entries(parsed)) {
+        if (typeof config !== 'object' || config === null) {
+          setMcpConfigError(`Server "${key}" must be an object`);
+          return false;
+        }
+
+        const serverConfig = config as any;
+        if (!serverConfig.name || typeof serverConfig.name !== 'string') {
+          setMcpConfigError(`Server "${key}" must have a name`);
+          return false;
+        }
+        if (!serverConfig.description || typeof serverConfig.description !== 'string') {
+          setMcpConfigError(`Server "${key}" must have a description`);
+          return false;
+        }
+        if (!serverConfig.command || typeof serverConfig.command !== 'string') {
+          setMcpConfigError(`Server "${key}" must have a command`);
+          return false;
+        }
+        if (serverConfig.transport !== 'stdio') {
+          setMcpConfigError(`Server "${key}" transport must be "stdio"`);
+          return false;
+        }
+      }
+
+      setMcpConfigError(null);
+      return true;
+    } catch (e) {
+      setMcpConfigError(`Invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return false;
+    }
+  };
+
   const handleSaveSettings = () => {
+    if (!validateMcpConfiguration(tempSettings.mcpConfiguration || '')) {
+      return;
+    }
     updateSettings(tempSettings);
     setShowSettings(false);
   };
 
   const handleCancelSettings = () => {
     setTempSettings(settings.value);
+    setMcpConfigError(null);
     setShowSettings(false);
   };
 
@@ -229,6 +283,33 @@ function App() {
                 }
                 placeholder="Leave blank to use 'openrouter'"
               />
+            </div>
+
+            <div class="form-group">
+              <label>MCP Configuration (JSON):</label>
+              <textarea
+                value={tempSettings.mcpConfiguration || ''}
+                onInput={(e) => {
+                  const value = (e.target as HTMLTextAreaElement).value;
+                  setTempSettings({
+                    ...tempSettings,
+                    mcpConfiguration: value
+                  });
+                }}
+                onBlur={() => validateMcpConfiguration(tempSettings.mcpConfiguration || '')}
+                rows={10}
+                style={{
+                  width: '100%',
+                  fontFamily: 'monospace',
+                  fontSize: '12px'
+                }}
+                placeholder='{"server-name": {"name": "...", "description": "...", "transport": "stdio", "command": "..."}}'
+              />
+              {mcpConfigError && (
+                <div style={{ color: 'red', marginTop: '5px', fontSize: '14px' }}>
+                  {mcpConfigError}
+                </div>
+              )}
             </div>
 
             <div class="modal-actions">

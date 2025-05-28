@@ -16,7 +16,8 @@ import {
 const DEFAULT_SETTINGS: Settings = {
   baseURL: '',
   apiKey: '',
-  defaultModel: ''
+  defaultModel: '',
+  mcpConfiguration: ''
 };
 
 // Flag to track initialization

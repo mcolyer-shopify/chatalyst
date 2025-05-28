@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conversation selection persistence that remembers the last selected conversation between application restarts
 - Animated loading indicator for assistant message generation with spinning Braille pattern animation
 - Window position and size persistence that remembers and restores window geometry between application restarts
+- MCP (Model Context Protocol) configuration support in settings
+  - Add textarea for JSON-based MCP server configuration
+  - Real-time JSON validation with error messages
+  - Persist MCP configuration across sessions
 
 ## [0.2.1] - 2025-01-26
 
