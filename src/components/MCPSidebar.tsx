@@ -14,16 +14,16 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
 
   const getStatusColor = (status: MCPServerStatus['status']) => {
     switch (status) {
-      case 'running':
-        return '#10b981'; // green
-      case 'starting':
-        return '#f59e0b'; // amber
-      case 'error':
-        return '#ef4444'; // red
-      case 'stopped':
-        return '#6b7280'; // gray
-      default:
-        return '#6b7280';
+    case 'running':
+      return '#10b981'; // green
+    case 'starting':
+      return '#f59e0b'; // amber
+    case 'error':
+      return '#ef4444'; // red
+    case 'stopped':
+      return '#6b7280'; // gray
+    default:
+      return '#6b7280';
     }
   };
 
@@ -153,26 +153,26 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
                   </div>
                   {isServerExpanded(server.id) && (
                     <div class="mcp-tools-list">
-                  {server.tools.map(tool => (
-                    <div key={tool.name} class="mcp-tool">
-                      <label class="mcp-tool-label">
-                        <input
-                          type="checkbox"
-                          checked={isToolEnabled(server.id, tool.name)}
-                          onChange={(e) => handleToolToggle(
-                            server.id, 
-                            tool.name, 
-                            (e.target as HTMLInputElement).checked
+                      {server.tools.map(tool => (
+                        <div key={tool.name} class="mcp-tool">
+                          <label class="mcp-tool-label">
+                            <input
+                              type="checkbox"
+                              checked={isToolEnabled(server.id, tool.name)}
+                              onChange={(e) => handleToolToggle(
+                                server.id, 
+                                tool.name, 
+                                (e.target as HTMLInputElement).checked
+                              )}
+                              disabled={server.status !== 'running'}
+                            />
+                            <span class="mcp-tool-name">{tool.name}</span>
+                          </label>
+                          {tool.description && (
+                            <div class="mcp-tool-description">{tool.description}</div>
                           )}
-                          disabled={server.status !== 'running'}
-                        />
-                        <span class="mcp-tool-name">{tool.name}</span>
-                      </label>
-                      {tool.description && (
-                        <div class="mcp-tool-description">{tool.description}</div>
-                      )}
-                    </div>
-                  ))}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

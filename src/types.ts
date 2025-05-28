@@ -62,7 +62,10 @@ export interface MCPServerStatus {
   tools: MCPTool[];
 }
 
+export type AIProvider = 'custom' | 'openrouter' | 'ollama';
+
 export interface Settings {
+  provider: AIProvider;
   baseURL: string;
   apiKey: string;
   defaultModel: string;

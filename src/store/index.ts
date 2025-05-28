@@ -15,7 +15,8 @@ import {
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
-  baseURL: '',
+  provider: 'openrouter',
+  baseURL: 'https://openrouter.ai/api/v1',
   apiKey: '',
   defaultModel: '',
   mcpConfiguration: ''
@@ -68,7 +69,17 @@ function initializeFromStorage() {
 
     const savedSettings = localStorage.getItem('chatalyst-settings');
     if (savedSettings) {
-      settings.value = JSON.parse(savedSettings);
+      const parsed = JSON.parse(savedSettings);
+      // Migrate old settings without provider
+      if (!parsed.provider) {
+        // If there's a base URL set, assume it's custom, otherwise default to openrouter
+        parsed.provider = parsed.baseURL ? 'custom' : 'openrouter';
+        // Set default base URL for openrouter if not set
+        if (parsed.provider === 'openrouter' && !parsed.baseURL) {
+          parsed.baseURL = 'https://openrouter.ai/api/v1';
+        }
+      }
+      settings.value = parsed;
     }
 
     const savedModelsCache = localStorage.getItem('chatalyst-models-cache');

@@ -63,7 +63,7 @@ export class TauriStdioTransport implements Transport {
       });
 
       command.on('error', (error) => {
-        console.error(`[TauriStdioTransport] Process error:`, error);
+        console.error('[TauriStdioTransport] Process error:', error);
         if (this.onerror) {
           this.onerror(new Error(error));
         }
@@ -72,15 +72,15 @@ export class TauriStdioTransport implements Transport {
       // Set up stdout handler to read messages
       command.stdout.on('data', (data: string | Uint8Array) => {
         // Handle both string and binary data
-        const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
+        const text = typeof data === 'string' ? data : new (globalThis.TextDecoder)().decode(data);
         this._readBuffer += text;
         this._processMessages();
       });
 
       // Set up stderr handler for debugging
       command.stderr.on('data', (data: string | Uint8Array) => {
-        const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
-        console.error(`[TauriStdioTransport] stderr:`, text);
+        const text = typeof data === 'string' ? data : new (globalThis.TextDecoder)().decode(data);
+        console.error('[TauriStdioTransport] stderr:', text);
       });
 
       // Spawn the process
@@ -88,7 +88,7 @@ export class TauriStdioTransport implements Transport {
       console.log(`[TauriStdioTransport] Process spawned with PID: ${this._process.pid}`);
 
     } catch (error) {
-      console.error(`[TauriStdioTransport] Failed to start:`, error);
+      console.error('[TauriStdioTransport] Failed to start:', error);
       if (this.onerror) {
         this.onerror(error instanceof Error ? error : new Error(String(error)));
       }
@@ -107,13 +107,13 @@ export class TauriStdioTransport implements Transport {
 
       try {
         const message = JSON.parse(line) as JSONRPCMessage;
-        console.log(`[TauriStdioTransport] Received message:`, message);
+        console.log('[TauriStdioTransport] Received message:', message);
         
         if (this.onmessage) {
           this.onmessage(message);
         }
       } catch (error) {
-        console.error(`[TauriStdioTransport] Failed to parse message:`, line, error);
+        console.error('[TauriStdioTransport] Failed to parse message:', line, error);
       }
     }
   }
@@ -124,27 +124,27 @@ export class TauriStdioTransport implements Transport {
     }
 
     const messageStr = JSON.stringify(message) + '\n';
-    console.log(`[TauriStdioTransport] Sending message:`, message);
+    console.log('[TauriStdioTransport] Sending message:', message);
 
     try {
       // Convert string to Uint8Array for write
-      const encoder = new TextEncoder();
+      const encoder = new (globalThis.TextEncoder)();
       const data = encoder.encode(messageStr);
       await this._process.write(data);
     } catch (error) {
-      console.error(`[TauriStdioTransport] Failed to send message:`, error);
+      console.error('[TauriStdioTransport] Failed to send message:', error);
       throw error;
     }
   }
 
   async close(): Promise<void> {
-    console.log(`[TauriStdioTransport] Closing transport`);
+    console.log('[TauriStdioTransport] Closing transport');
     
     if (this._process) {
       try {
         await this._process.kill();
       } catch (error) {
-        console.error(`[TauriStdioTransport] Failed to kill process:`, error);
+        console.error('[TauriStdioTransport] Failed to kill process:', error);
       }
       this._process = undefined;
     }

@@ -89,7 +89,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           <textarea
             value={tempMcpConfig}
             onInput={(e) => {
-              const value = (e.target as HTMLTextAreaElement).value;
+              const value = e.currentTarget.value;
               setTempMcpConfig(value);
             }}
             onBlur={() => validateMcpConfiguration(tempMcpConfig)}

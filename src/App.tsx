@@ -99,10 +99,29 @@ function App() {
 
   // Create AI provider with current settings
   const getAIProvider = () => {
+    // Get the appropriate base URL based on provider
+    let baseURL = settings.value.baseURL;
+    let apiKey = settings.value.apiKey;
+    
+    // Use provider-specific defaults
+    switch (settings.value.provider) {
+    case 'openrouter':
+      baseURL = baseURL || 'https://openrouter.ai/api/v1';
+      apiKey = apiKey || 'openrouter'; // Default API key for OpenRouter
+      break;
+    case 'ollama':
+      baseURL = baseURL || 'http://localhost:11434/v1';
+      apiKey = ''; // Ollama doesn't need an API key
+      break;
+    case 'custom':
+      // Use whatever is configured
+      break;
+    }
+    
     return createOpenAICompatible({
-      name: 'custom-ai-provider',
-      baseURL: settings.value.baseURL,
-      apiKey: settings.value.apiKey || 'openrouter'
+      name: `${settings.value.provider}-ai-provider`,
+      baseURL,
+      apiKey
     });
   };
 
@@ -161,14 +180,14 @@ function App() {
       const activeTools = await getActiveToolsForConversation(conversation);
       
       if (activeTools.length > 0) {
-        console.log(`[AI] Active tools for conversation:`, activeTools.map(t => t.name));
-        console.log(`[AI] Tool details:`, activeTools.map(t => ({
+        console.log('[AI] Active tools for conversation:', activeTools.map(t => t.name));
+        console.log('[AI] Tool details:', activeTools.map(t => ({
           name: t.name,
           description: t.description,
           parameters: t.parameters
         })));
       } else {
-        console.log(`[AI] No active tools for this conversation`);
+        console.log('[AI] No active tools for this conversation');
       }
       
       const toolsObject = activeTools.length > 0 ? activeTools.reduce((acc, tool) => {
@@ -192,7 +211,7 @@ function App() {
         return acc;
       }, {} as any) : undefined;
       
-      console.log(`[AI] Calling streamText with tools:`, toolsObject ? Object.keys(toolsObject) : 'none');
+      console.log('[AI] Calling streamText with tools:', toolsObject ? Object.keys(toolsObject) : 'none');
       console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
 
       // Use the AI SDK's built-in tool handling with maxSteps
@@ -215,7 +234,6 @@ function App() {
       
       // Stream the response
       let fullContent = '';
-      let currentStepIndex = 0;
       
       for await (const part of result.fullStream) {
         console.log('[AI] Stream part type:', part.type);
@@ -253,7 +271,6 @@ function App() {
           addMessage(conversation.id, toolMessage);
         } else if (part.type === 'step-finish') {
           console.log('[AI] Step finished:', part);
-          currentStepIndex++;
           // Each step represents a complete tool call/response cycle
         } else if (part.type === 'finish') {
           console.log('[AI] Finish event:', part);
