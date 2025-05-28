@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - TypeScript errors in MCP tool execution with proper type guards for tool results
+- Type assertion for MCP tool arguments to match expected Record<string, unknown> type
 
 ### Added
 - Error message display in conversation when models don't support tools

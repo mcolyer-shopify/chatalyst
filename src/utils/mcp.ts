@@ -345,7 +345,7 @@ export async function executeMCPTool(toolName: string, args: unknown) {
     // Call the tool through MCP
     const result = await connection.client.callTool({
       name: actualToolName,
-      arguments: args
+      arguments: args as Record<string, unknown>
     });
     
     console.log(`[MCP] Tool ${toolName} result:`, result);
