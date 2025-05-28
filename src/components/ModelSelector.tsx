@@ -340,6 +340,7 @@ export function ModelSelector({
                   onKeyDown={handleKeyDown}
                   placeholder="Search models..."
                   className="model-selector-search-input"
+                  autoCorrect="off"
                 />
               </div>
               
