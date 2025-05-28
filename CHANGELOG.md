@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Visual feedback for server errors
   - Graceful handling of removed tools
   - Collapsible tool lists with expand/collapse arrow indicator
+- Integration of MCP tools with AI message generation
+  - Active tools passed to AI based on conversation settings
+  - Tool calls displayed in message stream
+  - Mock tool execution for demonstration
 
 ### Fixed
 - Switch to using `sh -c` for all MCP server commands instead of individual command permissions

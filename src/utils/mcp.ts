@@ -1,6 +1,6 @@
 import { Child, Command } from '@tauri-apps/plugin-shell';
-import type { MCPConfiguration, MCPServerConfig, MCPServerStatus } from '../types';
-import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer } from '../store';
+import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation } from '../types';
+import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, mcpServers } from '../store';
 
 interface MCPConnection {
   serverId: string;
@@ -154,4 +154,59 @@ export async function shutdownMCPConnections() {
 export async function restartMCPConnections(newConfigString: string | undefined) {
   await shutdownMCPConnections();
   await initializeMCPConnections(newConfigString);
+}
+
+/**
+ * Get active tools for a conversation
+ */
+export function getActiveToolsForConversation(conversation: Conversation | null) {
+  if (!conversation || !conversation.enabledTools) {
+    return [];
+  }
+
+  const activeTools: any[] = [];
+  const servers = mcpServers.value;
+
+  for (const [serverId, enabledToolNames] of Object.entries(conversation.enabledTools)) {
+    if (!enabledToolNames || enabledToolNames.length === 0) continue;
+
+    const server = servers.find(s => s.id === serverId);
+    if (!server || server.status !== 'running') continue;
+
+    // For each enabled tool, create a tool definition
+    for (const toolName of enabledToolNames) {
+      const tool = server.tools.find(t => t.name === toolName);
+      if (!tool) continue;
+
+      // Create a tool definition that the AI SDK can use
+      // This is a placeholder - in a real implementation, we'd get the actual schema from MCP
+      activeTools.push({
+        name: `${serverId}_${toolName}`,
+        description: tool.description || `Tool ${toolName} from ${server.name}`,
+        parameters: {
+          type: 'object',
+          properties: {
+            // Placeholder schema - real MCP would provide actual parameters
+            input: {
+              type: 'string',
+              description: 'Input for the tool'
+            }
+          },
+          required: ['input']
+        },
+        execute: async (args: any) => {
+          // Placeholder execution - real MCP would handle this
+          console.log(`Executing tool ${toolName} from ${serverId} with args:`, args);
+          
+          // For now, return a mock response
+          return {
+            success: true,
+            result: `Mock result from ${toolName}: ${args.input}`
+          };
+        }
+      });
+    }
+  }
+
+  return activeTools;
 }

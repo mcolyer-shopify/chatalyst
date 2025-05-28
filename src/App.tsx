@@ -24,7 +24,7 @@ import {
   clearError
 } from './store';
 import { restoreWindowGeometry, setupWindowGeometryPersistence } from './utils/windowSize';
-import { initializeMCPConnections, restartMCPConnections, shutdownMCPConnections } from './utils/mcp';
+import { initializeMCPConnections, restartMCPConnections, shutdownMCPConnections, getActiveToolsForConversation } from './utils/mcp';
 import './App.css';
 
 function App() {
@@ -155,20 +155,63 @@ function App() {
       const aiProvider = getAIProvider();
       const modelToUse = conversation.model || settings.value.defaultModel || 'gpt-4-turbo';
       const messages = conversation.messages.concat([userMessage]);
+      
+      // Get active tools for this conversation
+      const activeTools = getActiveToolsForConversation(conversation);
+      
+      if (activeTools.length > 0) {
+        console.log(`Active tools for conversation:`, activeTools.map(t => t.name));
+      }
+      
       const result = await streamText({
         model: aiProvider(modelToUse),
         messages: messages.map((m) => ({
           role: m.role,
           content: m.content
         })),
+        tools: activeTools.length > 0 ? activeTools.reduce((acc, tool) => {
+          acc[tool.name] = {
+            description: tool.description,
+            parameters: tool.parameters,
+            execute: tool.execute
+          };
+          return acc;
+        }, {} as any) : undefined,
         abortSignal: controller.signal
       });
 
       // Stream the response
       let fullContent = '';
-      for await (const chunk of result.textStream) {
-        fullContent += chunk;
-        updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+      
+      // Check if there are tool calls
+      if (activeTools.length > 0) {
+        // Handle both text and tool calls
+        for await (const part of result.fullStream) {
+          if (part.type === 'text-delta') {
+            fullContent += part.textDelta;
+            updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+          } else if (part.type === 'tool-call') {
+            // Handle tool calls
+            const toolCall = part.toolCall;
+            if (toolCall) {
+              fullContent += `\n[Calling tool: ${toolCall.toolName}]\n`;
+              updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+            }
+          } else if (part.type === 'tool-result') {
+            // Handle tool results
+            const toolResult = part.toolResult;
+            if (toolResult) {
+              fullContent += `[Tool result: ${JSON.stringify(toolResult.result)}]\n`;
+              updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+            }
+          }
+        }
+      } else {
+        // No tools, just stream text
+        for await (const chunk of result.textStream) {
+          fullContent += chunk;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        }
       }
       
       // Mark as finished generating
