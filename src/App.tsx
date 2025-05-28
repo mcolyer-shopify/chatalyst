@@ -249,9 +249,10 @@ function App() {
                   toolCalls: m.toolCalls
                 };
               }
+              // Explicitly cast role to ensure it's a valid ModelMessage role
               return {
-                role: m.role,
-                content: m.content
+                role: m.role as 'user' | 'assistant' | 'system',
+                content: m.content || ''
               };
             }),
             tools: toolsObject,
@@ -350,8 +351,8 @@ function App() {
         const result = await streamText({
           model: aiProvider(modelToUse),
           messages: messages.map((m) => ({
-            role: m.role,
-            content: m.content
+            role: m.role as 'user' | 'assistant' | 'system',
+            content: m.content || ''
           })),
           abortSignal: controller.signal
         });
