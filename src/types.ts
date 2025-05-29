@@ -59,7 +59,7 @@ export interface MCPServerStatus {
   id: string;
   name: string;
   description: string;
-  status: 'starting' | 'running' | 'error' | 'stopped';
+  status: 'unloaded' | 'starting' | 'running' | 'error' | 'stopped';
   error?: string;
   tools: MCPTool[];
 }

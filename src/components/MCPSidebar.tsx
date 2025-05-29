@@ -22,6 +22,8 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
       return '#ef4444'; // red
     case 'stopped':
       return '#6b7280'; // gray
+    case 'unloaded':
+      return '#9ca3af'; // light gray
     default:
       return '#6b7280';
     }
@@ -37,6 +39,8 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
       return 'Server error';
     case 'stopped':
       return 'Server is stopped';
+    case 'unloaded':
+      return 'Server not loaded';
     default:
       return 'Unknown status';
     }
@@ -74,6 +78,13 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
       return (
         <svg width={size} height={size} viewBox="0 0 12 12" class="mcp-status-icon">
           <rect x="1" y="1" width="10" height="10" fill={color} />
+        </svg>
+      );
+    case 'unloaded':
+      // Dashed circle for unloaded
+      return (
+        <svg width={size} height={size} viewBox="0 0 12 12" class="mcp-status-icon">
+          <circle cx="6" cy="6" r="5" fill="none" stroke={color} stroke-width="2" stroke-dasharray="2,2" />
         </svg>
       );
     default:

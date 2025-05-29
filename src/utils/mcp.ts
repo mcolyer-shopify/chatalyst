@@ -25,6 +25,19 @@ export async function initializeMCPConnections(configString: string | undefined)
   try {
     const config: MCPConfiguration = JSON.parse(configString);
     
+    // First, add all configured servers in unloaded state
+    for (const [serverId, serverConfig] of Object.entries(config)) {
+      const serverStatus: MCPServerStatus = {
+        id: serverId,
+        name: serverConfig.name,
+        description: serverConfig.description,
+        status: 'unloaded',
+        tools: []
+      };
+      addMCPServer(serverStatus);
+    }
+    
+    // Then start enabled servers
     for (const [serverId, serverConfig] of Object.entries(config)) {
       if (serverConfig.enabled !== false) {
         await startMCPServer(serverId, serverConfig);
@@ -48,15 +61,8 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
 
     console.log(`Starting MCP server: ${serverId}`);
     
-    // Add server to store with starting status
-    const serverStatus: MCPServerStatus = {
-      id: serverId,
-      name: config.name,
-      description: config.description,
-      status: 'starting',
-      tools: []
-    };
-    addMCPServer(serverStatus);
+    // Update server status to starting
+    updateMCPServerStatus(serverId, { status: 'starting' });
     
     console.log(`MCP server ${serverId} starting...`);
 
@@ -156,7 +162,7 @@ export async function restartMCPConnections(newConfigString: string | undefined)
 
   try {
     const newConfig: MCPConfiguration = JSON.parse(newConfigString);
-    const currentServerIds = new Set(activeConnections.keys());
+    const currentServerIds = new Set(mcpServers.value.map(s => s.id));
     const newServerIds = new Set(Object.keys(newConfig));
     
     // Find servers to remove (in current but not in new)
@@ -206,7 +212,20 @@ export async function restartMCPConnections(newConfigString: string | undefined)
       }
     }
     
-    // Add new servers
+    // Add new servers in unloaded state first
+    for (const serverId of serversToAdd) {
+      const serverConfig = newConfig[serverId];
+      const serverStatus: MCPServerStatus = {
+        id: serverId,
+        name: serverConfig.name,
+        description: serverConfig.description,
+        status: 'unloaded',
+        tools: []
+      };
+      addMCPServer(serverStatus);
+    }
+    
+    // Then start enabled new servers
     for (const serverId of serversToAdd) {
       const serverConfig = newConfig[serverId];
       if (serverConfig.enabled !== false) {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Show MCP servers in unloaded state when configured but not yet started
+- Visual indicator (dashed circle) for unloaded MCP servers with "Server not loaded" tooltip
+
 ## [0.3.3] - 2025-01-29
 
 ### Fixed
