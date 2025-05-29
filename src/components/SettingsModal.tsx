@@ -19,11 +19,46 @@ type ProviderConfig = {
 
 const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
   custom: {
-    name: 'Custom OpenAI',
+    name: 'Custom OpenAI-Compatible',
     showBaseURL: true,
     showApiKey: true,
-    baseURLPlaceholder: 'https://api.openai.com/v1',
+    baseURLPlaceholder: 'https://api.example.com/v1',
+    apiKeyPlaceholder: 'your-api-key'
+  },
+  openai: {
+    name: 'OpenAI',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.openai.com/v1',
     apiKeyPlaceholder: 'sk-...'
+  },
+  anthropic: {
+    name: 'Anthropic',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.anthropic.com',
+    apiKeyPlaceholder: 'sk-ant-...'
+  },
+  google: {
+    name: 'Google AI',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://generativelanguage.googleapis.com',
+    apiKeyPlaceholder: 'AIza...'
+  },
+  groq: {
+    name: 'Groq',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.groq.com/openai/v1',
+    apiKeyPlaceholder: 'gsk_...'
+  },
+  perplexity: {
+    name: 'Perplexity',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.perplexity.ai',
+    apiKeyPlaceholder: 'pplx-...'
   },
   openrouter: {
     name: 'OpenRouter',
@@ -33,10 +68,11 @@ const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
     apiKeyPlaceholder: 'sk-or-v1-...'
   },
   ollama: {
-    name: 'Ollama',
-    showBaseURL: false,
+    name: 'Ollama (Local)',
+    showBaseURL: true,
     showApiKey: false,
-    defaultBaseURL: 'http://localhost:11434/v1'
+    defaultBaseURL: 'http://localhost:11434/v1',
+    baseURLPlaceholder: 'http://localhost:11434/v1'
   }
 };
 
@@ -79,14 +115,20 @@ export function SettingsModal({ show, settings, onSave, onCancel }: SettingsModa
     const config = PROVIDER_CONFIGS[provider];
     const updates: Partial<Settings> = { provider };
     
-    // Set default base URL for non-custom providers
-    if (!config.showBaseURL && config.defaultBaseURL) {
+    // Set default base URL for all providers that have one
+    if (config.defaultBaseURL) {
       updates.baseURL = config.defaultBaseURL;
     }
     
-    // Clear API key for providers that don't need it
+    // Set default API key for providers that need it (like Ollama)
     if (!config.showApiKey) {
       updates.apiKey = '';
+    } else if (provider === 'ollama') {
+      // Ollama needs a default API key
+      updates.apiKey = 'ollama';
+    } else if (provider === 'openrouter') {
+      // OpenRouter has a default API key
+      updates.apiKey = 'openrouter';
     }
     
     setTempSettings({
