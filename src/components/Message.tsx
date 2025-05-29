@@ -4,10 +4,12 @@ import { useEffect, useState } from 'preact/hooks';
 
 interface MessageProps {
   message: MessageType;
+  collapsed?: boolean;
 }
 
-export function Message({ message }: MessageProps) {
+export function Message({ message, collapsed = true }: MessageProps) {
   const [animationFrame, setAnimationFrame] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(message.role === 'tool' ? true : collapsed);
 
   useEffect(() => {
     if (message.isGenerating) {
@@ -18,6 +20,10 @@ export function Message({ message }: MessageProps) {
     }
   }, [message.isGenerating]);
 
+  useEffect(() => {
+    setIsCollapsed(collapsed);
+  }, [collapsed]);
+
   const getLoadingAnimation = () => {
     const frames = ['⠋', '⠙', '⠹', '⠸'];
     return frames[animationFrame];
@@ -26,21 +32,26 @@ export function Message({ message }: MessageProps) {
   const renderContent = () => {
     if (message.role === 'tool') {
       return (
-        <div class="message-content tool-message">
-          <div class="tool-header">
+        <div class={`message-content tool-message ${isCollapsed ? 'collapsed' : ''}`}>
+          <div class="tool-header" onClick={() => setIsCollapsed(!isCollapsed)}>
             <span class="tool-icon">🔧</span>
             <span class="tool-name">{message.toolName || 'Tool'}</span>
+            <span class="tool-toggle">{isCollapsed ? '▶' : '▼'}</span>
           </div>
-          {message.toolCall && (
-            <div class="tool-call">
-              <div class="tool-label">Call:</div>
-              <pre>{JSON.stringify(message.toolCall, null, 2)}</pre>
-            </div>
-          )}
-          {message.toolResult !== undefined && (
-            <div class="tool-result">
-              <div class="tool-label">Result:</div>
-              <pre>{JSON.stringify(message.toolResult, null, 2)}</pre>
+          {!isCollapsed && (
+            <div class="tool-details">
+              {message.toolCall && (
+                <div class="tool-call">
+                  <div class="tool-label">Call:</div>
+                  <pre>{JSON.stringify(message.toolCall, null, 2)}</pre>
+                </div>
+              )}
+              {message.toolResult !== undefined && (
+                <div class="tool-result">
+                  <div class="tool-label">Result:</div>
+                  <pre>{JSON.stringify(message.toolResult, null, 2)}</pre>
+                </div>
+              )}
             </div>
           )}
         </div>

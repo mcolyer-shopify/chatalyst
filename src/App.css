@@ -284,6 +284,14 @@ body {
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.message-tool .tool-header:hover {
+  background-color: #f8f9fa;
 }
 
 .message-tool .tool-icon {
@@ -292,6 +300,21 @@ body {
 
 .message-tool .tool-name {
   color: #495057;
+  flex: 1;
+}
+
+.message-tool .tool-toggle {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-left: auto;
+}
+
+.tool-message.collapsed .tool-header {
+  margin-bottom: 0;
+}
+
+.message-tool .tool-details {
+  animation: expandTool 0.2s ease-out;
 }
 
 .message-tool .tool-call,
@@ -305,6 +328,17 @@ body {
   color: #6c757d;
   text-transform: uppercase;
   margin-bottom: 0.25rem;
+}
+
+@keyframes expandTool {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
 }
 
 .message-tool pre {

@@ -88,7 +88,10 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
       </div>
       <div class="conversation-messages" ref={messagesContainerRef}>
         {conversation.messages.map((message) => (
-          <Message key={message.id} message={message} />
+          <Message 
+            key={message.id} 
+            message={message}
+          />
         ))}
         <div ref={messagesEndRef} />
         {showScrollButton && (
