@@ -13,7 +13,7 @@ export function createAIProvider(settings: Settings) {
     // Use native OpenAI provider
     baseURL = baseURL || PROVIDER_DEFAULTS.openai.baseURL;
     return createOpenAI({
-      apiKey: apiKey || process.env.OPENAI_API_KEY || '',
+      apiKey: apiKey || '',
       baseURL: baseURL !== PROVIDER_DEFAULTS.openai.baseURL ? baseURL : undefined
     });
     
@@ -67,7 +67,7 @@ export function createAIProvider(settings: Settings) {
     if (baseURL && (baseURL.includes('api.openai.com') || baseURL.includes('openai.azure.com'))) {
       // Use native OpenAI provider for better compatibility
       return createOpenAI({
-        apiKey: apiKey || process.env.OPENAI_API_KEY || '',
+        apiKey: apiKey || '',
         baseURL: baseURL
       });
     }

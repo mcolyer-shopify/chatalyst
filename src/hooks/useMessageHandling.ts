@@ -101,7 +101,7 @@ export function useMessageHandling() {
         }
         
         if (part.type === 'text-delta') {
-          fullContent += part.textDelta;
+          fullContent += (part as { textDelta: string }).textDelta;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'tool-result') {
           // Create a tool message for UI display
