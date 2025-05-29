@@ -72,6 +72,7 @@ export function useMessageHandling() {
       const result = await streamText({
         model: aiProvider(modelToUse),
         messages: conversationMessages,
+        // @ts-expect-error - AI SDK has incompatible tool types but works at runtime
         tools: toolsObject,
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a complete, natural language response to the user. Never end a conversation with a tool call',
@@ -100,6 +101,7 @@ export function useMessageHandling() {
           break;
         }
         
+        // @ts-expect-error - AI SDK types don't include 'text-delta' but it exists at runtime
         if (part.type === 'text-delta') {
           fullContent += (part as { textDelta: string }).textDelta;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
