@@ -2,9 +2,9 @@ import { jsonSchema } from 'ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { TauriStdioTransport } from './TauriStdioTransport';
-import { RemoteWebSocketTransport } from './RemoteWebSocketTransport';
 import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, clearMCPServers, mcpServers } from '../store';
 
@@ -136,12 +136,9 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
       transport = result.transport;
     } else if (config.transport === 'websocket') {
       const wsConfig = config as WebSocketMCPServerConfig;
-      transport = new RemoteWebSocketTransport({
-        url: wsConfig.url,
-        headers: wsConfig.headers,
-        reconnectAttempts: wsConfig.reconnectAttempts,
-        reconnectDelay: wsConfig.reconnectDelay
-      });
+      const wsUrl = new URL(wsConfig.url);
+      
+      transport = new WebSocketClientTransport(wsUrl);
       
       client = new Client({
         name: 'chatalyst',

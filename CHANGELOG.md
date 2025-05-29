@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Simplified HTTP transport handling for MCP remote servers
-  - Now uses official MCP SDK transports (StreamableHTTPClientTransport and SSEClientTransport)
+- Simplified transport handling for MCP remote servers
+  - Now uses official MCP SDK transports for all connection types:
+    - StreamableHTTPClientTransport and SSEClientTransport for HTTP
+    - WebSocketClientTransport for WebSocket connections
   - Automatically tries Streamable HTTP first, then falls back to SSE if needed
-  - Removed custom transport implementations in favor of SDK-provided ones
+  - Removed all custom transport implementations in favor of SDK-provided ones
   - Simplified configuration - no need to manually select transport type
 
 ### Fixed
