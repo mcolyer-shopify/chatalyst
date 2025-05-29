@@ -1,8 +1,9 @@
 import { jsonSchema } from 'ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { TauriStdioTransport } from './TauriStdioTransport';
-import { RemoteHttpTransport } from './RemoteHttpTransport';
 import { RemoteWebSocketTransport } from './RemoteWebSocketTransport';
 import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, clearMCPServers, mcpServers } from '../store';
@@ -52,6 +53,43 @@ export async function initializeMCPConnections(configString: string | undefined)
 }
 
 /**
+ * Connect to an HTTP MCP server with automatic transport fallback
+ */
+async function connectWithHttpTransport(serverId: string, httpConfig: HttpMCPServerConfig): Promise<{ client: Client, transport: Transport }> {
+  const baseUrl = new URL(httpConfig.url);
+  
+  // Try streamable HTTP first
+  try {
+    const client = new Client({
+      name: 'chatalyst',
+      version: '0.1.0'
+    }, {
+      capabilities: {}
+    });
+    
+    const transport = new StreamableHTTPClientTransport(baseUrl, httpConfig.headers);
+    await client.connect(transport);
+    console.log(`Connected to ${serverId} using Streamable HTTP transport`);
+    return { client, transport };
+  } catch (streamableError) {
+    console.log(`Streamable HTTP failed for ${serverId}, trying SSE:`, streamableError);
+    
+    // Create a new client for SSE attempt
+    const sseClient = new Client({
+      name: 'chatalyst',
+      version: '0.1.0'
+    }, {
+      capabilities: {}
+    });
+    
+    const sseTransport = new SSEClientTransport(baseUrl, httpConfig.headers);
+    await sseClient.connect(sseTransport);
+    console.log(`Connected to ${serverId} using SSE transport`);
+    return { client: sseClient, transport: sseTransport };
+  }
+}
+
+/**
  * Start a single MCP server
  */
 async function startMCPServer(serverId: string, config: MCPServerConfig) {
@@ -69,8 +107,9 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     
     console.log(`MCP server ${serverId} starting...`);
 
-    // Create appropriate transport based on config type
+    // Create appropriate transport and client based on config type
     let transport: Transport;
+    let client: Client;
     
     if (!config.transport || config.transport === 'stdio') {
       const stdioConfig = config as StdioMCPServerConfig;
@@ -80,13 +119,21 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
         cwd: stdioConfig.cwd,
         env: stdioConfig.env
       });
+      
+      client = new Client({
+        name: 'chatalyst',
+        version: '0.1.0'
+      }, {
+        capabilities: {}
+      });
+      
+      await client.connect(transport);
+      console.log(`MCP client connected for ${serverId}`);
     } else if (config.transport === 'http') {
       const httpConfig = config as HttpMCPServerConfig;
-      transport = new RemoteHttpTransport({
-        url: httpConfig.url,
-        headers: httpConfig.headers,
-        timeout: httpConfig.timeout
-      });
+      const result = await connectWithHttpTransport(serverId, httpConfig);
+      client = result.client;
+      transport = result.transport;
     } else if (config.transport === 'websocket') {
       const wsConfig = config as WebSocketMCPServerConfig;
       transport = new RemoteWebSocketTransport({
@@ -95,24 +142,19 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
         reconnectAttempts: wsConfig.reconnectAttempts,
         reconnectDelay: wsConfig.reconnectDelay
       });
+      
+      client = new Client({
+        name: 'chatalyst',
+        version: '0.1.0'
+      }, {
+        capabilities: {}
+      });
+      
+      await client.connect(transport);
+      console.log(`MCP client connected for ${serverId}`);
     } else {
       throw new Error(`Unsupported transport type: ${(config as { transport?: string }).transport}`);
     }
-
-    const client = new Client({
-      name: 'chatalyst',
-      version: '0.1.0'
-    }, {
-      capabilities: {}
-    });
-
-    // Start the transport first
-    await transport.start();
-    console.log(`MCP transport started for ${serverId}`);
-
-    // Connect the client to the transport
-    await client.connect(transport);
-    console.log(`MCP client connected for ${serverId}`);
 
     // List available tools
     const toolsResponse = await client.listTools();
@@ -315,8 +357,7 @@ function hasServerConfigChanged(oldConfig: MCPServerConfig, newConfig: MCPServer
     const newHttp = newConfig as HttpMCPServerConfig;
     return (
       oldHttp.url !== newHttp.url ||
-      JSON.stringify(oldHttp.headers) !== JSON.stringify(newHttp.headers) ||
-      oldHttp.timeout !== newHttp.timeout
+      JSON.stringify(oldHttp.headers) !== JSON.stringify(newHttp.headers)
     );
   } else if (oldConfig.transport === 'websocket' && newConfig.transport === 'websocket') {
     const oldWs = oldConfig as WebSocketMCPServerConfig;

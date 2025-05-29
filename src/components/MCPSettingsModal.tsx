@@ -22,7 +22,6 @@ interface HttpMCPServer extends BaseMCPServer {
   transport: 'http';
   url: string;
   headers?: Record<string, string>;
-  timeout?: number;
 }
 
 interface WebSocketMCPServer extends BaseMCPServer {
@@ -80,7 +79,6 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
               description: httpConfig.description || '',
               url: httpConfig.url || '',
               headers: httpConfig.headers || {},
-              timeout: httpConfig.timeout,
               transport: 'http',
               enabled: httpConfig.enabled !== false
             });
@@ -191,8 +189,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         enabled: editingServer.enabled,
         transport: 'http',
         url: '',
-        headers: {},
-        timeout: 30000
+        headers: {}
       };
     } else {
       newServer = {
@@ -285,10 +282,6 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         
         if (httpServer.headers && Object.keys(httpServer.headers).length > 0) {
           httpConfig.headers = httpServer.headers;
-        }
-        
-        if (httpServer.timeout) {
-          httpConfig.timeout = httpServer.timeout;
         }
         
         config[server.id] = httpConfig;
@@ -583,6 +576,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                         autoCapitalize="off"
                         spellcheck={false}
                       />
+                      <small>The SDK will automatically try Streamable HTTP first, then fall back to SSE if needed.</small>
                     </div>
 
                     <div class="form-group">
@@ -595,18 +589,6 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                         autoCorrect="off"
                         autoCapitalize="off"
                         spellcheck={false}
-                      />
-                    </div>
-
-                    <div class="form-group">
-                      <label>Timeout (milliseconds):</label>
-                      <input
-                        type="number"
-                        value={editingServer.timeout || 30000}
-                        onInput={(e) => handleServerChange('timeout', parseInt(e.currentTarget.value) || 30000)}
-                        min="1000"
-                        max="300000"
-                        step="1000"
                       />
                     </div>
                   </>
@@ -831,7 +813,8 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           border-radius: 0.375rem;
         }
 
-        .mcp-server-details textarea {
+        .mcp-server-details textarea,
+        .mcp-server-details select {
           width: 100%;
           padding: 0.5rem;
           border: 1px solid #e0e0e0;
@@ -842,6 +825,19 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           min-height: 4rem;
           line-height: 1.4;
           white-space: pre-wrap;
+        }
+
+        .mcp-server-details select {
+          font-family: inherit;
+          min-height: auto;
+          resize: none;
+        }
+
+        .mcp-server-details small {
+          color: #666;
+          font-size: 0.75rem;
+          margin-top: 0.25rem;
+          display: block;
         }
 
         @media (prefers-color-scheme: dark) {

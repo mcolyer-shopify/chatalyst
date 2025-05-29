@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Simplified HTTP transport handling for MCP remote servers
+  - Now uses official MCP SDK transports (StreamableHTTPClientTransport and SSEClientTransport)
+  - Automatically tries Streamable HTTP first, then falls back to SSE if needed
+  - Removed custom transport implementations in favor of SDK-provided ones
+  - Simplified configuration - no need to manually select transport type
+
+### Fixed
+- HTTP transport compatibility for MCP remote servers
+  - Fixes 404 errors when connecting to SSE endpoints
+  - Automatic fallback from Streamable HTTP to SSE transport
+  - Better error handling and logging during transport selection
+  - Uses Tauri HTTP client plugin for proper CORS handling and security
+
 ## [0.4.0] - 2025-01-29
 
 ### Added

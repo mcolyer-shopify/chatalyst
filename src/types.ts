@@ -55,7 +55,6 @@ export interface HttpMCPServerConfig extends BaseMCPServerConfig {
   transport: 'http';
   url: string;
   headers?: Record<string, string>;
-  timeout?: number; // in milliseconds
 }
 
 // Configuration for WebSocket-based remote MCP servers
