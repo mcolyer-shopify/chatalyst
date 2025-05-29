@@ -33,6 +33,9 @@ pnpm test:coverage
 ### Future
 
 - Fix autoscrolling
+- Show MCP servers that haven't loaded yet with an unloaded state.
+- Make sure to clear errors when switching conversations.
 - Make sure to clear the error state on the MCP Settings modal after saving or canceling.
 - Add support for remote sse MCP servers.
+- Refactor messages to be array of message parts rather than strings.
 - Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.
