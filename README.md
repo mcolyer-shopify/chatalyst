@@ -32,7 +32,6 @@ pnpm test:coverage
 
 ### Future
 
-- Make sure to clear the error state on the MCP Settings modal after saving or canceling.
 - Add support for remote sse MCP servers.
 - Refactor messages to be array of message parts rather than strings.
 - Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.

@@ -25,11 +25,16 @@ vi.mock('../store', () => {
 // Import the mocked store
 import { mcpServers, selectedConversation } from '../store';
 
+// Helper function to set signal values in tests
+function setMockSignalValue<T>(signal: { value: T }, newValue: T) {
+  (signal as { value: T }).value = newValue;
+}
+
 describe('MCPSidebar', () => {
   beforeEach(() => {
     // Reset the signals
-    (mcpServers as any).value = [];
-    (selectedConversation as any).value = null;
+    setMockSignalValue(mcpServers, []);
+    setMockSignalValue(selectedConversation, null);
   });
 
   it('shows server with unloaded status', () => {
@@ -50,8 +55,8 @@ describe('MCPSidebar', () => {
       enabledTools: {}
     };
 
-    (mcpServers as any).value = [unloadedServer];
-    (selectedConversation as any).value = conversation;
+    setMockSignalValue(mcpServers, [unloadedServer]);
+    setMockSignalValue(selectedConversation, conversation);
 
     render(<MCPSidebar />);
 
@@ -97,8 +102,8 @@ describe('MCPSidebar', () => {
       enabledTools: {}
     };
 
-    (mcpServers as any).value = servers;
-    (selectedConversation as any).value = conversation;
+    setMockSignalValue(mcpServers, servers);
+    setMockSignalValue(selectedConversation, conversation);
 
     render(<MCPSidebar />);
 
@@ -117,8 +122,8 @@ describe('MCPSidebar', () => {
       enabledTools: {}
     };
 
-    (mcpServers as any).value = [];
-    (selectedConversation as any).value = conversation;
+    setMockSignalValue(mcpServers, []);
+    setMockSignalValue(selectedConversation, conversation);
 
     render(<MCPSidebar />);
 
@@ -126,8 +131,8 @@ describe('MCPSidebar', () => {
   });
 
   it('shows conversation selection message when no conversation is selected', () => {
-    (mcpServers as any).value = [];
-    (selectedConversation as any).value = null;
+    setMockSignalValue(mcpServers, []);
+    setMockSignalValue(selectedConversation, null);
 
     render(<MCPSidebar />);
 
