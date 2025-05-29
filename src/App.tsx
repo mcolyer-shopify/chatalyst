@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { streamText, tool } from 'ai';
+import { streamText } from 'ai';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
 import { MCPSidebar } from './components/MCPSidebar';
@@ -191,7 +191,7 @@ function App() {
       }
       
       const toolsObject = activeTools.length > 0 ? activeTools.reduce((acc, activeTool) => {
-        acc[activeTool.name] = tool({
+        acc[activeTool.name] = {
           description: activeTool.description || '',
           parameters: activeTool.parameters,
           execute: async (args: unknown) => {
@@ -207,9 +207,13 @@ function App() {
               throw error;
             }
           }
-        });
+        };
         return acc;
-      }, {} as Record<string, ReturnType<typeof tool>>) : undefined;
+      }, {} as Record<string, {
+        description: string;
+        parameters: unknown;
+        execute: (args: unknown) => Promise<unknown>;
+      }>) : undefined;
       
       console.log('[AI] Calling streamText with tools:', toolsObject ? Object.keys(toolsObject) : 'none');
       console.log('[AI] Messages being sent:', messages.map(m => ({ role: m.role, content: m.content.substring(0, 50) + '...', toolCalls: m.toolCalls, toolResult: m.toolResult })));
@@ -227,9 +231,8 @@ function App() {
         model: aiProvider(modelToUse),
         messages: conversationMessages,
         tools: toolsObject,
-        // @ts-expect-error For some reason this isn't recognized as a valid option https://github.com/vercel/ai/blob/9b09f85143986636570e597c31903daf160608cd/packages/ai/core/generate-text/stream-text.ts#L252
         maxSteps: 10, // Limit to 10 tool calls per turn
-        system: 'You are a helpful assistant. Always provide a complete, natural language response to the user. If you use tools, incorporate the results into your response.',
+        system: 'You are a helpful assistant. Always provide a complete, natural language response to the user. Never end a conversation with a tool call',
         abortSignal: controller.signal,
         onStepFinish: (event) => {
           console.log('[AI] Step finished:', event);
@@ -268,9 +271,9 @@ function App() {
           }
         }
         
-        if (part.type === 'text') {
-          console.log('[AI] Text:', part.text);
-          fullContent += part.text;
+        if (part.type === 'text-delta') {
+          console.log('[AI] Text:', part.textDelta);
+          fullContent += part.textDelta;
           console.log('[AI] Full content so far:', fullContent);
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'tool-call') {

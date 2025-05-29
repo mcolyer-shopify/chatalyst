@@ -128,7 +128,7 @@ describe('ModelSelector', () => {
   it('shows loading state', () => {
     // Mock the store to simulate loading state
     store.availableModels.value = [];
-    const { rerender } = render(<ModelSelector {...mockProps} selectedModel="gpt-4" />);
+    render(<ModelSelector {...mockProps} selectedModel="gpt-4" />);
     
     // When there are no models and the component isn't disabled, it would show as disabled
     const button = screen.getByRole('button');

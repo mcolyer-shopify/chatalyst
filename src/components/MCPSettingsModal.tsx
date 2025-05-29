@@ -264,7 +264,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     }}
                     autoCorrect="off"
                     autoCapitalize="off"
-                    spellCheck="false"
+                    spellcheck={false}
                   />
                 </div>
 
@@ -295,7 +295,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     placeholder="e.g., npx, python, node"
                     autoCorrect="off"
                     autoCapitalize="off"
-                    spellCheck="false"
+                    spellcheck={false}
                   />
                 </div>
 
@@ -308,7 +308,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     placeholder="e.g., @modelcontextprotocol/server-github"
                     autoCorrect="off"
                     autoCapitalize="off"
-                    spellCheck="false"
+                    spellcheck={false}
                   />
                 </div>
 
@@ -321,7 +321,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     placeholder="e.g., GITHUB_TOKEN=your-token"
                     autoCorrect="off"
                     autoCapitalize="off"
-                    spellCheck="false"
+                    spellcheck={false}
                   />
                 </div>
 
