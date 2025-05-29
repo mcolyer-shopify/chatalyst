@@ -69,6 +69,7 @@ function App() {
     const mcpConfigChanged = settings.value.mcpConfiguration !== mcpConfiguration;
     updateSettings({ ...settings.value, mcpConfiguration });
     setShowMcpSettings(false);
+    clearError();
     
     // Restart MCP connections if configuration changed
     if (mcpConfigChanged) {
@@ -101,7 +102,10 @@ function App() {
         show={showMcpSettings}
         mcpConfiguration={settings.value.mcpConfiguration}
         onSave={handleSaveMcpSettings}
-        onCancel={() => setShowMcpSettings(false)}
+        onCancel={() => {
+          setShowMcpSettings(false);
+          clearError();
+        }}
       />
 
       <div class="app-content">

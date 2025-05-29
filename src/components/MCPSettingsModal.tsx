@@ -9,6 +9,7 @@ interface MCPServer {
   args?: string[];
   env?: Record<string, string>;
   transport: 'stdio';
+  enabled: boolean;
 }
 
 interface MCPSettingsModalProps {
@@ -40,7 +41,8 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
             command: serverConfig.command || '',
             args: serverConfig.args || [],
             env: serverConfig.env || {},
-            transport: 'stdio'
+            transport: 'stdio',
+            enabled: serverConfig.enabled !== false // Default to enabled
           });
         }
         
@@ -76,7 +78,8 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
       command: '',
       args: [],
       env: {},
-      transport: 'stdio'
+      transport: 'stdio',
+      enabled: true
     };
     
     setServers([...servers, newServer]);
@@ -134,7 +137,8 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         name: server.name,
         description: server.description,
         command: server.command,
-        transport: server.transport
+        transport: server.transport,
+        enabled: server.enabled
       };
       
       if (server.args && server.args.length > 0) {
@@ -230,9 +234,25 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                 <div
                   key={server.id}
                   class={`mcp-server-item ${server.id === selectedServerId ? 'selected' : ''}`}
-                  onClick={() => setSelectedServerId(server.id)}
                 >
-                  {server.name || 'Unnamed Server'}
+                  <input
+                    type="checkbox"
+                    checked={server.enabled}
+                    onChange={(e) => {
+                      const updatedServer = { ...server, enabled: e.currentTarget.checked };
+                      setServers(servers.map(s => s.id === server.id ? updatedServer : s));
+                      if (editingServer && editingServer.id === server.id) {
+                        setEditingServer(updatedServer);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span
+                    class="server-name"
+                    onClick={() => setSelectedServerId(server.id)}
+                  >
+                    {server.name || 'Unnamed Server'}
+                  </span>
                 </div>
               ))}
               
@@ -334,6 +354,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     style={{ opacity: 0.6 }}
                   />
                 </div>
+
               </>
             ) : (
               <div class="mcp-server-empty">
@@ -376,7 +397,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         }
 
         .mcp-servers-list {
-          width: 250px;
+          width: 220px;
           border: 1px solid #e0e0e0;
           border-radius: 0.375rem;
           display: flex;
@@ -387,7 +408,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0.75rem 1rem;
+          padding: 0.75rem;
           border-bottom: 1px solid #e0e0e0;
           background: #f8f9fa;
         }
@@ -438,11 +459,23 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         }
 
         .mcp-server-item {
-          padding: 0.75rem 1rem;
-          cursor: pointer;
+          padding: 0.75rem;
           border-bottom: 1px solid #f0f0f0;
           transition: background-color 0.2s;
           font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .mcp-server-item input[type="checkbox"] {
+          margin: 0;
+          flex-shrink: 0;
+        }
+
+        .mcp-server-item .server-name {
+          cursor: pointer;
+          flex: 1;
         }
 
         .mcp-server-item:hover {
@@ -551,6 +584,10 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
             background: #5a1a1a;
             color: #f8d7da;
             border-color: #721c24;
+          }
+
+          .mcp-server-item .server-name {
+            color: #e0e0e0;
           }
         }
       `}</style>

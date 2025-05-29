@@ -191,24 +191,46 @@ export async function restartMCPConnections(newConfigString: string | undefined)
     
     // Check if existing servers need to be restarted due to config changes
     for (const serverId of serversToCheck) {
-      const connection = activeConnections.get(serverId);
       const newServerConfig = newConfig[serverId];
+      const connection = activeConnections.get(serverId);
+      const shouldBeRunning = newServerConfig.enabled !== false;
+      const isCurrentlyRunning = !!connection;
       
-      if (connection && hasServerConfigChanged(connection.config, newServerConfig)) {
-        // Config changed, restart this server
+      if (isCurrentlyRunning && !shouldBeRunning) {
+        // Stop server that should be disabled
         try {
           await connection.client.close();
           await connection.transport.close();
           activeConnections.delete(serverId);
-          removeMCPServer(serverId);
           
-          // Start with new config
-          if (newServerConfig.enabled !== false) {
-            await startMCPServer(serverId, newServerConfig);
-          }
+          // Update server status to unloaded
+          updateMCPServerStatus(serverId, { 
+            status: 'unloaded',
+            tools: []
+          });
+        } catch (error) {
+          console.error(`Failed to stop MCP server ${serverId}:`, error);
+        }
+      } else if (isCurrentlyRunning && shouldBeRunning && hasServerConfigChanged(connection.config, newServerConfig)) {
+        // Restart server with changed config
+        try {
+          await connection.client.close();
+          await connection.transport.close();
+          activeConnections.delete(serverId);
+          
+          // Update server status to unloaded, then start with new config
+          updateMCPServerStatus(serverId, { 
+            status: 'unloaded',
+            tools: []
+          });
+          
+          await startMCPServer(serverId, newServerConfig);
         } catch (error) {
           console.error(`Failed to restart MCP server ${serverId}:`, error);
         }
+      } else if (!isCurrentlyRunning && shouldBeRunning) {
+        // Start server that should be enabled
+        await startMCPServer(serverId, newServerConfig);
       }
     }
     

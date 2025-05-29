@@ -21,9 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Applies to conversation messages, input field, and header
   - Content is centered when viewport is wider than max-width
   - Optimizes line length for better reading experience
+- Enable/disable functionality for MCP servers in settings modal
+  - Checkbox column in server list for quick enable/disable
+  - Individual server enable/disable toggle in server details
+  - Servers start/stop automatically based on enabled state when configuration is saved
+
+### Changed
+- Improved MCP Settings modal layout with narrower left panel and wider right panel
 
 ### Fixed
 - Clear error messages when switching between conversations
+- Clear error messages when saving or canceling MCP settings modal
+- Fix MCP server enable/disable functionality to properly maintain enabled servers when others are disabled
+- Remove duplicate enable/disable checkbox from server details in MCP settings modal
+- Remove excessive padding from server list header in MCP settings modal
 
 ## [0.3.3] - 2025-01-29
 
