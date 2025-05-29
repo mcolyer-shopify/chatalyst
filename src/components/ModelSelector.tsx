@@ -97,9 +97,14 @@ export function ModelSelector({
       availableModels.value = cachedModels;
       setError(null);
       
-      // Auto-select first model if no default is selected and this is a default selector
-      if (showAsDefault && !selectedModel && cachedModels.length > 0) {
-        onModelChange(cachedModels[0].id);
+      // Auto-select first model if this is a default selector and either:
+      // 1. No model is currently selected, OR
+      // 2. The currently selected model is not in the available models
+      if (showAsDefault && cachedModels.length > 0) {
+        const isCurrentModelValid = selectedModel && cachedModels.some(m => m.id === selectedModel);
+        if (!selectedModel || !isCurrentModelValid) {
+          onModelChange(cachedModels[0].id);
+        }
       }
       return;
     }
@@ -203,9 +208,14 @@ export function ModelSelector({
       availableModels.value = fetchedModels;
       setCachedModels(effectiveBaseURL, fetchedModels);
 
-      // Auto-select first model if no default is selected and this is a default selector
-      if (showAsDefault && !selectedModel && fetchedModels.length > 0) {
-        onModelChange(fetchedModels[0].id);
+      // Auto-select first model if this is a default selector and either:
+      // 1. No model is currently selected, OR
+      // 2. The currently selected model is not in the available models
+      if (showAsDefault && fetchedModels.length > 0) {
+        const isCurrentModelValid = selectedModel && fetchedModels.some(m => m.id === selectedModel);
+        if (!selectedModel || !isCurrentModelValid) {
+          onModelChange(fetchedModels[0].id);
+        }
       }
     } catch (err) {
       console.error('[ModelSelector] Failed to fetch models:', err);
