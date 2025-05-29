@@ -331,5 +331,26 @@ export function disableAllServerTools(conversationId: string, serverId: string) 
   });
 }
 
+export function enableAllToolsOnAllServers(conversationId: string) {
+  conversations.value = conversations.value.map(conv => {
+    if (conv.id !== conversationId) return conv;
+    
+    const enabledTools: Record<string, string[]> = {};
+    
+    // Enable all tools for each running server
+    mcpServers.value.forEach(server => {
+      if (server.status === 'running') {
+        enabledTools[server.id] = server.tools.map(tool => tool.name);
+      }
+    });
+    
+    return {
+      ...conv,
+      enabledTools,
+      updatedAt: Date.now()
+    };
+  });
+}
+
 // Initialize on module load
 initializeFromStorage();

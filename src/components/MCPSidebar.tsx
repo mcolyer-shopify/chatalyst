@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { mcpServers, selectedConversation, toggleConversationTool, enableAllServerTools, disableAllServerTools } from '../store';
+import { mcpServers, selectedConversation, toggleConversationTool, enableAllServerTools, disableAllServerTools, enableAllToolsOnAllServers } from '../store';
 import type { MCPServerStatus } from '../types';
 import './MCPSidebar.css';
 
@@ -102,7 +102,7 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
     return conversation.enabledTools?.[serverId]?.length || 0;
   };
   
-  const handleToggleAllTools = (server: MCPServerStatus) => {
+  const handleToggleServerTools = (server: MCPServerStatus) => {
     if (!conversation) return;
     
     const enabledCount = getEnabledToolCount(server.id);
@@ -128,6 +128,39 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
   };
   
   const isServerExpanded = (serverId: string) => expandedServers.has(serverId);
+  
+  const handleToggleAllTools = () => {
+    if (!conversation) return;
+    
+    if (areAllToolsEnabled()) {
+      // Disable all tools on all servers
+      servers.forEach(server => {
+        if (server.status === 'running') {
+          disableAllServerTools(conversation.id, server.id);
+        }
+      });
+    } else {
+      // Enable all tools on all servers
+      enableAllToolsOnAllServers(conversation.id);
+    }
+  };
+  
+  const hasRunningServersWithTools = () => {
+    return servers.some(server => server.status === 'running' && server.tools.length > 0);
+  };
+  
+  const areAllToolsEnabled = () => {
+    if (!conversation) return false;
+    
+    return servers.every(server => {
+      if (server.status !== 'running' || server.tools.length === 0) return true;
+      
+      const enabledTools = conversation.enabledTools?.[server.id] || [];
+      const availableTools = server.tools.map(t => t.name);
+      
+      return availableTools.every(tool => enabledTools.includes(tool));
+    });
+  };
 
   return (
     <div class="mcp-sidebar">
@@ -206,7 +239,7 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
                     </span>
                     <button 
                       class="mcp-toggle-all-button"
-                      onClick={() => handleToggleAllTools(server)}
+                      onClick={() => handleToggleServerTools(server)}
                       disabled={server.status !== 'running'}
                     >
                       {getEnabledToolCount(server.id) === 0 ? 'Enable All' : 'Disable All'}
@@ -242,6 +275,16 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
           ))
         )}
       </div>
+      
+      {conversation && hasRunningServersWithTools() && (
+        <button
+          onClick={handleToggleAllTools}
+          class="mcp-toggle-all-tools-button"
+          title={areAllToolsEnabled() ? 'Disable all tools on all servers' : 'Enable all tools on all servers'}
+        >
+          {areAllToolsEnabled() ? 'Disable All Tools' : 'Enable All Tools'}
+        </button>
+      )}
     </div>
   );
 }

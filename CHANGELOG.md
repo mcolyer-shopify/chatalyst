@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Toggle button at bottom of MCP sidebar to quickly enable/disable all tools on all running servers
+  - Shows "Enable All Tools" when some tools are disabled
+  - Shows "Disable All Tools" when all tools are enabled
+  - Only appears when there's an active conversation and running servers with tools
+
 ## [0.3.0] - 2025-01-28
 
 ### Added

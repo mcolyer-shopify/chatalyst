@@ -21,6 +21,7 @@
   justify-content: space-between;
 }
 
+
 .mcp-sidebar-header h3 {
   margin: 0;
   font-size: 18px;
@@ -48,6 +49,22 @@
 
 .mcp-settings-button:hover {
   background-color: #f0f0f0;
+}
+
+.mcp-toggle-all-tools-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+  margin: 1rem;
+}
+
+.mcp-toggle-all-tools-button:hover {
+  background: #545b62;
 }
 
 .mcp-servers-list {
