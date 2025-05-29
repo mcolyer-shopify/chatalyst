@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved MCP Settings modal layout with narrower left panel and wider right panel
+- Update TypeScript configuration to ES2023 for modern JavaScript features
 
 ### Fixed
 - Clear error messages when switching between conversations
