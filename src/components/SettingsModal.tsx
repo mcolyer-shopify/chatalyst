@@ -46,40 +46,12 @@ const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
     defaultBaseURL: 'https://generativelanguage.googleapis.com',
     apiKeyPlaceholder: 'AIza...'
   },
-  mistral: {
-    name: 'Mistral AI',
-    showBaseURL: false,
-    showApiKey: true,
-    defaultBaseURL: 'https://api.mistral.ai',
-    apiKeyPlaceholder: 'your-mistral-api-key'
-  },
   groq: {
     name: 'Groq',
     showBaseURL: false,
     showApiKey: true,
     defaultBaseURL: 'https://api.groq.com/openai/v1',
     apiKeyPlaceholder: 'gsk_...'
-  },
-  together: {
-    name: 'Together AI',
-    showBaseURL: false,
-    showApiKey: true,
-    defaultBaseURL: 'https://api.together.xyz/v1',
-    apiKeyPlaceholder: 'your-together-api-key'
-  },
-  deepseek: {
-    name: 'DeepSeek',
-    showBaseURL: false,
-    showApiKey: true,
-    defaultBaseURL: 'https://api.deepseek.com/v1',
-    apiKeyPlaceholder: 'sk-...'
-  },
-  cohere: {
-    name: 'Cohere',
-    showBaseURL: false,
-    showApiKey: true,
-    defaultBaseURL: 'https://api.cohere.ai',
-    apiKeyPlaceholder: 'your-cohere-api-key'
   },
   perplexity: {
     name: 'Perplexity',

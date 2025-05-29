@@ -8,11 +8,7 @@ export const AI_PROVIDERS = {
   OPENAI: 'openai',
   ANTHROPIC: 'anthropic',
   GOOGLE: 'google',
-  MISTRAL: 'mistral',
   GROQ: 'groq',
-  TOGETHER: 'together',
-  DEEPSEEK: 'deepseek',
-  COHERE: 'cohere',
   PERPLEXITY: 'perplexity'
 } as const;
 
@@ -37,24 +33,8 @@ export const PROVIDER_DEFAULTS = {
     baseURL: 'https://generativelanguage.googleapis.com',
     apiKey: ''
   },
-  [AI_PROVIDERS.MISTRAL]: {
-    baseURL: 'https://api.mistral.ai',
-    apiKey: ''
-  },
   [AI_PROVIDERS.GROQ]: {
     baseURL: 'https://api.groq.com/openai/v1',
-    apiKey: ''
-  },
-  [AI_PROVIDERS.TOGETHER]: {
-    baseURL: 'https://api.together.xyz/v1',
-    apiKey: ''
-  },
-  [AI_PROVIDERS.DEEPSEEK]: {
-    baseURL: 'https://api.deepseek.com/v1',
-    apiKey: ''
-  },
-  [AI_PROVIDERS.COHERE]: {
-    baseURL: 'https://api.cohere.ai',
     apiKey: ''
   },
   [AI_PROVIDERS.PERPLEXITY]: {

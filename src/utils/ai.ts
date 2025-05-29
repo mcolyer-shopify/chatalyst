@@ -38,8 +38,6 @@ export function createAIProvider(settings: Settings) {
     });
     
   case AI_PROVIDERS.GROQ:
-  case AI_PROVIDERS.TOGETHER:
-  case AI_PROVIDERS.DEEPSEEK:
   case AI_PROVIDERS.PERPLEXITY:
     // These providers are OpenAI-compatible
     baseURL = baseURL || PROVIDER_DEFAULTS[settings.provider].baseURL;
@@ -51,8 +49,6 @@ export function createAIProvider(settings: Settings) {
     
   case AI_PROVIDERS.ANTHROPIC:
   case AI_PROVIDERS.GOOGLE:
-  case AI_PROVIDERS.MISTRAL:
-  case AI_PROVIDERS.COHERE:
     // These providers need their specific SDKs but can work with OpenAI-compatible mode
     baseURL = baseURL || PROVIDER_DEFAULTS[settings.provider].baseURL;
     return createOpenAICompatible({

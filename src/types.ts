@@ -64,7 +64,7 @@ export interface MCPServerStatus {
   tools: MCPTool[];
 }
 
-export type AIProvider = 'custom' | 'openrouter' | 'ollama' | 'openai' | 'anthropic' | 'google' | 'mistral' | 'groq' | 'together' | 'deepseek' | 'cohere' | 'perplexity';
+export type AIProvider = 'custom' | 'openrouter' | 'ollama' | 'openai' | 'anthropic' | 'google' | 'groq' | 'perplexity';
 
 export interface Settings {
   provider: AIProvider;
