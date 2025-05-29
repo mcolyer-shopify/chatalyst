@@ -1,14 +1,17 @@
 import { jsonSchema } from 'ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { TauriStdioTransport } from './TauriStdioTransport';
-import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation } from '../types';
+import { RemoteHttpTransport } from './RemoteHttpTransport';
+import { RemoteWebSocketTransport } from './RemoteWebSocketTransport';
+import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, clearMCPServers, mcpServers } from '../store';
 
 interface MCPConnection {
   serverId: string;
   config: MCPServerConfig;
   client: Client;
-  transport: TauriStdioTransport;
+  transport: Transport;
 }
 
 // Store active MCP connections
@@ -66,13 +69,35 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     
     console.log(`MCP server ${serverId} starting...`);
 
-    // Create MCP client and custom Tauri transport
-    const transport = new TauriStdioTransport({
-      command: config.command,
-      args: config.args,
-      cwd: config.cwd,
-      env: config.env
-    });
+    // Create appropriate transport based on config type
+    let transport: Transport;
+    
+    if (!config.transport || config.transport === 'stdio') {
+      const stdioConfig = config as StdioMCPServerConfig;
+      transport = new TauriStdioTransport({
+        command: stdioConfig.command,
+        args: stdioConfig.args,
+        cwd: stdioConfig.cwd,
+        env: stdioConfig.env
+      });
+    } else if (config.transport === 'http') {
+      const httpConfig = config as HttpMCPServerConfig;
+      transport = new RemoteHttpTransport({
+        url: httpConfig.url,
+        headers: httpConfig.headers,
+        timeout: httpConfig.timeout
+      });
+    } else if (config.transport === 'websocket') {
+      const wsConfig = config as WebSocketMCPServerConfig;
+      transport = new RemoteWebSocketTransport({
+        url: wsConfig.url,
+        headers: wsConfig.headers,
+        reconnectAttempts: wsConfig.reconnectAttempts,
+        reconnectDelay: wsConfig.reconnectDelay
+      });
+    } else {
+      throw new Error(`Unsupported transport type: ${(config as { transport?: string }).transport}`);
+    }
 
     const client = new Client({
       name: 'chatalyst',
@@ -267,15 +292,45 @@ export async function restartMCPConnections(newConfigString: string | undefined)
  * Check if server configuration has changed
  */
 function hasServerConfigChanged(oldConfig: MCPServerConfig, newConfig: MCPServerConfig): boolean {
-  return (
-    oldConfig.name !== newConfig.name ||
-    oldConfig.description !== newConfig.description ||
-    oldConfig.command !== newConfig.command ||
-    JSON.stringify(oldConfig.args) !== JSON.stringify(newConfig.args) ||
-    JSON.stringify(oldConfig.env) !== JSON.stringify(newConfig.env) ||
-    oldConfig.cwd !== newConfig.cwd ||
-    oldConfig.enabled !== newConfig.enabled
-  );
+  // Basic fields that all configs have
+  if (oldConfig.name !== newConfig.name ||
+      oldConfig.description !== newConfig.description ||
+      oldConfig.enabled !== newConfig.enabled ||
+      oldConfig.transport !== newConfig.transport) {
+    return true;
+  }
+  
+  // Transport-specific field comparisons
+  if (oldConfig.transport === 'stdio' && newConfig.transport === 'stdio') {
+    const oldStdio = oldConfig as StdioMCPServerConfig;
+    const newStdio = newConfig as StdioMCPServerConfig;
+    return (
+      oldStdio.command !== newStdio.command ||
+      JSON.stringify(oldStdio.args) !== JSON.stringify(newStdio.args) ||
+      JSON.stringify(oldStdio.env) !== JSON.stringify(newStdio.env) ||
+      oldStdio.cwd !== newStdio.cwd
+    );
+  } else if (oldConfig.transport === 'http' && newConfig.transport === 'http') {
+    const oldHttp = oldConfig as HttpMCPServerConfig;
+    const newHttp = newConfig as HttpMCPServerConfig;
+    return (
+      oldHttp.url !== newHttp.url ||
+      JSON.stringify(oldHttp.headers) !== JSON.stringify(newHttp.headers) ||
+      oldHttp.timeout !== newHttp.timeout
+    );
+  } else if (oldConfig.transport === 'websocket' && newConfig.transport === 'websocket') {
+    const oldWs = oldConfig as WebSocketMCPServerConfig;
+    const newWs = newConfig as WebSocketMCPServerConfig;
+    return (
+      oldWs.url !== newWs.url ||
+      JSON.stringify(oldWs.headers) !== JSON.stringify(newWs.headers) ||
+      oldWs.reconnectAttempts !== newWs.reconnectAttempts ||
+      oldWs.reconnectDelay !== newWs.reconnectDelay
+    );
+  }
+  
+  // Different transport types means config has changed
+  return true;
 }
 
 

@@ -34,16 +34,41 @@ export interface Model {
   description?: string;
 }
 
-export interface MCPServerConfig {
+// Base configuration shared by all MCP servers
+interface BaseMCPServerConfig {
   enabled?: boolean;
   name: string;
   description: string;
+}
+
+// Configuration for stdio (local process) MCP servers
+export interface StdioMCPServerConfig extends BaseMCPServerConfig {
   transport: 'stdio';
   command: string;
   args?: string[];
   cwd?: string;
   env?: Record<string, string>;
 }
+
+// Configuration for HTTP-based remote MCP servers
+export interface HttpMCPServerConfig extends BaseMCPServerConfig {
+  transport: 'http';
+  url: string;
+  headers?: Record<string, string>;
+  timeout?: number; // in milliseconds
+}
+
+// Configuration for WebSocket-based remote MCP servers
+export interface WebSocketMCPServerConfig extends BaseMCPServerConfig {
+  transport: 'websocket';
+  url: string;
+  headers?: Record<string, string>;
+  reconnectAttempts?: number;
+  reconnectDelay?: number; // in milliseconds
+}
+
+// Union type for all MCP server configurations
+export type MCPServerConfig = StdioMCPServerConfig | HttpMCPServerConfig | WebSocketMCPServerConfig;
 
 export interface MCPConfiguration {
   [key: string]: MCPServerConfig;

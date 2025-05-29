@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2025-01-29
 
 ### Added
+- Support for remote MCP servers via HTTP and WebSocket transports
+  - New transport dropdown in MCP Settings modal to select between Local Process (stdio), Remote HTTP, or Remote WebSocket
+  - HTTP transport configuration with URL, headers, and timeout settings
+  - WebSocket transport configuration with URL, headers, reconnect attempts, and reconnect delay
+  - Automatic transport selection based on server configuration
+  - Backwards compatibility maintained for existing stdio configurations
 - Show MCP servers in unloaded state when configured but not yet started
 - Visual indicator (dashed circle) for unloaded MCP servers with "Server not loaded" tooltip
 - Hide/show sidebars with chevron toggle buttons
