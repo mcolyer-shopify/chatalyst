@@ -273,7 +273,7 @@ function App() {
         
         if (part.type === 'text-delta') {
           console.log('[AI] Text:', part.textDelta);
-          fullContent += ' ' + part.textDelta;
+          fullContent += part.textDelta;
           console.log('[AI] Full content so far:', fullContent);
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'tool-call') {
