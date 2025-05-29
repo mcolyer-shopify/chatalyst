@@ -19,11 +19,74 @@ type ProviderConfig = {
 
 const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
   custom: {
-    name: 'Custom OpenAI',
+    name: 'Custom OpenAI-Compatible',
     showBaseURL: true,
     showApiKey: true,
-    baseURLPlaceholder: 'https://api.openai.com/v1',
+    baseURLPlaceholder: 'https://api.example.com/v1',
+    apiKeyPlaceholder: 'your-api-key'
+  },
+  openai: {
+    name: 'OpenAI',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.openai.com/v1',
     apiKeyPlaceholder: 'sk-...'
+  },
+  anthropic: {
+    name: 'Anthropic',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.anthropic.com',
+    apiKeyPlaceholder: 'sk-ant-...'
+  },
+  google: {
+    name: 'Google AI',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://generativelanguage.googleapis.com',
+    apiKeyPlaceholder: 'AIza...'
+  },
+  mistral: {
+    name: 'Mistral AI',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.mistral.ai',
+    apiKeyPlaceholder: 'your-mistral-api-key'
+  },
+  groq: {
+    name: 'Groq',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.groq.com/openai/v1',
+    apiKeyPlaceholder: 'gsk_...'
+  },
+  together: {
+    name: 'Together AI',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.together.xyz/v1',
+    apiKeyPlaceholder: 'your-together-api-key'
+  },
+  deepseek: {
+    name: 'DeepSeek',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.deepseek.com/v1',
+    apiKeyPlaceholder: 'sk-...'
+  },
+  cohere: {
+    name: 'Cohere',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.cohere.ai',
+    apiKeyPlaceholder: 'your-cohere-api-key'
+  },
+  perplexity: {
+    name: 'Perplexity',
+    showBaseURL: false,
+    showApiKey: true,
+    defaultBaseURL: 'https://api.perplexity.ai',
+    apiKeyPlaceholder: 'pplx-...'
   },
   openrouter: {
     name: 'OpenRouter',
@@ -33,10 +96,11 @@ const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
     apiKeyPlaceholder: 'sk-or-v1-...'
   },
   ollama: {
-    name: 'Ollama',
-    showBaseURL: false,
+    name: 'Ollama (Local)',
+    showBaseURL: true,
     showApiKey: false,
-    defaultBaseURL: 'http://localhost:11434/v1'
+    defaultBaseURL: 'http://localhost:11434/v1',
+    baseURLPlaceholder: 'http://localhost:11434/v1'
   }
 };
 
