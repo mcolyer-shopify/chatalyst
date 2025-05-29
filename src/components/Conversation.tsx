@@ -129,10 +129,15 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
       }
 
       // Scroll to position user message at top
-      container.scrollTo({
-        top: container.scrollTop + scrollOffset,
-        behavior: 'smooth'
-      });
+      if (container.scrollTo) {
+        container.scrollTo({
+          top: container.scrollTop + scrollOffset,
+          behavior: 'smooth'
+        });
+      } else {
+        // Fallback for test environments that don't support scrollTo
+        container.scrollTop = container.scrollTop + scrollOffset;
+      }
 
       // Update scroll button state after scrolling
       setTimeout(() => {

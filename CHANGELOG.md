@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix MCP server enable/disable functionality to properly maintain enabled servers when others are disabled
 - Remove duplicate enable/disable checkbox from server details in MCP settings modal
 - Remove excessive padding from server list header in MCP settings modal
+- Fix scroll functionality in test environment by adding fallback for missing scrollTo method
 
 ## [0.3.3] - 2025-01-29
 
