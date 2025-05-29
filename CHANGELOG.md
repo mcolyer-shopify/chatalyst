@@ -7,11 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-01-28
+
 ### Added
 - Toggle button at bottom of MCP sidebar to quickly enable/disable all tools on all running servers
   - Shows "Enable All Tools" when some tools are disabled
   - Shows "Disable All Tools" when all tools are enabled
   - Only appears when there's an active conversation and running servers with tools
+  - Button styled to match "New Conversation" button
+
+### Fixed
+- Auto-focus for MessageInput when creating new conversations or switching between conversations
+  - Textarea now automatically receives focus when creating a new conversation
+  - Focus also triggers when switching between existing conversations
+  - Improves user experience by eliminating need to manually click input field
 
 ## [0.3.0] - 2025-01-28
 
@@ -170,7 +179,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conversation persistence across app restarts
 - Type-safe interfaces for all data models
 
-[Unreleased]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.1.0...v0.2.0
