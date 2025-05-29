@@ -112,6 +112,7 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
         userMessages={conversation.messages
           .filter(m => m.role === 'user')
           .map(m => m.content)}
+        conversationId={conversation.id}
       />
     </div>
   );

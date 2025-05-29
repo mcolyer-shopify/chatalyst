@@ -6,20 +6,21 @@ interface MessageInputProps {
   disabled?: boolean;
   isGenerating?: boolean;
   userMessages?: string[]; // Array of previous user messages
+  conversationId?: string; // Track conversation changes for auto-focus
 }
 
-export function MessageInput({ onSend, onStopGeneration, disabled = false, isGenerating = false, userMessages = [] }: MessageInputProps) {
+export function MessageInput({ onSend, onStopGeneration, disabled = false, isGenerating = false, userMessages = [], conversationId }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const [historyIndex, setHistoryIndex] = useState(-1); // -1 means current message
   const [tempMessage, setTempMessage] = useState(''); // Store current message when navigating history
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-focus the input when component mounts or becomes enabled
+  // Auto-focus the input when component mounts, becomes enabled, or conversation changes
   useEffect(() => {
     if (!disabled && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [disabled]);
+  }, [disabled, conversationId]);
 
   // Reset history index when message changes manually
   useEffect(() => {
