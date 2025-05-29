@@ -115,14 +115,20 @@ export function SettingsModal({ show, settings, onSave, onCancel }: SettingsModa
     const config = PROVIDER_CONFIGS[provider];
     const updates: Partial<Settings> = { provider };
     
-    // Set default base URL for non-custom providers
-    if (!config.showBaseURL && config.defaultBaseURL) {
+    // Set default base URL for all providers that have one
+    if (config.defaultBaseURL) {
       updates.baseURL = config.defaultBaseURL;
     }
     
-    // Clear API key for providers that don't need it
+    // Set default API key for providers that need it (like Ollama)
     if (!config.showApiKey) {
       updates.apiKey = '';
+    } else if (provider === 'ollama') {
+      // Ollama needs a default API key
+      updates.apiKey = 'ollama';
+    } else if (provider === 'openrouter') {
+      // OpenRouter has a default API key
+      updates.apiKey = 'openrouter';
     }
     
     setTempSettings({

@@ -19,7 +19,7 @@ export const PROVIDER_DEFAULTS = {
   },
   [AI_PROVIDERS.OLLAMA]: {
     baseURL: 'http://localhost:11434/v1',
-    apiKey: ''
+    apiKey: 'ollama'
   },
   [AI_PROVIDERS.OPENAI]: {
     baseURL: 'https://api.openai.com/v1',

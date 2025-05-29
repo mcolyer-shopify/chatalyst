@@ -30,7 +30,7 @@ export function createAIProvider(settings: Settings) {
   case AI_PROVIDERS.OLLAMA:
     // Ollama is OpenAI-compatible
     baseURL = baseURL || PROVIDER_DEFAULTS.ollama.baseURL;
-    apiKey = PROVIDER_DEFAULTS.ollama.apiKey || 'ollama'; // Ollama needs a non-empty key
+    apiKey = apiKey || PROVIDER_DEFAULTS.ollama.apiKey; // Use configured key or default
     return createOpenAICompatible({
       name: 'ollama-ai-provider',
       baseURL,
