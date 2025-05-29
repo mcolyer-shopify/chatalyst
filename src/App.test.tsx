@@ -349,4 +349,52 @@ describe('App Integration', () => {
       expect(mockDeleteConversation).toHaveBeenCalledWith('1');
     });
   });
+
+  it('toggles left sidebar visibility', () => {
+    render(<App />);
+    
+    // Initially, conversations sidebar should be visible
+    expect(screen.getByText('Create New')).toBeInTheDocument();
+    
+    // Click hide button for left sidebar
+    const hideLeftButton = screen.getByTitle('Hide conversations');
+    fireEvent.click(hideLeftButton);
+    
+    // Conversations sidebar should be hidden
+    expect(screen.queryByText('Create New')).not.toBeInTheDocument();
+    
+    // Show button should appear
+    const showLeftButton = screen.getByTitle('Show conversations');
+    expect(showLeftButton).toBeInTheDocument();
+    
+    // Click show button
+    fireEvent.click(showLeftButton);
+    
+    // Conversations sidebar should be visible again
+    expect(screen.getByText('Create New')).toBeInTheDocument();
+  });
+
+  it('toggles right sidebar visibility', () => {
+    render(<App />);
+    
+    // Initially, MCP sidebar should be visible
+    expect(screen.getByText('MCP Servers')).toBeInTheDocument();
+    
+    // Click hide button for right sidebar
+    const hideRightButton = screen.getByTitle('Hide MCP servers');
+    fireEvent.click(hideRightButton);
+    
+    // MCP sidebar should be hidden
+    expect(screen.queryByText('MCP Servers')).not.toBeInTheDocument();
+    
+    // Show button should appear
+    const showRightButton = screen.getByTitle('Show MCP servers');
+    expect(showRightButton).toBeInTheDocument();
+    
+    // Click show button
+    fireEvent.click(showRightButton);
+    
+    // MCP sidebar should be visible again
+    expect(screen.getByText('MCP Servers')).toBeInTheDocument();
+  });
 });

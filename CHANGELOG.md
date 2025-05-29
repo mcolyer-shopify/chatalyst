@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Show MCP servers in unloaded state when configured but not yet started
 - Visual indicator (dashed circle) for unloaded MCP servers with "Server not loaded" tooltip
+- Hide/show sidebars with chevron toggle buttons
+  - Left sidebar (conversations) can be collapsed with chevron pointing left
+  - Right sidebar (MCP servers) can be collapsed with chevron pointing right  
+  - Consistent circular floating button design for both hide and show toggles
+  - All buttons positioned at center vertically on left/right edges for consistency
+  - Buttons appear in same locations whether showing or hiding sidebars
+  - Full dark mode support for all toggle buttons
+- Maximum content width of 860px for improved readability
+  - Applies to conversation messages, input field, and header
+  - Content is centered when viewport is wider than max-width
+  - Optimizes line length for better reading experience
 
 ## [0.3.3] - 2025-01-29
 

@@ -27,6 +27,8 @@ import './App.css';
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMcpSettings, setShowMcpSettings] = useState(false);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
   
   // Custom hooks
   const { sendMessage, stopGeneration } = useMessageHandling();
@@ -103,24 +105,64 @@ function App() {
       />
 
       <div class="app-content">
-        <ConversationList
-          conversations={conversations.value}
-          selectedId={selectedConversationId.value}
-          onSelect={(id) => { selectedConversationId.value = id; }}
-          onCreate={createNewConversation}
-          onRename={renameConversation}
-          onDelete={handleDeleteConversation}
-          onSettingsClick={() => setShowSettings(true)}
-          defaultModel={settings.value.defaultModel}
-          onDefaultModelChange={handleDefaultModelChange}
-        />
+        {showLeftSidebar && (
+          <ConversationList
+            conversations={conversations.value}
+            selectedId={selectedConversationId.value}
+            onSelect={(id) => { selectedConversationId.value = id; }}
+            onCreate={createNewConversation}
+            onRename={renameConversation}
+            onDelete={handleDeleteConversation}
+            onSettingsClick={() => setShowSettings(true)}
+            defaultModel={settings.value.defaultModel}
+            onDefaultModelChange={handleDefaultModelChange}
+          />
+        )}
+        
+        {!showLeftSidebar && (
+          <button 
+            class="sidebar-toggle sidebar-toggle-left"
+            onClick={() => setShowLeftSidebar(true)}
+            title="Show conversations"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        )}
+
         <div class="conversation-container">
+          {showLeftSidebar && (
+            <button 
+              class="sidebar-toggle sidebar-toggle-left-hide"
+              onClick={() => setShowLeftSidebar(false)}
+              title="Hide conversations"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </button>
+          )}
+          
           <Conversation
             conversation={selectedConversation.value || null}
             onSendMessage={sendMessage}
             onModelChange={handleConversationModelChange}
             onStopGeneration={stopGeneration}
           />
+          
+          {showRightSidebar && (
+            <button 
+              class="sidebar-toggle sidebar-toggle-right-hide"
+              onClick={() => setShowRightSidebar(false)}
+              title="Hide MCP servers"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+          )}
+          
           {errorMessage.value && (
             <div class="error-message">
               <span>{errorMessage.value}</span>
@@ -128,7 +170,22 @@ function App() {
             </div>
           )}
         </div>
-        <MCPSidebar onSettingsClick={() => setShowMcpSettings(true)} />
+        
+        {showRightSidebar && (
+          <MCPSidebar onSettingsClick={() => setShowMcpSettings(true)} />
+        )}
+        
+        {!showRightSidebar && (
+          <button 
+            class="sidebar-toggle sidebar-toggle-right"
+            onClick={() => setShowRightSidebar(true)}
+            title="Show MCP servers"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );

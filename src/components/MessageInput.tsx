@@ -112,23 +112,25 @@ export function MessageInput({ onSend, onStopGeneration, disabled = false, isGen
 
   return (
     <form class="message-input" onSubmit={handleSubmit}>
-      <textarea
-        ref={inputRef}
-        value={message}
-        onInput={(e) => setMessage(e.currentTarget.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type a message... (Shift+Enter for new line)"
-        disabled={disabled}
-        class="message-input-field"
-        rows={1}
-      />
-      <button
-        type="submit"
-        disabled={isGenerating ? false : (disabled || !message.trim())}
-        class={`message-send-button ${isGenerating ? 'stop-button' : ''}`}
-      >
-        {isGenerating ? 'Stop' : 'Send'}
-      </button>
+      <div class="message-input-content">
+        <textarea
+          ref={inputRef}
+          value={message}
+          onInput={(e) => setMessage(e.currentTarget.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a message... (Shift+Enter for new line)"
+          disabled={disabled}
+          class="message-input-field"
+          rows={1}
+        />
+        <button
+          type="submit"
+          disabled={isGenerating ? false : (disabled || !message.trim())}
+          class={`message-send-button ${isGenerating ? 'stop-button' : ''}`}
+        >
+          {isGenerating ? 'Stop' : 'Send'}
+        </button>
+      </div>
     </form>
   );
 }

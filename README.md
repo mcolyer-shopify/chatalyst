@@ -32,8 +32,6 @@ pnpm test:coverage
 
 ### Future
 
-- Fix autoscrolling
-- Show MCP servers that haven't loaded yet with an unloaded state.
 - Make sure to clear errors when switching conversations.
 - Make sure to clear the error state on the MCP Settings modal after saving or canceling.
 - Add support for remote sse MCP servers.

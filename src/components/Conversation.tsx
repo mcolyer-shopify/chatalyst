@@ -164,21 +164,25 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
   return (
     <div class="conversation">
       <div class="conversation-header">
-        <h2>{conversation.title}</h2>
-        <ModelSelector
-          selectedModel={conversation.model}
-          onModelChange={onModelChange}
-          className="conversation-model-selector"
-        />
+        <div class="conversation-header-content">
+          <h2>{conversation.title}</h2>
+          <ModelSelector
+            selectedModel={conversation.model}
+            onModelChange={onModelChange}
+            className="conversation-model-selector"
+          />
+        </div>
       </div>
       <div class="conversation-messages" ref={messagesContainerRef}>
-        {conversation.messages.map((message) => (
-          <Message 
-            key={message.id} 
-            message={message}
-          />
-        ))}
-        <div ref={messagesEndRef} />
+        <div class="conversation-messages-content">
+          {conversation.messages.map((message) => (
+            <Message 
+              key={message.id} 
+              message={message}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
         {showScrollButton && (
           <button
             class="scroll-to-bottom"
