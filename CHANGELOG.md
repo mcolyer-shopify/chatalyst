@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Content is centered when viewport is wider than max-width
   - Optimizes line length for better reading experience
 
+### Fixed
+- Clear error messages when switching between conversations
+
 ## [0.3.3] - 2025-01-29
 
 ### Fixed

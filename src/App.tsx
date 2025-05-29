@@ -109,7 +109,10 @@ function App() {
           <ConversationList
             conversations={conversations.value}
             selectedId={selectedConversationId.value}
-            onSelect={(id) => { selectedConversationId.value = id; }}
+            onSelect={(id) => { 
+              selectedConversationId.value = id; 
+              clearError();
+            }}
             onCreate={createNewConversation}
             onRename={renameConversation}
             onDelete={handleDeleteConversation}
