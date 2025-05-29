@@ -101,9 +101,8 @@ export function useMessageHandling() {
           break;
         }
         
-        // @ts-expect-error - AI SDK types don't include 'text-delta' but it exists at runtime
-        if (part.type === 'text-delta') {
-          fullContent += (part as { textDelta: string }).textDelta;
+        if (part.type === 'text') {
+          fullContent += (part as { text: string }).text;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'tool-result') {
           // Create a tool message for UI display
