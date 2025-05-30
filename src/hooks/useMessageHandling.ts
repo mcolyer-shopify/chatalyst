@@ -69,6 +69,9 @@ export function useMessageHandling() {
         content
       });
       
+      // Track tool messages by ID to update them when results come in
+      const toolMessagesMap = new Map<string, Message>();
+      
       const result = await streamText({
         model: aiProvider(modelToUse),
         messages: conversationMessages,
@@ -76,6 +79,31 @@ export function useMessageHandling() {
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal,
+        onChunk: async ({ chunk }) => {
+          if (chunk.type === 'tool-call') {
+            // Create initial tool message when tool is called
+            const toolMessage: Message = {
+              id: `${Date.now()}-tool-${chunk.toolCallId}`,
+              role: 'tool',
+              content: 'Calling tool...',
+              timestamp: Date.now(),
+              toolName: chunk.toolName || 'unknown',
+              toolCall: chunk.args,
+              toolResult: undefined
+            };
+            toolMessagesMap.set(chunk.toolCallId, toolMessage);
+            addMessage(conversation.id, toolMessage);
+          } else if (chunk.type === 'tool-result') {
+            // Update the tool message with the result
+            const existingMessage = toolMessagesMap.get(chunk.toolCallId);
+            if (existingMessage) {
+              updateMessage(conversation.id, existingMessage.id, {
+                content: JSON.stringify(chunk.result),
+                toolResult: chunk.result
+              });
+            }
+          }
+        },
         onStepFinish: () => {
           // Step finished callback
         },
@@ -109,18 +137,6 @@ export function useMessageHandling() {
         if (part.type === 'text-delta') {
           fullContent += (part as { textDelta: string }).textDelta;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'tool-result') {
-          // Create a tool message for UI display
-          const toolMessage: Message = {
-            id: `${Date.now()}-tool-${part.toolCallId}`,
-            role: 'tool',
-            content: JSON.stringify(part.result),
-            timestamp: Date.now(),
-            toolName: part.toolName || 'unknown',
-            toolCall: part.args,
-            toolResult: part.result
-          };
-          addMessage(conversation.id, toolMessage);
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
