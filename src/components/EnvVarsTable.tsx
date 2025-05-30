@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useState } from 'preact/hooks';
 
 interface EnvVarsTableProps {
   env: Record<string, string>;
@@ -7,19 +7,19 @@ interface EnvVarsTableProps {
 
 export function EnvVarsTable({ env, onChange }: EnvVarsTableProps) {
   const entries = Object.entries(env || {});
-  const [newKey, setNewKey] = useState("");
-  const [newValue, setNewValue] = useState("");
+  const [newKey, setNewKey] = useState('');
+  const [newValue, setNewValue] = useState('');
   return (
     <table class="env-table">
       <thead>
         <tr>
-          <th style={{ width: "40%" }}>Name</th>
-          <th style={{ width: "50%" }}>Value</th>
-          <th style={{ width: "10%" }}></th>
+          <th style={{ width: '40%' }}>Name</th>
+          <th style={{ width: '50%' }}>Value</th>
+          <th style={{ width: '10%' }}></th>
         </tr>
       </thead>
       <tbody>
-        {entries.map(([key, value], idx, arr) => (
+        {entries.map(([key, value], idx, _arr) => (
           <tr key={key + idx}>
             <td>
               <label>{key}</label>
@@ -74,13 +74,13 @@ export function EnvVarsTable({ env, onChange }: EnvVarsTableProps) {
             <button
               type="button"
               class="env-add-btn"
-              disabled={newKey.trim() === "" || newValue.trim() === ""}
+              disabled={newKey.trim() === '' || newValue.trim() === ''}
               onClick={() => {
                 const newEnv = { ...env };
                 newEnv[newKey.trim()] = newValue.trim();
                 onChange(newEnv);
-                setNewKey("");
-                setNewValue("");
+                setNewKey('');
+                setNewValue('');
               }}
             >
               Add
