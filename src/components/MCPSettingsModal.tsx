@@ -48,7 +48,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   const [editingServer, setEditingServer] = useState<MCPServer | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Parse configuration on mount and when props change
+  // Parse configuration
   useEffect(() => {
     if (mcpConfiguration) {
       try {
@@ -108,7 +108,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         setError('Failed to parse configuration');
       }
     }
-  }, [mcpConfiguration]);
+  });
 
   // Update editing server when selection changes
   useEffect(() => {

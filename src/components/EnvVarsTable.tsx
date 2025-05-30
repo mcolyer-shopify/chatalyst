@@ -19,7 +19,7 @@ export function EnvVarsTable({ env, onChange }: EnvVarsTableProps) {
         </tr>
       </thead>
       <tbody>
-        {entries.map(([key, value], idx, arr) => (
+        {entries.map(([key, value], idx, _arr) => (
           <tr key={key + idx}>
             <td>
               <label>{key}</label>
