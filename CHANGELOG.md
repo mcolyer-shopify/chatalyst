@@ -39,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Environment variables can now be added, edited, and removed individually
   - Clear visual separation between variable names and values
   - Input validation prevents adding empty keys or values
+- MCP configuration disappearing when reopening settings modal
+  - Fixed state initialization to properly restore configuration when modal is shown
+  - Configuration now persists correctly between modal open/close cycles
 
 ## [0.4.0] - 2025-01-29
 

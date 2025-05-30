@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import type { MCPServerConfig, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 import { EnvVarsTable } from './EnvVarsTable';
 
@@ -47,10 +47,12 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [editingServer, setEditingServer] = useState<MCPServer | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isTransportDropdownOpen, setIsTransportDropdownOpen] = useState(false);
+  const transportDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Parse configuration on mount and when props change
+  // Parse configuration when modal is shown or when props change
   useEffect(() => {
-    if (mcpConfiguration) {
+    if (show && mcpConfiguration) {
       try {
         const parsed = JSON.parse(mcpConfiguration);
         const serverList: MCPServer[] = [];
@@ -107,8 +109,13 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
       } catch {
         setError('Failed to parse configuration');
       }
+    } else if (show && !mcpConfiguration) {
+      // If modal is shown but no configuration exists, ensure state is clean
+      setServers([]);
+      setSelectedServerId(null);
+      setEditingServer(null);
     }
-  }, [mcpConfiguration]);
+  }, [show, mcpConfiguration]);
 
   // Update editing server when selection changes
   useEffect(() => {
@@ -119,6 +126,18 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
       }
     }
   }, [selectedServerId, servers]);
+
+  // Handle click outside for transport dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (transportDropdownRef.current && !transportDropdownRef.current.contains(event.target as Node)) {
+        setIsTransportDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!show) return null;
 
@@ -316,9 +335,6 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   };
 
   const handleCancel = () => {
-    setServers([]);
-    setSelectedServerId(null);
-    setEditingServer(null);
     setError(null);
     onCancel();
   };
@@ -469,14 +485,58 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
 
                 <div class="form-group">
                   <label>Transport:</label>
-                  <select
-                    value={editingServer.transport}
-                    onChange={(e) => handleTransportChange(e.currentTarget.value as TransportType)}
-                  >
-                    <option value="stdio">Local Process (stdio)</option>
-                    <option value="http">Remote HTTP</option>
-                    <option value="websocket">Remote WebSocket</option>
-                  </select>
+                  <div class="transport-dropdown" ref={transportDropdownRef}>
+                    <button
+                      type="button"
+                      class="transport-dropdown-button"
+                      onClick={() => setIsTransportDropdownOpen(!isTransportDropdownOpen)}
+                    >
+                      <span class="transport-dropdown-text">
+                        {editingServer.transport === 'stdio' && 'Local Process (stdio)'}
+                        {editingServer.transport === 'http' && 'Remote HTTP'}
+                        {editingServer.transport === 'websocket' && 'Remote WebSocket'}
+                      </span>
+                      <span class="transport-dropdown-arrow">▼</span>
+                    </button>
+                    
+                    {isTransportDropdownOpen && (
+                      <div class="transport-dropdown-menu">
+                        <button
+                          type="button"
+                          class={`transport-dropdown-option ${editingServer.transport === 'stdio' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleTransportChange('stdio');
+                            setIsTransportDropdownOpen(false);
+                          }}
+                        >
+                          <div class="transport-option-name">Local Process (stdio)</div>
+                          <div class="transport-option-description">Run MCP servers as local processes</div>
+                        </button>
+                        <button
+                          type="button"
+                          class={`transport-dropdown-option ${editingServer.transport === 'http' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleTransportChange('http');
+                            setIsTransportDropdownOpen(false);
+                          }}
+                        >
+                          <div class="transport-option-name">Remote HTTP</div>
+                          <div class="transport-option-description">Connect to remote HTTP/SSE servers</div>
+                        </button>
+                        <button
+                          type="button"
+                          class={`transport-dropdown-option ${editingServer.transport === 'websocket' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleTransportChange('websocket');
+                            setIsTransportDropdownOpen(false);
+                          }}
+                        >
+                          <div class="transport-option-name">Remote WebSocket</div>
+                          <div class="transport-option-description">Connect to remote WebSocket servers</div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Stdio-specific fields */}
@@ -782,8 +842,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           border-radius: 0.375rem;
         }
 
-        .mcp-server-details textarea,
-        .mcp-server-details select {
+        .mcp-server-details textarea {
           width: 100%;
           padding: 0.5rem;
           border: 1px solid #e0e0e0;
@@ -796,17 +855,103 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           white-space: pre-wrap;
         }
 
-        .mcp-server-details select {
-          font-family: inherit;
-          min-height: auto;
-          resize: none;
-        }
-
         .mcp-server-details small {
           color: #666;
           font-size: 0.75rem;
           margin-top: 0.25rem;
           display: block;
+        }
+
+        /* Transport Dropdown Styles */
+        .transport-dropdown {
+          position: relative;
+          width: 100%;
+        }
+
+        .transport-dropdown-button {
+          width: 100%;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #e0e0e0;
+          border-radius: 0.375rem;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          cursor: pointer;
+          font-size: 0.875rem;
+          transition: all 0.2s;
+          text-align: left;
+        }
+
+        .transport-dropdown-button:hover {
+          border-color: #007bff;
+          background: #f8f9fa;
+        }
+
+        .transport-dropdown-button:focus {
+          outline: none;
+          border-color: #007bff;
+          box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .transport-dropdown-text {
+          flex: 1;
+          color: #333;
+        }
+
+        .transport-dropdown-arrow {
+          margin-left: 0.5rem;
+          font-size: 0.625rem;
+          color: #666;
+          transition: transform 0.2s;
+        }
+
+        .transport-dropdown-menu {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
+          background: white;
+          border: 1px solid #e0e0e0;
+          border-radius: 0.375rem;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          z-index: 1000;
+          overflow: hidden;
+        }
+
+        .transport-dropdown-option {
+          width: 100%;
+          padding: 0.75rem;
+          border: none;
+          background: none;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.2s;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .transport-dropdown-option:last-child {
+          border-bottom: none;
+        }
+
+        .transport-dropdown-option:hover {
+          background: #f8f9fa;
+        }
+
+        .transport-dropdown-option.selected {
+          background: #e3f2fd;
+        }
+
+        .transport-option-name {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #333;
+          margin-bottom: 0.25rem;
+        }
+
+        .transport-option-description {
+          font-size: 0.75rem;
+          color: #666;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -864,6 +1009,52 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
 
           .mcp-server-item .server-name {
             color: #e0e0e0;
+          }
+
+          /* Dark mode transport dropdown styles */
+          .transport-dropdown-button {
+            background: #3a3a3a;
+            border-color: #555;
+            color: #e0e0e0;
+          }
+
+          .transport-dropdown-button:hover {
+            background: #444;
+            border-color: #007bff;
+          }
+
+          .transport-dropdown-text {
+            color: #e0e0e0;
+          }
+
+          .transport-dropdown-arrow {
+            color: #999;
+          }
+
+          .transport-dropdown-menu {
+            background: #3a3a3a;
+            border-color: #555;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+          }
+
+          .transport-dropdown-option {
+            border-color: #444;
+          }
+
+          .transport-dropdown-option:hover {
+            background: #444;
+          }
+
+          .transport-dropdown-option.selected {
+            background: #1e3a5f;
+          }
+
+          .transport-option-name {
+            color: #e0e0e0;
+          }
+
+          .transport-option-description {
+            color: #999;
           }
         }
       `}</style>
