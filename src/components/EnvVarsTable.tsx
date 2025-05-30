@@ -49,7 +49,6 @@ export function EnvVarsTable({ env, onChange }: EnvVarsTableProps) {
               type="text"
               value={newKey}
               onInput={(e) => {
-                console.log(e.currentTarget.value);
                 setNewKey(e.currentTarget.value);
               }}
               placeholder="KEY"

@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript errors with AI SDK message types
   - Updated to use CoreMessage type from AI SDK for proper type safety
   - Fixed incompatible message type errors in streamText responses
+- Environment variables input in MCP settings modal
+  - Replaced error-prone KEY=value textarea with user-friendly table interface
+  - Environment variables can now be added, edited, and removed individually
+  - Clear visual separation between variable names and values
+  - Input validation prevents adding empty keys or values
 
 ## [0.4.0] - 2025-01-29
 
