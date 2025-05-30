@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { MCPServerConfig, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
+import { EnvVarsTable } from './EnvVarsTable';
 
 type TransportType = 'stdio' | 'http' | 'websocket';
 
@@ -330,35 +331,9 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
     handleServerChange('args', args);
   };
 
-  const handleEnvChange = (value: string) => {
-    if (!editingServer) return;
-    
-    const env: Record<string, string> = {};
-    const lines = value.split('\n');
-    
-    for (const line of lines) {
-      // Only process non-empty lines for env vars
-      if (line.trim()) {
-        const [key, ...valueParts] = line.split('=');
-        if (key && valueParts.length > 0) {
-          env[key.trim()] = valueParts.join('=').trim();
-        }
-      }
-    }
-    
-    handleServerChange('env', env);
-  };
-
   const getArgsText = () => {
     if (!editingServer || editingServer.transport !== 'stdio' || !editingServer.args) return '';
     return editingServer.args.join('\n');
-  };
-
-  const getEnvText = () => {
-    if (!editingServer || editingServer.transport !== 'stdio' || !editingServer.env) return '';
-    return Object.entries(editingServer.env)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('\n');
   };
 
   const getHeadersText = () => {
@@ -492,7 +467,6 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                   />
                 </div>
 
-
                 <div class="form-group">
                   <label>Transport:</label>
                   <select
@@ -548,15 +522,10 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                     </div>
 
                     <div class="form-group">
-                      <label>Environment Variables (KEY=value format):</label>
-                      <textarea
-                        value={getEnvText()}
-                        onInput={(e) => handleEnvChange(e.currentTarget.value)}
-                        rows={3}
-                        placeholder="e.g., GITHUB_TOKEN=your-token"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellcheck={false}
+                      <label>Environment Variables:</label>
+                      <EnvVarsTable
+                        env={editingServer.env || {}}
+                        onChange={env => handleServerChange('env', env)}
                       />
                     </div>
                   </>
