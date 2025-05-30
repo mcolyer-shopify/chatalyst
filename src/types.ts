@@ -1,3 +1,5 @@
+import type { CoreMessage } from 'ai';
+
 export interface Message {
   id: string;
   content: string;
@@ -26,6 +28,7 @@ export interface Conversation {
   updatedAt: number;
   model?: string;
   enabledTools?: { [serverId: string]: string[] }; // serverId -> array of enabled tool names
+  sdkMessages?: CoreMessage[];
 }
 
 export interface Model {

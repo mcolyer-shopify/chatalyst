@@ -1,4 +1,5 @@
 import { signal, computed, effect, batch } from '@preact/signals';
+import type { CoreMessage } from 'ai';
 import type {
   Conversation as ConversationType,
   Message,
@@ -170,6 +171,12 @@ export function updateConversationTitle(id: string, title: string) {
 export function updateConversationModel(id: string, model: string) {
   conversations.value = conversations.value.map((c) =>
     c.id === id ? { ...c, model, updatedAt: Date.now() } : c
+  );
+}
+
+export function updateConversationSDKMessages(id: string, sdkMessages: CoreMessage[]) {
+  conversations.value = conversations.value.map((c) =>
+    c.id === id ? { ...c, sdkMessages, updatedAt: Date.now() } : c
   );
 }
 
