@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-05-30
+
 ### Added
 - Dark mode support for MCP sidebar
   - All MCP sidebar elements now follow system dark mode preference
@@ -259,7 +261,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conversation persistence across app restarts
 - Type-safe interfaces for all data models
 
-[Unreleased]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/mcolyer-shopify/chatalyst/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.4.0...v1.0.0
+[0.4.0]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.1...v0.3.3
 [0.3.1]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/mcolyer-shopify/chatalyst/compare/v0.2.1...v0.3.0
