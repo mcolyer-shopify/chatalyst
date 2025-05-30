@@ -32,6 +32,5 @@ pnpm test:coverage
 
 ### Future
 
-- Add support for remote sse MCP servers.
 - Refactor messages to be array of message parts rather than strings.
 - Support image input. Read https://ai-sdk.dev/docs/guides/multi-modal-chatbot, add the ability to paste images and attached them to the response.

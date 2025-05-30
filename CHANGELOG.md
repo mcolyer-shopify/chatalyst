@@ -7,9 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Dark mode support for MCP sidebar
+  - All MCP sidebar elements now follow system dark mode preference
+  - Consistent dark theme styling matching the main application
+  
+### Changed
+- Simplified transport handling for MCP remote servers
+  - Now uses official MCP SDK transports for all connection types:
+    - StreamableHTTPClientTransport and SSEClientTransport for HTTP
+    - WebSocketClientTransport for WebSocket connections
+  - Automatically tries Streamable HTTP first, then falls back to SSE if needed
+  - Removed all custom transport implementations in favor of SDK-provided ones
+  - Simplified configuration - no need to manually select transport type
+- Improved tool message handling for better user experience
+  - Tool messages now appear immediately when a tool is called with "Calling tool..." status
+  - Tool results update the existing message instead of creating a new one
+  - Uses AI SDK's onChunk handler for real-time tool execution feedback
+
+### Fixed
+- HTTP transport compatibility for MCP remote servers
+  - Fixes 404 errors when connecting to SSE endpoints
+  - Automatic fallback from Streamable HTTP to SSE transport
+  - Better error handling and logging during transport selection
+  - Uses Tauri HTTP client plugin for proper CORS handling and security
+- TypeScript errors with AI SDK message types
+  - Updated to use CoreMessage type from AI SDK for proper type safety
+  - Fixed incompatible message type errors in streamText responses
+
 ## [0.4.0] - 2025-01-29
 
 ### Added
+- Support for remote MCP servers via HTTP and WebSocket transports
+  - New transport dropdown in MCP Settings modal to select between Local Process (stdio), Remote HTTP, or Remote WebSocket
+  - HTTP transport configuration with URL, headers, and timeout settings
+  - WebSocket transport configuration with URL, headers, reconnect attempts, and reconnect delay
+  - Automatic transport selection based on server configuration
+  - Backwards compatibility maintained for existing stdio configurations
 - Show MCP servers in unloaded state when configured but not yet started
 - Visual indicator (dashed circle) for unloaded MCP servers with "Server not loaded" tooltip
 - Hide/show sidebars with chevron toggle buttons

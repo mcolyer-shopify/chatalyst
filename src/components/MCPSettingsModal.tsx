@@ -1,16 +1,38 @@
 import { useState, useEffect } from 'preact/hooks';
-import type { MCPServerConfig } from '../types';
+import type { MCPServerConfig, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 
-interface MCPServer {
+type TransportType = 'stdio' | 'http' | 'websocket';
+
+interface BaseMCPServer {
   id: string;
   name: string;
   description: string;
+  enabled: boolean;
+}
+
+interface StdioMCPServer extends BaseMCPServer {
+  transport: 'stdio';
   command: string;
   args?: string[];
   env?: Record<string, string>;
-  transport: 'stdio';
-  enabled: boolean;
+  cwd?: string;
 }
+
+interface HttpMCPServer extends BaseMCPServer {
+  transport: 'http';
+  url: string;
+  headers?: Record<string, string>;
+}
+
+interface WebSocketMCPServer extends BaseMCPServer {
+  transport: 'websocket';
+  url: string;
+  headers?: Record<string, string>;
+  reconnectAttempts?: number;
+  reconnectDelay?: number;
+}
+
+type MCPServer = StdioMCPServer | HttpMCPServer | WebSocketMCPServer;
 
 interface MCPSettingsModalProps {
   show: boolean;
@@ -34,16 +56,46 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         
         for (const [id, config] of Object.entries(parsed)) {
           const serverConfig = config as MCPServerConfig;
-          serverList.push({
-            id,
-            name: serverConfig.name || '',
-            description: serverConfig.description || '',
-            command: serverConfig.command || '',
-            args: serverConfig.args || [],
-            env: serverConfig.env || {},
-            transport: 'stdio',
-            enabled: serverConfig.enabled !== false // Default to enabled
-          });
+          
+          // Handle different transport types
+          if (!serverConfig.transport || serverConfig.transport === 'stdio') {
+            const stdioConfig = serverConfig as StdioMCPServerConfig;
+            serverList.push({
+              id,
+              name: stdioConfig.name || '',
+              description: stdioConfig.description || '',
+              command: stdioConfig.command || '',
+              args: stdioConfig.args || [],
+              env: stdioConfig.env || {},
+              cwd: stdioConfig.cwd,
+              transport: 'stdio',
+              enabled: stdioConfig.enabled !== false
+            });
+          } else if (serverConfig.transport === 'http') {
+            const httpConfig = serverConfig as HttpMCPServerConfig;
+            serverList.push({
+              id,
+              name: httpConfig.name || '',
+              description: httpConfig.description || '',
+              url: httpConfig.url || '',
+              headers: httpConfig.headers || {},
+              transport: 'http',
+              enabled: httpConfig.enabled !== false
+            });
+          } else if (serverConfig.transport === 'websocket') {
+            const wsConfig = serverConfig as WebSocketMCPServerConfig;
+            serverList.push({
+              id,
+              name: wsConfig.name || '',
+              description: wsConfig.description || '',
+              url: wsConfig.url || '',
+              headers: wsConfig.headers || {},
+              reconnectAttempts: wsConfig.reconnectAttempts,
+              reconnectDelay: wsConfig.reconnectDelay,
+              transport: 'websocket',
+              enabled: wsConfig.enabled !== false
+            });
+          }
         }
         
         setServers(serverList);
@@ -71,7 +123,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
 
   const handleAddServer = () => {
     const newId = `server-${Date.now()}`;
-    const newServer: MCPServer = {
+    const newServer: StdioMCPServer = {
       id: newId,
       name: 'New Server',
       description: 'Server description',
@@ -101,16 +153,60 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
     }
   };
 
-  const handleServerChange = (field: keyof MCPServer, value: string | string[] | Record<string, string>) => {
+  const handleServerChange = (field: string, value: unknown) => {
     if (!editingServer) return;
     
-    const updated = { ...editingServer, [field]: value };
+    const updated = { ...editingServer, [field]: value } as MCPServer;
     setEditingServer(updated);
     
     // Update in servers list
     setServers(servers.map(s => 
       s.id === editingServer.id ? updated : s
     ));
+  };
+
+  const handleTransportChange = (newTransport: TransportType) => {
+    if (!editingServer) return;
+    
+    let newServer: MCPServer;
+    
+    if (newTransport === 'stdio') {
+      newServer = {
+        id: editingServer.id,
+        name: editingServer.name,
+        description: editingServer.description,
+        enabled: editingServer.enabled,
+        transport: 'stdio',
+        command: '',
+        args: [],
+        env: {}
+      };
+    } else if (newTransport === 'http') {
+      newServer = {
+        id: editingServer.id,
+        name: editingServer.name,
+        description: editingServer.description,
+        enabled: editingServer.enabled,
+        transport: 'http',
+        url: '',
+        headers: {}
+      };
+    } else {
+      newServer = {
+        id: editingServer.id,
+        name: editingServer.name,
+        description: editingServer.description,
+        enabled: editingServer.enabled,
+        transport: 'websocket',
+        url: '',
+        headers: {},
+        reconnectAttempts: 5,
+        reconnectDelay: 1000
+      };
+    }
+    
+    setEditingServer(newServer);
+    setServers(servers.map(s => s.id === editingServer.id ? newServer : s));
   };
 
   const handleSave = () => {
@@ -124,33 +220,94 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         setError(`Server "${server.id}" must have a description`);
         return;
       }
-      if (!server.command.trim()) {
-        setError(`Server "${server.id}" must have a command`);
-        return;
+      
+      // Transport-specific validation
+      if (server.transport === 'stdio') {
+        if (!server.command.trim()) {
+          setError(`Server "${server.id}" must have a command`);
+          return;
+        }
+      } else if (server.transport === 'http' || server.transport === 'websocket') {
+        if (!server.url.trim()) {
+          setError(`Server "${server.id}" must have a URL`);
+          return;
+        }
+        try {
+          new globalThis.URL(server.url);
+        } catch {
+          setError(`Server "${server.id}" has an invalid URL`);
+          return;
+        }
       }
     }
 
     // Convert to JSON format
     const config: Record<string, MCPServerConfig> = {};
     for (const server of servers) {
-      config[server.id] = {
-        name: server.name,
-        description: server.description,
-        command: server.command,
-        transport: server.transport,
-        enabled: server.enabled
-      };
-      
-      if (server.args && server.args.length > 0) {
-        // Filter out empty args when saving
-        const filteredArgs = server.args.filter(arg => arg.trim());
-        if (filteredArgs.length > 0) {
-          config[server.id].args = filteredArgs;
+      if (server.transport === 'stdio') {
+        const stdioServer = server as StdioMCPServer;
+        const stdioConfig: StdioMCPServerConfig = {
+          name: stdioServer.name,
+          description: stdioServer.description,
+          transport: 'stdio',
+          command: stdioServer.command,
+          enabled: stdioServer.enabled
+        };
+        
+        if (stdioServer.args && stdioServer.args.length > 0) {
+          const filteredArgs = stdioServer.args.filter(arg => arg.trim());
+          if (filteredArgs.length > 0) {
+            stdioConfig.args = filteredArgs;
+          }
         }
-      }
-      
-      if (server.env && Object.keys(server.env).length > 0) {
-        config[server.id].env = server.env;
+        
+        if (stdioServer.env && Object.keys(stdioServer.env).length > 0) {
+          stdioConfig.env = stdioServer.env;
+        }
+        
+        if (stdioServer.cwd) {
+          stdioConfig.cwd = stdioServer.cwd;
+        }
+        
+        config[server.id] = stdioConfig;
+      } else if (server.transport === 'http') {
+        const httpServer = server as HttpMCPServer;
+        const httpConfig: HttpMCPServerConfig = {
+          name: httpServer.name,
+          description: httpServer.description,
+          transport: 'http',
+          url: httpServer.url,
+          enabled: httpServer.enabled
+        };
+        
+        if (httpServer.headers && Object.keys(httpServer.headers).length > 0) {
+          httpConfig.headers = httpServer.headers;
+        }
+        
+        config[server.id] = httpConfig;
+      } else if (server.transport === 'websocket') {
+        const wsServer = server as WebSocketMCPServer;
+        const wsConfig: WebSocketMCPServerConfig = {
+          name: wsServer.name,
+          description: wsServer.description,
+          transport: 'websocket',
+          url: wsServer.url,
+          enabled: wsServer.enabled
+        };
+        
+        if (wsServer.headers && Object.keys(wsServer.headers).length > 0) {
+          wsConfig.headers = wsServer.headers;
+        }
+        
+        if (wsServer.reconnectAttempts !== undefined) {
+          wsConfig.reconnectAttempts = wsServer.reconnectAttempts;
+        }
+        
+        if (wsServer.reconnectDelay !== undefined) {
+          wsConfig.reconnectDelay = wsServer.reconnectDelay;
+        }
+        
+        config[server.id] = wsConfig;
       }
     }
     
@@ -193,15 +350,44 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   };
 
   const getArgsText = () => {
-    if (!editingServer || !editingServer.args) return '';
+    if (!editingServer || editingServer.transport !== 'stdio' || !editingServer.args) return '';
     return editingServer.args.join('\n');
   };
 
   const getEnvText = () => {
-    if (!editingServer || !editingServer.env) return '';
+    if (!editingServer || editingServer.transport !== 'stdio' || !editingServer.env) return '';
     return Object.entries(editingServer.env)
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
+  };
+
+  const getHeadersText = () => {
+    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket') || !editingServer.headers) return '';
+    return Object.entries(editingServer.headers)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('\n');
+  };
+
+  const handleHeadersChange = (value: string) => {
+    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket')) return;
+    
+    const headers: Record<string, string> = {};
+    const lines = value.split('\n');
+    
+    for (const line of lines) {
+      if (line.trim()) {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex > 0) {
+          const key = line.substring(0, colonIndex).trim();
+          const value = line.substring(colonIndex + 1).trim();
+          if (key) {
+            headers[key] = value;
+          }
+        }
+      }
+    }
+    
+    handleServerChange('headers', headers);
   };
 
   return (
@@ -306,54 +492,161 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                   />
                 </div>
 
-                <div class="form-group">
-                  <label>Command:</label>
-                  <input
-                    type="text"
-                    value={editingServer.command}
-                    onInput={(e) => handleServerChange('command', e.currentTarget.value)}
-                    placeholder="e.g., npx, python, node"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellcheck={false}
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label>Arguments (one per line):</label>
-                  <textarea
-                    value={getArgsText()}
-                    onInput={(e) => handleArgsChange(e.currentTarget.value)}
-                    rows={3}
-                    placeholder="e.g., @modelcontextprotocol/server-github"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellcheck={false}
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label>Environment Variables (KEY=value format):</label>
-                  <textarea
-                    value={getEnvText()}
-                    onInput={(e) => handleEnvChange(e.currentTarget.value)}
-                    rows={3}
-                    placeholder="e.g., GITHUB_TOKEN=your-token"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellcheck={false}
-                  />
-                </div>
 
                 <div class="form-group">
                   <label>Transport:</label>
-                  <input
-                    type="text"
-                    value="stdio"
-                    disabled
-                    style={{ opacity: 0.6 }}
-                  />
+                  <select
+                    value={editingServer.transport}
+                    onChange={(e) => handleTransportChange(e.currentTarget.value as TransportType)}
+                  >
+                    <option value="stdio">Local Process (stdio)</option>
+                    <option value="http">Remote HTTP</option>
+                    <option value="websocket">Remote WebSocket</option>
+                  </select>
                 </div>
+
+                {/* Stdio-specific fields */}
+                {editingServer.transport === 'stdio' && (
+                  <>
+                    <div class="form-group">
+                      <label>Command:</label>
+                      <input
+                        type="text"
+                        value={editingServer.command}
+                        onInput={(e) => handleServerChange('command', e.currentTarget.value)}
+                        placeholder="e.g., npx, python, node"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label>Arguments (one per line):</label>
+                      <textarea
+                        value={getArgsText()}
+                        onInput={(e) => handleArgsChange(e.currentTarget.value)}
+                        rows={3}
+                        placeholder="e.g., @modelcontextprotocol/server-github"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label>Working Directory (optional):</label>
+                      <input
+                        type="text"
+                        value={editingServer.cwd || ''}
+                        onInput={(e) => handleServerChange('cwd', e.currentTarget.value || undefined)}
+                        placeholder="e.g., /path/to/project"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label>Environment Variables (KEY=value format):</label>
+                      <textarea
+                        value={getEnvText()}
+                        onInput={(e) => handleEnvChange(e.currentTarget.value)}
+                        rows={3}
+                        placeholder="e.g., GITHUB_TOKEN=your-token"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* HTTP-specific fields */}
+                {editingServer.transport === 'http' && (
+                  <>
+                    <div class="form-group">
+                      <label>URL:</label>
+                      <input
+                        type="text"
+                        value={editingServer.url}
+                        onInput={(e) => handleServerChange('url', e.currentTarget.value)}
+                        placeholder="e.g., https://api.example.com/mcp"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                      <small>The SDK will automatically try Streamable HTTP first, then fall back to SSE if needed.</small>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Headers (Key: Value format):</label>
+                      <textarea
+                        value={getHeadersText()}
+                        onInput={(e) => handleHeadersChange(e.currentTarget.value)}
+                        rows={3}
+                        placeholder="e.g., Authorization: Bearer token"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* WebSocket-specific fields */}
+                {editingServer.transport === 'websocket' && (
+                  <>
+                    <div class="form-group">
+                      <label>WebSocket URL:</label>
+                      <input
+                        type="text"
+                        value={editingServer.url}
+                        onInput={(e) => handleServerChange('url', e.currentTarget.value)}
+                        placeholder="e.g., wss://api.example.com/mcp"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label>Headers (Key: Value format):</label>
+                      <textarea
+                        value={getHeadersText()}
+                        onInput={(e) => handleHeadersChange(e.currentTarget.value)}
+                        rows={3}
+                        placeholder="e.g., Authorization: Bearer token"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label>Reconnect Attempts:</label>
+                      <input
+                        type="number"
+                        value={editingServer.reconnectAttempts ?? 5}
+                        onInput={(e) => handleServerChange('reconnectAttempts', parseInt(e.currentTarget.value) || 5)}
+                        min="0"
+                        max="20"
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label>Reconnect Delay (milliseconds):</label>
+                      <input
+                        type="number"
+                        value={editingServer.reconnectDelay ?? 1000}
+                        onInput={(e) => handleServerChange('reconnectDelay', parseInt(e.currentTarget.value) || 1000)}
+                        min="100"
+                        max="60000"
+                        step="100"
+                      />
+                    </div>
+                  </>
+                )}
 
               </>
             ) : (
@@ -520,7 +813,8 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           border-radius: 0.375rem;
         }
 
-        .mcp-server-details textarea {
+        .mcp-server-details textarea,
+        .mcp-server-details select {
           width: 100%;
           padding: 0.5rem;
           border: 1px solid #e0e0e0;
@@ -531,6 +825,19 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           min-height: 4rem;
           line-height: 1.4;
           white-space: pre-wrap;
+        }
+
+        .mcp-server-details select {
+          font-family: inherit;
+          min-height: auto;
+          resize: none;
+        }
+
+        .mcp-server-details small {
+          color: #666;
+          font-size: 0.75rem;
+          margin-top: 0.25rem;
+          display: block;
         }
 
         @media (prefers-color-scheme: dark) {

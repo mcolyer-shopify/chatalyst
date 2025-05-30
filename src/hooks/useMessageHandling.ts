@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { streamText } from 'ai';
+import type { CoreMessage } from 'ai';
 import type { Message, Conversation } from '../types';
 import { 
   conversations,
@@ -8,7 +9,8 @@ import {
   isStreaming,
   addMessage,
   updateMessage,
-  clearError
+  clearError,
+  updateConversationSDKMessages
 } from '../store';
 import { createAIProvider } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
@@ -55,30 +57,60 @@ export function useMessageHandling() {
       // Call the AI with current settings and conversation model
       const aiProvider = createAIProvider(settings.value);
       const modelToUse = conversation.model || settings.value.defaultModel || DEFAULT_MODEL;
-      const messages = conversation.messages.concat([userMessage]);
       
       // Get active tools for this conversation
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
       
-      // Filter out tool messages as they're handled internally by the SDK
-      const conversationMessages = messages
-        .filter(m => m.role !== 'tool')
-        .map((m) => ({
-          role: m.role as 'user' | 'assistant' | 'system',
-          content: m.content || ''
-        }));
+      // Use SDK messages if available, otherwise create from scratch
+      const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];      
+      conversationMessages.push({
+        role: 'user',
+        content
+      });
+      
+      // Track tool messages by ID to update them when results come in
+      const toolMessagesMap = new Map<string, Message>();
       
       const result = await streamText({
         model: aiProvider(modelToUse),
         messages: conversationMessages,
-        // @ts-expect-error - AI SDK has incompatible tool types but works at runtime
         tools: toolsObject,
         maxSteps: MAX_TOOL_STEPS,
-        system: 'You are a helpful assistant. Always provide a complete, natural language response to the user. Never end a conversation with a tool call',
+        system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal,
+        onChunk: async ({ chunk }) => {
+          if (chunk.type === 'tool-call') {
+            // Create initial tool message when tool is called
+            const toolMessage: Message = {
+              id: `${Date.now()}-tool-${chunk.toolCallId}`,
+              role: 'tool',
+              content: 'Calling tool...',
+              timestamp: Date.now(),
+              toolName: chunk.toolName || 'unknown',
+              toolCall: chunk.args,
+              toolResult: undefined
+            };
+            toolMessagesMap.set(chunk.toolCallId, toolMessage);
+            addMessage(conversation.id, toolMessage);
+          } else if (chunk.type === 'tool-result') {
+            // Update the tool message with the result
+            const existingMessage = toolMessagesMap.get(chunk.toolCallId);
+            if (existingMessage) {
+              updateMessage(conversation.id, existingMessage.id, {
+                content: JSON.stringify(chunk.result),
+                toolResult: chunk.result
+              });
+            }
+          }
+        },
         onStepFinish: () => {
           // Step finished callback
+        },
+        onFinish: async ({ response }) => {
+          conversationMessages.push(...response.messages);
+          console.log('[useMessageHandling] Full response messages:', conversationMessages);
+          updateConversationSDKMessages(conversation.id, conversationMessages);
         }
       });
       
@@ -86,6 +118,7 @@ export function useMessageHandling() {
       let fullContent = '';
       
       for await (const part of result.fullStream) {
+        console.log('[useMessageHandling] Stream part:', part);
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
           
@@ -101,30 +134,15 @@ export function useMessageHandling() {
           break;
         }
         
-        if (part.type === 'text') {
-          fullContent += (part as { text: string }).text;
+        if (part.type === 'text-delta') {
+          fullContent += (part as { textDelta: string }).textDelta;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'tool-result') {
-          // Create a tool message for UI display
-          const toolMessage: Message = {
-            id: `${Date.now()}-tool-${part.toolCallId}`,
-            role: 'tool',
-            content: JSON.stringify(part.result),
-            timestamp: Date.now(),
-            toolName: part.toolName || 'unknown',
-            toolCall: part.args,
-            toolResult: part.result
-          };
-          addMessage(conversation.id, toolMessage);
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
             fullContent,
             conversation,
-            assistantMessage,
-            modelToUse,
-            aiProvider,
-            controller
+            assistantMessage
           );
         }
       }
@@ -179,25 +197,11 @@ async function handleStreamFinish(
   part: StreamFinishPart,
   fullContent: string,
   conversation: Conversation,
-  assistantMessage: Message,
-  modelToUse: string,
-  aiProvider: ReturnType<typeof createAIProvider>,
-  controller: AbortController
+  assistantMessage: Message
 ) {
   // Check if we finished with only tool calls and no text response
   if (part.finishReason === 'tool-calls' && fullContent.trim() === '') {
     removeAssistantMessage(conversation.id, assistantMessage.id);
-    
-    // Get the updated conversation with tool messages
-    const updatedConversation = conversations.value.find(c => c.id === conversation.id);
-    if (updatedConversation) {
-      await generateFollowUpResponse(
-        updatedConversation,
-        modelToUse,
-        aiProvider,
-        controller
-      );
-    }
   } else if (fullContent.trim() !== '') {
     // Normal finish with text content
     updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
@@ -207,46 +211,3 @@ async function handleStreamFinish(
   }
 }
 
-async function generateFollowUpResponse(
-  conversation: Conversation,
-  modelToUse: string,
-  aiProvider: ReturnType<typeof createAIProvider>,
-  controller: AbortController
-) {
-  const followUpMessage: Message = {
-    id: `${Date.now()}-assistant-followup`,
-    role: 'assistant',
-    content: '',
-    timestamp: Date.now(),
-    isGenerating: true
-  };
-  addMessage(conversation.id, followUpMessage);
-  
-  // Convert tool messages to assistant messages that describe the tool results
-  const followUpMessages = conversation.messages.map((m) => {
-    if (m.role === 'tool') {
-      return {
-        role: 'assistant' as const,
-        content: `Tool ${m.toolName} returned: ${JSON.stringify(m.toolResult)}`
-      };
-    }
-    return {
-      role: m.role as 'user' | 'assistant' | 'system',
-      content: m.content || ''
-    };
-  });
-  
-  const followUpResult = await streamText({
-    model: aiProvider(modelToUse),
-    messages: followUpMessages,
-    system: 'You are a helpful assistant. Based on the tool results provided, give a natural language response to the user\'s question.',
-    abortSignal: controller.signal
-  });
-  
-  let followUpContent = '';
-  for await (const chunk of followUpResult.textStream) {
-    followUpContent += chunk;
-    updateMessage(conversation.id, followUpMessage.id, { content: followUpContent });
-  }
-  updateMessage(conversation.id, followUpMessage.id, { isGenerating: false });
-}

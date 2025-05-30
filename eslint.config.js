@@ -1,7 +1,6 @@
 import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
-import preact from 'eslint-plugin-preact';
 
 export default [
   js.configs.recommended,
@@ -37,12 +36,12 @@ export default [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         AbortController: 'readonly',
-        KeyboardEvent: 'readonly'
+        KeyboardEvent: 'readonly',
+        URL: 'readonly'
       }
     },
     plugins: {
-      '@typescript-eslint': typescript,
-      preact
+      '@typescript-eslint': typescript
     },
     rules: {
       ...typescript.configs.recommended.rules,

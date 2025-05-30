@@ -244,3 +244,101 @@
   margin-top: 2px;
   line-height: 1.4;
 }
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mcp-sidebar {
+    background-color: #2d2d2d;
+    border-left-color: #444;
+  }
+
+  .mcp-sidebar-header {
+    background-color: #3a3a3a;
+    border-bottom-color: #444;
+  }
+
+  .mcp-sidebar-header h3 {
+    color: #e0e0e0;
+  }
+
+  .mcp-settings-button {
+    color: #999;
+  }
+
+  .mcp-settings-button:hover {
+    background-color: #4a4a4a;
+  }
+
+  .mcp-toggle-all-tools-button {
+    background: #4a4a4a;
+    color: #e0e0e0;
+  }
+
+  .mcp-toggle-all-tools-button:hover {
+    background: #555;
+  }
+
+  .mcp-empty-state {
+    color: #999;
+  }
+
+  .mcp-server {
+    background-color: #3a3a3a;
+    border-color: #555;
+  }
+
+  .mcp-server-header {
+    border-bottom-color: #4a4a4a;
+  }
+
+  .mcp-server-name {
+    color: #e0e0e0;
+  }
+
+  .mcp-server-description {
+    color: #999;
+  }
+
+  .mcp-server-error {
+    color: #ff6b6b;
+  }
+
+  .mcp-tools-section {
+    background-color: #333;
+  }
+
+  .mcp-tools-header {
+    background-color: #3a3a3a;
+  }
+
+  .mcp-expand-button {
+    color: #999;
+  }
+
+  .mcp-expand-button:hover {
+    color: #e0e0e0;
+  }
+
+  .mcp-tools-title {
+    color: #e0e0e0;
+  }
+
+  .mcp-toggle-all-button {
+    background-color: #4a4a4a;
+    border-color: #666;
+    color: #e0e0e0;
+  }
+
+  .mcp-toggle-all-button:hover:not(:disabled) {
+    background-color: #555;
+    border-color: #777;
+  }
+
+  .mcp-tool-label {
+    color: #e0e0e0;
+  }
+
+  .mcp-tool-description {
+    color: #999;
+  }
+}
