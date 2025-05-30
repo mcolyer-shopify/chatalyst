@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { MCPServerConfig } from '../types';
+import { EnvVarsTable } from './EnvVarsTable';
 
 interface MCPServer {
   id: string;
@@ -333,15 +334,10 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                 </div>
 
                 <div class="form-group">
-                  <label>Environment Variables (KEY=value format):</label>
-                  <textarea
-                    value={getEnvText()}
-                    onInput={(e) => handleEnvChange(e.currentTarget.value)}
-                    rows={3}
-                    placeholder="e.g., GITHUB_TOKEN=your-token"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellcheck={false}
+                  <label>Environment Variables:</label>
+                  <EnvVarsTable
+                    env={editingServer.env || {}}
+                    onChange={env => handleServerChange('env', env)}
                   />
                 </div>
 
