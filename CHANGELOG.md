@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- User messages now use markdown rendering to preserve newlines and formatting
+  - Multi-line messages display properly with line breaks preserved
+  - User messages support markdown formatting like bold, italic, and code blocks
+  - Added appropriate CSS styling for markdown elements in user messages
+
 ## [1.0.0] - 2025-05-30
 
 ### Added

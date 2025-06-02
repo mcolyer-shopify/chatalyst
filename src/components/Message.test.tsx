@@ -95,7 +95,7 @@ describe('Message', () => {
       expect(container.querySelector('em')).toHaveTextContent('italic');
     });
 
-    it('does not render markdown in user messages', () => {
+    it('renders markdown in user messages', () => {
       const markdownMessage: MessageType = {
         id: '4',
         content: '# Hello\n\nThis is **bold** text.',
@@ -105,10 +105,25 @@ describe('Message', () => {
 
       const { container } = render(<Message message={markdownMessage} />);
       
-      // Check that markdown is NOT converted for user messages
-      expect(container.querySelector('h1')).not.toBeInTheDocument();
-      expect(container.querySelector('strong')).not.toBeInTheDocument();
-      expect(screen.getByText('# Hello This is **bold** text.')).toBeInTheDocument();
+      // Check that markdown is converted for user messages
+      expect(container.querySelector('h1')).toHaveTextContent('Hello');
+      expect(container.querySelector('strong')).toHaveTextContent('bold');
+    });
+
+    it('preserves newlines in multi-line user messages', () => {
+      const multiLineMessage: MessageType = {
+        id: '7',
+        content: 'Line 1\nLine 2\n\nLine 3 after blank line',
+        role: 'user',
+        timestamp: Date.now()
+      };
+
+      const { container } = render(<Message message={multiLineMessage} />);
+      
+      // Check that the content is split into paragraphs
+      const paragraphs = container.querySelectorAll('p');
+      expect(paragraphs.length).toBeGreaterThan(1);
+      expect(paragraphs[0]).toHaveTextContent('Line 1');
     });
 
     it('renders code blocks correctly', () => {
