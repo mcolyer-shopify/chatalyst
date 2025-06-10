@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User messages support markdown formatting like bold, italic, and code blocks
   - Added appropriate CSS styling for markdown elements in user messages
 
+### Fixed
+- Fixed race condition where auto-scroll to new user messages would sometimes fail
+  - Messages now reliably scroll to top of viewport when sent
+  - Added retry logic to handle DOM update timing issues
+
 ## [1.0.0] - 2025-05-30
 
 ### Added

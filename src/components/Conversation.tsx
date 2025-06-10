@@ -16,6 +16,7 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [shouldScrollToUserMessage, setShouldScrollToUserMessage] = useState(false);
 
   // Check if user is at the bottom of scroll (checking against last message, not padding)
   const isAtBottom = () => {
@@ -92,59 +93,73 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
     }
   };
 
-  const scrollToUserMessage = () => {
+  const scrollToUserMessage = (retryCount = 0) => {
     const container = messagesContainerRef.current;
     if (!container || !conversation?.messages.length) return;
 
-    // Wait for DOM to update with the new message
+    // Find the last user message (which should be the newly added one)
+    const lastUserMessageIndex = conversation.messages.findLastIndex(m => m.role === 'user');
+    if (lastUserMessageIndex === -1) return;
+
+    // Get all message elements
+    const messageElements = container.querySelectorAll('.message');
+    const userMessageElement = messageElements[lastUserMessageIndex] as HTMLElement;
+    
+    // If element not found and we haven't retried too many times, retry
+    if (!userMessageElement && retryCount < 10) {
+      setTimeout(() => scrollToUserMessage(retryCount + 1), 50);
+      return;
+    }
+    
+    if (!userMessageElement) return;
+
+    // Calculate scroll position to place user message at top
+    const containerTop = container.getBoundingClientRect().top;
+    const messageTop = userMessageElement.getBoundingClientRect().top;
+    const scrollOffset = messageTop - containerTop;
+    
+    // Create padding div if needed to allow scrolling message to top
+    const existingPadding = container.querySelector('.scroll-padding');
+    if (existingPadding) {
+      existingPadding.remove();
+    }
+
+    // Calculate padding needed to align user message with top of viewport
+    const paddingHeight = container.clientHeight - userMessageElement.offsetHeight;
+    if (paddingHeight > 0) {
+      const paddingDiv = document.createElement('div');
+      paddingDiv.className = 'scroll-padding';
+      paddingDiv.style.height = `${paddingHeight}px`;
+      container.appendChild(paddingDiv);
+    }
+
+    // Scroll to position user message at top
+    if (container.scrollTo) {
+      container.scrollTo({
+        top: container.scrollTop + scrollOffset,
+        behavior: 'smooth'
+      });
+    } else {
+      // Fallback for test environments that don't support scrollTo
+      container.scrollTop = container.scrollTop + scrollOffset;
+    }
+
+    // Update scroll button state after scrolling
     setTimeout(() => {
-      // Find the last user message (which should be the newly added one)
-      const lastUserMessageIndex = conversation.messages.findLastIndex(m => m.role === 'user');
-      if (lastUserMessageIndex === -1) return;
-
-      // Get all message elements
-      const messageElements = container.querySelectorAll('.message');
-      const userMessageElement = messageElements[lastUserMessageIndex] as HTMLElement;
-      
-      if (!userMessageElement) return;
-
-      // Calculate scroll position to place user message at top
-      const containerTop = container.getBoundingClientRect().top;
-      const messageTop = userMessageElement.getBoundingClientRect().top;
-      const scrollOffset = messageTop - containerTop;
-      
-      // Create padding div if needed to allow scrolling message to top
-      const existingPadding = container.querySelector('.scroll-padding');
-      if (existingPadding) {
-        existingPadding.remove();
-      }
-
-      // Calculate padding needed to align user message with top of viewport
-      const paddingHeight = container.clientHeight - userMessageElement.offsetHeight;
-      if (paddingHeight > 0) {
-        const paddingDiv = document.createElement('div');
-        paddingDiv.className = 'scroll-padding';
-        paddingDiv.style.height = `${paddingHeight}px`;
-        container.appendChild(paddingDiv);
-      }
-
-      // Scroll to position user message at top
-      if (container.scrollTo) {
-        container.scrollTo({
-          top: container.scrollTop + scrollOffset,
-          behavior: 'smooth'
-        });
-      } else {
-        // Fallback for test environments that don't support scrollTo
-        container.scrollTop = container.scrollTop + scrollOffset;
-      }
-
-      // Update scroll button state after scrolling
-      setTimeout(() => {
-        setShowScrollButton(!isAtBottom());
-      }, 300); // Wait for smooth scroll to complete
-    }, 50); // Give DOM time to update with new message
+      setShowScrollButton(!isAtBottom());
+    }, 300); // Wait for smooth scroll to complete
   };
+
+  // Effect to scroll to user message when flag is set
+  useEffect(() => {
+    if (shouldScrollToUserMessage && conversation?.messages.length) {
+      // Use a small timeout to ensure DOM is updated
+      setTimeout(() => {
+        scrollToUserMessage();
+        setShouldScrollToUserMessage(false);
+      }, 0);
+    }
+  }, [shouldScrollToUserMessage, conversation?.messages.length]);
 
   const [isLastMessageGenerating, setIsLastMessageGenerating] = useState(false);
 
@@ -201,8 +216,8 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
       <MessageInput 
         onSend={(message) => {
           onSendMessage(message);
-          // Scroll to user message after sending
-          scrollToUserMessage();
+          // Set flag to trigger scroll to user message after DOM updates
+          setShouldScrollToUserMessage(true);
         }} 
         onStopGeneration={onStopGeneration}
         disabled={isStreaming.value && !isLastMessageGenerating} 
