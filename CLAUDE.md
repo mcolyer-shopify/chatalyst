@@ -88,7 +88,7 @@ When writing code, follow these ESLint-enforced style rules:
 - Avoid `any` in test code - use proper typing for mocks
 
 **Browser APIs:**
-- `fetch`, `localStorage`, `window`, `document` are available as globals
+- `fetch`, `localStorage`, `window`, `document`, `requestAnimationFrame` are available as globals
 - No need to import or declare these browser APIs
 
 ### Continuous Integration

@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed race condition where auto-scroll to new user messages would sometimes fail
   - Messages now reliably scroll to top of viewport when sent
   - Added retry logic to handle DOM update timing issues
+  - Uses requestAnimationFrame for proper DOM update synchronization
+  - Added comprehensive test coverage for the scrolling behavior
 
 ## [1.0.0] - 2025-05-30
 

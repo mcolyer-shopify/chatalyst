@@ -28,6 +28,7 @@ export default [
         HTMLTextAreaElement: 'readonly',
         Event: 'readonly',
         MouseEvent: 'readonly',
+        requestAnimationFrame: 'readonly',
         Node: 'readonly',
         global: 'readonly',
         process: 'readonly',

@@ -153,11 +153,11 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
   // Effect to scroll to user message when flag is set
   useEffect(() => {
     if (shouldScrollToUserMessage && conversation?.messages.length) {
-      // Use a small timeout to ensure DOM is updated
-      setTimeout(() => {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
         scrollToUserMessage();
         setShouldScrollToUserMessage(false);
-      }, 0);
+      });
     }
   }, [shouldScrollToUserMessage, conversation?.messages.length]);
 

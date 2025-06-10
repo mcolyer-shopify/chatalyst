@@ -230,4 +230,89 @@ describe('Conversation', () => {
 
     expect(screen.getByText('New Conversation')).toBeInTheDocument();
   });
+
+  it('scrolls to new user message after sending (race condition fix)', async () => {
+    // Mock scrollTo and querySelector methods
+    const mockScrollTo = vi.fn();
+    const mockGetBoundingClientRect = vi.fn(() => ({
+      top: 100,
+      bottom: 200,
+      height: 100,
+      left: 0,
+      right: 100,
+      width: 100,
+      x: 0,
+      y: 100
+    }));
+    
+    // Create a mock message element
+    const mockMessageElement = document.createElement('div');
+    mockMessageElement.getBoundingClientRect = mockGetBoundingClientRect;
+    
+    // Mock container with necessary methods
+    const mockContainer = {
+      scrollTo: mockScrollTo,
+      scrollTop: 0,
+      clientHeight: 500,
+      offsetHeight: 600,
+      getBoundingClientRect: vi.fn(() => ({
+        top: 0,
+        bottom: 500,
+        height: 500,
+        left: 0,
+        right: 100,
+        width: 100,
+        x: 0,
+        y: 0
+      })),
+      querySelector: vi.fn((selector: string) => {
+        if (selector === '.scroll-padding') return null;
+        return null;
+      }),
+      querySelectorAll: vi.fn(() => [mockMessageElement]),
+      appendChild: vi.fn()
+    };
+
+    // Mock requestAnimationFrame to execute immediately
+    const originalRAF = global.requestAnimationFrame;
+    global.requestAnimationFrame = vi.fn((cb: (time: number) => void) => {
+      setTimeout(() => cb(0), 0);
+      return 0;
+    });
+
+    const { container } = render(<Conversation 
+      conversation={mockConversation} 
+      onSendMessage={mockOnSendMessage}
+      onModelChange={mockOnModelChange}
+      baseURL={mockBaseURL}
+      apiKey={mockApiKey}
+    />);
+    
+    // Override the ref to use our mock container
+    const messagesContainer = container.querySelector('.conversation-messages');
+    if (messagesContainer) {
+      Object.defineProperty(messagesContainer, 'scrollTo', { value: mockScrollTo, writable: true });
+      Object.defineProperty(messagesContainer, 'clientHeight', { value: 500, writable: true });
+      Object.defineProperty(messagesContainer, 'querySelector', { value: mockContainer.querySelector, writable: true });
+      Object.defineProperty(messagesContainer, 'querySelectorAll', { value: mockContainer.querySelectorAll, writable: true });
+      Object.defineProperty(messagesContainer, 'appendChild', { value: mockContainer.appendChild, writable: true });
+      Object.defineProperty(messagesContainer, 'getBoundingClientRect', { value: mockContainer.getBoundingClientRect, writable: true });
+    }
+
+    // Click send button to trigger message send
+    const sendButton = screen.getByText('Send Test');
+    sendButton.click();
+    
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Verify requestAnimationFrame was called
+    expect(global.requestAnimationFrame).toHaveBeenCalled();
+    
+    // Verify scrollTo was eventually called (after DOM updates)
+    expect(mockScrollTo).toHaveBeenCalled();
+    
+    // Restore original requestAnimationFrame
+    global.requestAnimationFrame = originalRAF;
+  });
 });
