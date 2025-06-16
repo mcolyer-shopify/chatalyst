@@ -33,7 +33,7 @@ function App() {
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   
   // Custom hooks
-  const { sendMessage, stopGeneration } = useMessageHandling();
+  const { sendMessage, stopGeneration, generateConversationTitle } = useMessageHandling();
   
   // Conversation management
   const createNewConversation = () => {
@@ -59,6 +59,10 @@ function App() {
 
   const handleDeleteConversation = (id: string) => {
     deleteConversation(id);
+  };
+
+  const handleGenerateTitle = async (id: string) => {
+    await generateConversationTitle(id);
   };
 
   // Settings management
@@ -124,6 +128,7 @@ function App() {
             onDelete={handleDeleteConversation}
             onArchive={archiveConversation}
             onUnarchive={unarchiveConversation}
+            onGenerateTitle={handleGenerateTitle}
             onSettingsClick={() => setShowSettings(true)}
             defaultModel={settings.value.defaultModel}
             onDefaultModelChange={handleDefaultModelChange}

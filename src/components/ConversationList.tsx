@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'preact/hooks';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
+import { generatingTitleFor } from '../store';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -11,6 +12,7 @@ interface ConversationListProps {
   onDelete: (id: string) => void;
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
+  onGenerateTitle: (id: string) => void;
   onSettingsClick: () => void;
   defaultModel?: string;
   onDefaultModelChange: (modelId: string) => void;
@@ -25,6 +27,7 @@ export function ConversationList({
   onDelete,
   onArchive,
   onUnarchive,
+  onGenerateTitle,
   onSettingsClick,
   defaultModel,
   onDefaultModelChange
@@ -161,7 +164,11 @@ export function ConversationList({
                   class="conversation-title"
                   onClick={() => onSelect(conversation.id)}
                 >
-                  {conversation.title}
+                  {generatingTitleFor.value === conversation.id ? (
+                    <span style="opacity: 0.6">Generating title...</span>
+                  ) : (
+                    conversation.title
+                  )}
                 </div>
                 <div class="conversation-menu">
                   <button
@@ -178,6 +185,14 @@ export function ConversationList({
                       <button onClick={() => handleRename(conversation)}>
                         Rename
                       </button>
+                      {conversation.messages.length > 0 && (
+                        <button onClick={() => {
+                          onGenerateTitle(conversation.id);
+                          setDropdownId(null);
+                        }}>
+                          Generate Title
+                        </button>
+                      )}
                       {conversation.archived ? (
                         <button onClick={() => onUnarchive(conversation.id)}>
                           Unarchive

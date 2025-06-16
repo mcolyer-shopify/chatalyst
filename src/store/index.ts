@@ -32,6 +32,7 @@ export const selectedConversationId = signal<string | null>(null);
 export const settings = signal<Settings>(DEFAULT_SETTINGS);
 export const isLoadingModels = signal(false);
 export const isStreaming = signal(false);
+export const generatingTitleFor = signal<string | null>(null);
 
 // Error state signals
 export const errorMessage = signal<string | null>(null);

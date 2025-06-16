@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automatic conversation title generation
+  - New "Generate Title" option in conversation dropdown menu
+  - AI-powered title generation based on conversation content
+  - Shows loading indicator while title is being generated
+  - Only available for conversations with at least one message
 - Archive functionality for conversations
   - Conversations can now be archived instead of permanently deleted
   - New "Archive" tab in the conversation list to view archived conversations
