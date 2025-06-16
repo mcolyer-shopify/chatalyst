@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added appropriate CSS styling for markdown elements in user messages
 
 ### Fixed
+- Fixed dropdown menu styling to prevent text wrapping
+  - Increased minimum width from 120px to 150px
+  - Added white-space: nowrap to menu buttons
+  - "Generate Title" option now displays on a single line
 - Fixed race condition where auto-scroll to new user messages would sometimes fail
   - Messages now reliably scroll to top of viewport when sent
   - Added retry logic to handle DOM update timing issues

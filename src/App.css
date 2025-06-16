@@ -147,7 +147,7 @@ body {
   border-radius: 0.375rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 10;
-  min-width: 120px;
+  min-width: 150px;
 }
 
 .dropdown-menu button {
@@ -161,6 +161,7 @@ body {
   font-size: 0.875rem;
   color: #333;
   transition: background-color 0.2s;
+  white-space: nowrap;
 }
 
 .dropdown-menu button:hover {
