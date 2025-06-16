@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { streamText } from 'ai';
+import { streamText, generateText } from 'ai';
 import type { CoreMessage } from 'ai';
 import type { Message, Conversation } from '../types';
 import { 
@@ -10,7 +10,9 @@ import {
   addMessage,
   updateMessage,
   clearError,
-  updateConversationSDKMessages
+  updateConversationSDKMessages,
+  updateConversationTitle,
+  generatingTitleFor
 } from '../store';
 import { createAIProvider } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
@@ -176,7 +178,54 @@ export function useMessageHandling() {
     }
   };
 
-  return { sendMessage, stopGeneration };
+  const generateConversationTitle = async (conversationId: string) => {
+    const conversation = conversations.value.find(c => c.id === conversationId);
+    if (!conversation || conversation.messages.length === 0) return;
+
+    // Set loading state
+    generatingTitleFor.value = conversationId;
+
+    try {
+      // Get first few messages for context (up to 5 exchanges)
+      const messagesToAnalyze = conversation.messages.slice(0, 10);
+      
+      // Build context from messages
+      const conversationContext = messagesToAnalyze
+        .map(msg => `${msg.role}: ${msg.content}`)
+        .join('\n');
+
+      // Create AI provider and generate title
+      const aiProvider = createAIProvider(settings.value);
+      const modelToUse = conversation.model || settings.value.defaultModel || DEFAULT_MODEL;
+      
+      const result = await generateText({
+        model: aiProvider(modelToUse),
+        prompt: `Based on the following conversation, generate a brief 3-5 word title that captures the main topic. Respond with only the title, no additional text, quotes, or punctuation.
+
+Conversation:
+${conversationContext}
+
+Title:`,
+        temperature: 0.7,
+        maxTokens: 20
+      });
+
+      const title = result.text.trim();
+      
+      // Update the conversation title if we got a valid response
+      if (title && title.length > 0 && title.length < 100) {
+        updateConversationTitle(conversationId, title);
+      }
+    } catch (error) {
+      console.error('Failed to generate title:', error);
+      // Silently fail - don't show error to user for title generation
+    } finally {
+      // Clear loading state
+      generatingTitleFor.value = null;
+    }
+  };
+
+  return { sendMessage, stopGeneration, generateConversationTitle };
 }
 
 // Helper functions
