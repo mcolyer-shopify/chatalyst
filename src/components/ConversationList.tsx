@@ -41,7 +41,8 @@ export function ConversationList({
   const filteredConversations = useMemo(() => {
     const isArchived = activeTab === 'archived';
     return conversations.filter(conv => {
-      const matchesTab = conv.archived === isArchived;
+      // Handle undefined archived field (treat as not archived)
+      const matchesTab = isArchived ? conv.archived === true : conv.archived !== true;
       const matchesSearch = searchQuery === '' || 
         conv.title.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesTab && matchesSearch;
