@@ -11,6 +11,8 @@ interface ConversationListProps {
   onCreate: () => void;
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
   onSettingsClick: () => void;
 }
 
@@ -45,6 +47,8 @@ vi.mock('./store', () => {
     mcpServers: signal([]),
     createConversation: vi.fn(),
     deleteConversation: vi.fn(),
+    archiveConversation: vi.fn(),
+    unarchiveConversation: vi.fn(),
     updateConversationTitle: vi.fn(),
     addMessage: vi.fn(),
     updateMessage: vi.fn(),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useState, useMemo } from 'preact/hooks';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
 
@@ -9,6 +9,8 @@ interface ConversationListProps {
   onCreate: () => void;
   onRename: (id: string, newTitle: string) => void;
   onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
   onSettingsClick: () => void;
   defaultModel?: string;
   onDefaultModelChange: (modelId: string) => void;
@@ -21,6 +23,8 @@ export function ConversationList({
   onCreate,
   onRename,
   onDelete,
+  onArchive,
+  onUnarchive,
   onSettingsClick,
   defaultModel,
   onDefaultModelChange
@@ -30,6 +34,20 @@ export function ConversationList({
   const [dropdownId, setDropdownId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter conversations based on tab and search query
+  const filteredConversations = useMemo(() => {
+    const isArchived = activeTab === 'archived';
+    return conversations.filter(conv => {
+      // Handle undefined archived field (treat as not archived)
+      const matchesTab = isArchived ? conv.archived === true : conv.archived !== true;
+      const matchesSearch = searchQuery === '' || 
+        conv.title.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesTab && matchesSearch;
+    });
+  }, [conversations, activeTab, searchQuery]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -83,9 +101,40 @@ export function ConversationList({
             </svg>
           </button>
         </div>
+        <div class="conversation-tabs">
+          <button
+            class={`tab ${activeTab === 'active' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('active');
+              setSearchQuery('');
+            }}
+          >
+            Active
+          </button>
+          <button
+            class={`tab ${activeTab === 'archived' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('archived');
+              setSearchQuery('');
+            }}
+          >
+            Archive
+          </button>
+        </div>
+        {activeTab === 'archived' && (
+          <div class="search-box">
+            <input
+              type="text"
+              placeholder="Search archived conversations..."
+              value={searchQuery}
+              onInput={(e) => setSearchQuery(e.currentTarget.value)}
+              class="search-input"
+            />
+          </div>
+        )}
       </div>
       <div class="conversations">
-        {conversations.map((conversation) => (
+        {filteredConversations.map((conversation) => (
           <div
             key={conversation.id}
             class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''}`}
@@ -129,6 +178,15 @@ export function ConversationList({
                       <button onClick={() => handleRename(conversation)}>
                         Rename
                       </button>
+                      {conversation.archived ? (
+                        <button onClick={() => onUnarchive(conversation.id)}>
+                          Unarchive
+                        </button>
+                      ) : (
+                        <button onClick={() => onArchive(conversation.id)}>
+                          Archive
+                        </button>
+                      )}
                       <button onClick={() => handleDelete(conversation.id)}>
                         Delete
                       </button>

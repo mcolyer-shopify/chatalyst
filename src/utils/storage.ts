@@ -7,7 +7,17 @@ const SELECTED_CONVERSATION_KEY = 'chatalyst_selected_conversation';
 export function loadConversations(): Conversation[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    
+    const conversations: Conversation[] = JSON.parse(data);
+    
+    // Migrate conversations without archived field - set them as active
+    return conversations.map(conv => {
+      if (conv.archived === undefined) {
+        return { ...conv, archived: false };
+      }
+      return conv;
+    });
   } catch (error) {
     showError(`Failed to load conversations from storage: ${error instanceof Error ? error.message : 'Unknown error'}. Your conversations may not be available.`);
     return [];

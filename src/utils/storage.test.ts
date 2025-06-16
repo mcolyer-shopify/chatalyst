@@ -55,7 +55,8 @@ describe('Storage utilities (deprecated)', () => {
       const result = loadConversations();
       
       expect(localStorage.getItem).toHaveBeenCalledWith('chatalyst_conversations');
-      expect(result).toEqual(mockConversations);
+      // Migration adds archived: false to conversations without the field
+      expect(result).toEqual(mockConversations.map(conv => ({ ...conv, archived: false })));
     });
 
     it('handles invalid JSON gracefully', () => {
@@ -84,6 +85,20 @@ describe('Storage utilities (deprecated)', () => {
       const result = loadConversations();
       
       expect(result).toEqual([]);
+    });
+
+    it('migrates conversations without archived field', () => {
+      const conversationsWithArchived = [
+        { ...mockConversations[0], archived: true },
+        mockConversations[1] // No archived field
+      ];
+      
+      localStorage.getItem.mockReturnValue(JSON.stringify(conversationsWithArchived));
+      
+      const result = loadConversations();
+      
+      expect(result[0].archived).toBe(true); // Keeps existing archived value
+      expect(result[1].archived).toBe(false); // Adds archived: false
     });
   });
 
@@ -167,7 +182,8 @@ describe('Storage utilities (deprecated)', () => {
       // Load conversations
       const loaded = loadConversations();
       
-      expect(loaded).toEqual(mockConversations);
+      // Migration adds archived: false to conversations without the field
+      expect(loaded).toEqual(mockConversations.map(conv => ({ ...conv, archived: false })));
     });
   });
 

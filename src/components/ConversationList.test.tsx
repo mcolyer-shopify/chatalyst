@@ -34,6 +34,8 @@ describe('ConversationList', () => {
     onCreate: vi.fn(),
     onRename: vi.fn(),
     onDelete: vi.fn(),
+    onArchive: vi.fn(),
+    onUnarchive: vi.fn(),
     onSettingsClick: vi.fn(),
     defaultModel: 'gpt-4',
     onDefaultModelChange: vi.fn()
@@ -83,8 +85,11 @@ describe('ConversationList', () => {
     const menuButtons = container.querySelectorAll('.menu-button');
     fireEvent.click(menuButtons[0]);
     
-    expect(screen.getByText('Rename')).toBeInTheDocument();
-    expect(screen.getByText('Delete')).toBeInTheDocument();
+    const dropdown = container.querySelector('.dropdown-menu');
+    expect(dropdown).toBeInTheDocument();
+    expect(dropdown).toHaveTextContent('Rename');
+    expect(dropdown).toHaveTextContent('Archive');
+    expect(dropdown).toHaveTextContent('Delete');
   });
 
   it('hides dropdown menu when clicking outside', async () => {
@@ -179,6 +184,19 @@ describe('ConversationList', () => {
     fireEvent.click(screen.getByText('Delete'));
     
     expect(mockProps.onDelete).toHaveBeenCalledWith('1');
+  });
+
+  it('calls onArchive when archive is clicked', () => {
+    const { container } = render(<ConversationList {...mockProps} />);
+    
+    const menuButtons = container.querySelectorAll('.menu-button');
+    fireEvent.click(menuButtons[0]);
+    
+    const dropdown = container.querySelector('.dropdown-menu');
+    const archiveButton = dropdown?.querySelector('button:nth-child(2)'); // Archive is second button
+    fireEvent.click(archiveButton!);
+    
+    expect(mockProps.onArchive).toHaveBeenCalledWith('1');
   });
 
   it('renders empty state correctly', () => {
