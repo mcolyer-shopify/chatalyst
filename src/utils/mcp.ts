@@ -19,6 +19,32 @@ interface MCPConnection {
 const activeConnections = new Map<string, MCPConnection>();
 
 /**
+ * Check if an error is a connection-related error
+ */
+function isConnectionError(error: unknown): boolean {
+  if (!error) return false;
+  
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const lowerMessage = errorMessage.toLowerCase();
+  
+  // Check for common connection error patterns
+  return (
+    lowerMessage.includes('connection closed') ||
+    lowerMessage.includes('connection lost') ||
+    lowerMessage.includes('connection refused') ||
+    lowerMessage.includes('network error') ||
+    lowerMessage.includes('econnreset') ||
+    lowerMessage.includes('econnrefused') ||
+    lowerMessage.includes('timeout') ||
+    lowerMessage.includes('disconnected') ||
+    // JSON-RPC specific error codes
+    errorMessage.includes('-32000') || // Connection closed
+    errorMessage.includes('-32001') || // Server error
+    errorMessage.includes('-32700')    // Parse error (could indicate connection issues)
+  );
+}
+
+/**
  * Initialize MCP connections based on configuration
  */
 export async function initializeMCPConnections(configString: string | undefined) {
@@ -41,13 +67,35 @@ export async function initializeMCPConnections(configString: string | undefined)
       addMCPServer(serverStatus);
     }
     
-    // Then start enabled servers
+    // Then start enabled servers (continue even if some fail)
+    const startPromises: Promise<void>[] = [];
     for (const [serverId, serverConfig] of Object.entries(config)) {
       if (serverConfig.enabled !== false) {
-        await startMCPServer(serverId, serverConfig);
+        // Start servers in parallel but catch individual failures
+        startPromises.push(
+          startMCPServer(serverId, serverConfig).catch(error => {
+            console.error(`[MCP] Failed to start server ${serverId} during initialization:`, error);
+            // Individual server failures are already handled in startMCPServer
+          })
+        );
       }
     }
+    
+    // Wait for all servers to attempt startup
+    await Promise.allSettled(startPromises);
+    
+    const runningServers = Array.from(activeConnections.keys());
+    const totalServers = Object.keys(config).filter(id => config[id].enabled !== false).length;
+    
+    console.log(`[MCP] Initialization complete: ${runningServers.length}/${totalServers} servers running`);
+    
+    if (runningServers.length === 0 && totalServers > 0) {
+      showError('Failed to start any MCP servers. Please check your configuration.');
+    } else if (runningServers.length < totalServers) {
+      console.log(`[MCP] Some servers failed to start, but ${runningServers.length} are running successfully`);
+    }
   } catch (error) {
+    console.error('Failed to parse MCP configuration:', error);
     showError(`Failed to initialize MCP connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -87,6 +135,86 @@ async function connectWithHttpTransport(serverId: string, httpConfig: HttpMCPSer
     console.log(`Connected to ${serverId} using SSE transport`);
     return { client: sseClient, transport: sseTransport };
   }
+}
+
+/**
+ * Setup connection error handlers for graceful failure handling
+ */
+function setupConnectionErrorHandlers(serverId: string, transport: Transport) {
+  // For our custom TauriStdioTransport, we can set up error handlers
+  // For other transports (HTTP, WebSocket), we'll rely on client-level error handling
+  if ('_command' in transport) {
+    // This is our TauriStdioTransport
+    const stdioTransport = transport as Transport & {
+      onclose?: (reason?: unknown) => void;
+      onerror?: (error: Error) => void;
+    };
+    
+    // Handle transport close events
+    if (stdioTransport.onclose !== undefined) {
+      const originalOnClose = stdioTransport.onclose;
+      stdioTransport.onclose = (reason?: unknown) => {
+        console.log(`[MCP] Transport closed for server ${serverId}:`, reason);
+        handleConnectionLoss(serverId, reason);
+        if (originalOnClose) originalOnClose(reason);
+      };
+    } else {
+      stdioTransport.onclose = (reason?: unknown) => {
+        console.log(`[MCP] Transport closed for server ${serverId}:`, reason);
+        handleConnectionLoss(serverId, reason);
+      };
+    }
+
+    // Handle transport error events
+    if (stdioTransport.onerror !== undefined) {
+      const originalOnError = stdioTransport.onerror;
+      stdioTransport.onerror = (error: Error) => {
+        console.error(`[MCP] Transport error for server ${serverId}:`, error);
+        handleConnectionError(serverId, error);
+        if (originalOnError) originalOnError(error);
+      };
+    } else {
+      stdioTransport.onerror = (error: Error) => {
+        console.error(`[MCP] Transport error for server ${serverId}:`, error);
+        handleConnectionError(serverId, error);
+      };
+    }
+  }
+  
+  // For other transport types, connection errors will be caught at the client operation level
+  console.log(`[MCP] Error handlers set up for server ${serverId}`);
+}
+
+/**
+ * Handle connection loss gracefully
+ */
+function handleConnectionLoss(serverId: string, reason?: unknown) {
+  console.log(`[MCP] Handling connection loss for server ${serverId}:`, reason);
+  
+  // Clean up the connection
+  activeConnections.delete(serverId);
+  
+  // Update server status to stopped
+  updateMCPServerStatus(serverId, { 
+    status: 'stopped',
+    error: `Connection lost: ${reason || 'Unknown reason'}`
+  });
+}
+
+/**
+ * Handle connection errors gracefully
+ */
+function handleConnectionError(serverId: string, error: Error) {
+  console.error(`[MCP] Handling connection error for server ${serverId}:`, error);
+  
+  // Clean up the connection
+  activeConnections.delete(serverId);
+  
+  // Update server status to error
+  updateMCPServerStatus(serverId, { 
+    status: 'error',
+    error: error.message || 'Connection error'
+  });
 }
 
 /**
@@ -153,6 +281,9 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
       throw new Error(`Unsupported transport type: ${(config as { transport?: string }).transport}`);
     }
 
+    // Setup error handlers for graceful failure handling
+    setupConnectionErrorHandlers(serverId, transport);
+
     // List available tools
     const toolsResponse = await client.listTools();
     console.log(`MCP server ${serverId} tools:`, toolsResponse.tools);
@@ -186,7 +317,10 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
       status: 'error',
       error: errorMessage
     });
-    showError(`Failed to start MCP server ${serverId}: ${errorMessage}`);
+    
+    // Don't show error for individual server failures to avoid disrupting other servers
+    // showError(`Failed to start MCP server ${serverId}: ${errorMessage}`);
+    console.log(`[MCP] Server ${serverId} failed to start, but continuing with other servers`);
   }
 }
 
@@ -451,6 +585,12 @@ export async function getActiveToolsForConversation(conversation: Conversation |
         console.log(`[MCP] Added tool: ${serverId}_${toolName}`);
       } catch (error) {
         console.error(`[MCP] Failed to get schema for tool ${toolName}:`, error);
+        
+        // Check if this is a connection error and handle gracefully
+        if (isConnectionError(error)) {
+          console.log(`[MCP] Connection lost for server ${serverId}, marking as disconnected`);
+          handleConnectionError(serverId, error instanceof Error ? error : new Error(String(error)));
+        }
       }
     }
   }
@@ -501,6 +641,14 @@ export async function executeMCPTool(toolName: string, args: unknown) {
     return result;
   } catch (error) {
     console.error(`[MCP] Failed to execute tool ${toolName}:`, error);
+    
+    // Check if this is a connection error and handle gracefully
+    if (isConnectionError(error)) {
+      console.log(`[MCP] Connection lost for server ${serverId}, marking as disconnected`);
+      handleConnectionError(serverId, error instanceof Error ? error : new Error(String(error)));
+      throw new Error(`MCP server ${serverId} is no longer available. Please check the server connection.`);
+    }
+    
     throw error;
   }
 }
