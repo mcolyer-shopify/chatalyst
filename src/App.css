@@ -151,7 +151,9 @@ body {
 }
 
 .dropdown-menu button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 1rem;
   border: none;
@@ -162,6 +164,12 @@ body {
   color: #333;
   transition: background-color 0.2s;
   white-space: nowrap;
+}
+
+.dropdown-menu .menu-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .dropdown-menu button:hover {

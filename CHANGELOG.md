@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User messages support markdown formatting like bold, italic, and code blocks
   - Added appropriate CSS styling for markdown elements in user messages
 
+### Changed
+- Enhanced dropdown menu with outline icons
+  - Added Heroicons-style outline icons to all menu items
+  - Icons automatically adapt to light/dark mode using currentColor
+  - Improved visual hierarchy and clarity of menu actions
+
 ### Fixed
 - Fixed dropdown menu styling to prevent text wrapping
   - Increased minimum width from 120px to 150px
