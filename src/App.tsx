@@ -12,6 +12,8 @@ import {
   errorMessage,
   createConversation,
   deleteConversation,
+  archiveConversation,
+  unarchiveConversation,
   updateConversationTitle,
   updateConversationModel,
   updateSettings,
@@ -120,6 +122,8 @@ function App() {
             onCreate={createNewConversation}
             onRename={renameConversation}
             onDelete={handleDeleteConversation}
+            onArchive={archiveConversation}
+            onUnarchive={unarchiveConversation}
             onSettingsClick={() => setShowSettings(true)}
             defaultModel={settings.value.defaultModel}
             onDefaultModelChange={handleDefaultModelChange}

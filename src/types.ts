@@ -29,6 +29,8 @@ export interface Conversation {
   model?: string;
   enabledTools?: { [serverId: string]: string[] }; // serverId -> array of enabled tool names
   sdkMessages?: CoreMessage[];
+  archived?: boolean;
+  archivedAt?: number;
 }
 
 export interface Model {

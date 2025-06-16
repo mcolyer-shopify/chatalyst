@@ -49,6 +49,9 @@ body {
 .conversation-list-header {
   padding: 1rem;
   border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .conversation-list-footer {
@@ -1489,5 +1492,95 @@ body {
     background: #4a4a4a;
     border-color: #64b5f6;
     color: #64b5f6;
+  }
+}
+
+/* Conversation Tabs */
+.conversation-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+
+.conversation-tabs .tab {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.conversation-tabs .tab:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.conversation-tabs .tab.active {
+  background: #e3f2fd;
+  color: #0277bd;
+  border-color: #0277bd;
+}
+
+/* Search Box */
+.search-box {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #007bff;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+/* Dark mode support for tabs and search */
+@media (prefers-color-scheme: dark) {
+  .conversation-tabs {
+    border-color: #444;
+  }
+
+  .conversation-tabs .tab {
+    color: #999;
+  }
+
+  .conversation-tabs .tab:hover {
+    background: #3a3a3a;
+    color: #e0e0e0;
+  }
+
+  .conversation-tabs .tab.active {
+    background: #1e3a5f;
+    color: #64b5f6;
+    border-color: #64b5f6;
+  }
+
+  .search-input {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+
+  .search-input:focus {
+    border-color: #64b5f6;
+  }
+
+  .search-input::placeholder {
+    color: #666;
   }
 }

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Archive functionality for conversations
+  - Conversations can now be archived instead of permanently deleted
+  - New "Archive" tab in the conversation list to view archived conversations
+  - Archived conversations can be unarchived to restore them to the active list
+  - Search functionality in the archive tab to easily find archived conversations
+  - Archive option added to conversation dropdown menu
+  - Automatic migration: existing conversations are marked as active when loaded
+
 ### Changed
 - User messages now use markdown rendering to preserve newlines and formatting
   - Multi-line messages display properly with line breaks preserved

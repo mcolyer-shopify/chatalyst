@@ -156,10 +156,33 @@ export function deleteConversation(id: string) {
   batch(() => {
     conversations.value = conversations.value.filter((c) => c.id !== id);
     if (selectedConversationId.value === id) {
+      // Find first non-archived conversation, or any conversation if all are archived
+      const activeConversations = conversations.value.filter(c => !c.archived);
       selectedConversationId.value =
-        conversations.value.length > 0 ? conversations.value[0].id : null;
+        activeConversations.length > 0 ? activeConversations[0].id :
+          conversations.value.length > 0 ? conversations.value[0].id : null;
     }
   });
+}
+
+export function archiveConversation(id: string) {
+  batch(() => {
+    conversations.value = conversations.value.map((c) =>
+      c.id === id ? { ...c, archived: true, archivedAt: Date.now(), updatedAt: Date.now() } : c
+    );
+    
+    // If archiving the selected conversation, select another active one
+    if (selectedConversationId.value === id) {
+      const activeConversations = conversations.value.filter(c => !c.archived && c.id !== id);
+      selectedConversationId.value = activeConversations.length > 0 ? activeConversations[0].id : null;
+    }
+  });
+}
+
+export function unarchiveConversation(id: string) {
+  conversations.value = conversations.value.map((c) =>
+    c.id === id ? { ...c, archived: false, archivedAt: undefined, updatedAt: Date.now() } : c
+  );
 }
 
 export function updateConversationTitle(id: string, title: string) {
