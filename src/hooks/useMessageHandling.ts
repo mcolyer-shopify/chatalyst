@@ -53,6 +53,9 @@ export function useMessageHandling() {
       isGenerating: true
     };
 
+    // Declare fullContent outside try block so it's accessible in catch
+    let fullContent = '';
+
     try {
       addMessage(conversation.id, assistantMessage);
 
@@ -117,7 +120,6 @@ export function useMessageHandling() {
       });
       
       // Stream the response
-      let fullContent = '';
       
       for await (const part of result.fullStream) {
         console.log('[useMessageHandling] Stream part:', part);
