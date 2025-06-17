@@ -13,6 +13,7 @@ export function MessageInput({ onSend, onStopGeneration, disabled = false, isGen
   const [message, setMessage] = useState('');
   const [historyIndex, setHistoryIndex] = useState(-1); // -1 means current message
   const [tempMessage, setTempMessage] = useState(''); // Store current message when navigating history
+  const [isStopping, setIsStopping] = useState(false); // Track if we're in the process of stopping
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-focus the input when component mounts, becomes enabled, or conversation changes
@@ -101,8 +102,11 @@ export function MessageInput({ onSend, onStopGeneration, disabled = false, isGen
     if (e) e.preventDefault();
     
     if (isGenerating && onStopGeneration) {
+      setIsStopping(true);
       onStopGeneration();
-    } else if (message.trim() && !disabled) {
+      // Reset stopping state after a short delay
+      setTimeout(() => setIsStopping(false), 500);
+    } else if (message.trim() && !disabled && !isGenerating) {
       onSend(message.trim());
       setMessage('');
       setHistoryIndex(-1);
@@ -119,16 +123,16 @@ export function MessageInput({ onSend, onStopGeneration, disabled = false, isGen
           onInput={(e) => setMessage(e.currentTarget.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message... (Shift+Enter for new line)"
-          disabled={disabled}
+          disabled={disabled && !isGenerating}
           class="message-input-field"
           rows={1}
         />
         <button
           type="submit"
-          disabled={isGenerating ? false : (disabled || !message.trim())}
-          class={`message-send-button ${isGenerating ? 'stop-button' : ''}`}
+          disabled={isStopping || (!isGenerating && (disabled || !message.trim()))}
+          class={`message-send-button ${isGenerating ? 'stop-button' : ''} ${isStopping ? 'stopping' : ''}`}
         >
-          {isGenerating ? 'Stop' : 'Send'}
+          {isStopping ? 'Stopping...' : isGenerating ? 'Stop' : 'Send'}
         </button>
       </div>
     </form>

@@ -161,17 +161,7 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
     }
   }, [shouldScrollToUserMessage, conversation?.messages.length]);
 
-  const [isLastMessageGenerating, setIsLastMessageGenerating] = useState(false);
-
-  // Update generating state when conversation changes
-  useEffect(() => {
-    if (!conversation?.messages.length) {
-      setIsLastMessageGenerating(false);
-      return;
-    }
-    const lastMessage = conversation.messages[conversation.messages.length - 1];
-    setIsLastMessageGenerating(lastMessage.role === 'assistant' && !!lastMessage.isGenerating);
-  }, [conversation?.messages]);
+  // Removed isLastMessageGenerating - using isStreaming.value directly for cleaner state management
 
   if (!conversation) {
     return (
@@ -220,8 +210,8 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
           setShouldScrollToUserMessage(true);
         }} 
         onStopGeneration={onStopGeneration}
-        disabled={isStreaming.value && !isLastMessageGenerating} 
-        isGenerating={isLastMessageGenerating}
+        disabled={false} 
+        isGenerating={isStreaming.value}
         userMessages={conversation.messages
           .filter(m => m.role === 'user')
           .map(m => m.content)}

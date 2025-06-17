@@ -756,6 +756,12 @@ body {
   background: #c82333;
 }
 
+.message-send-button.stopping {
+  background: #bd2130;
+  opacity: 0.8;
+  cursor: wait;
+}
+
 /* Error Message Styles */
 .error-message {
   position: absolute;
@@ -1423,6 +1429,11 @@ body {
 
   .message-send-button.stop-button:hover:not(:disabled) {
     background: #c53030;
+  }
+
+  .message-send-button.stopping {
+    background: #c53030;
+    opacity: 0.8;
   }
 
   /* Provider Selector Dark Mode */
