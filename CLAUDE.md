@@ -189,3 +189,4 @@ Frontend and backend communicate through Tauri's IPC system:
 - `vite.config.ts` - Vite configuration (dev server on port 1420)
 - `src-tauri/tauri.conf.json` - Tauri app configuration (window settings, app metadata)
 - `tsconfig.json` - TypeScript configuration (strict mode, Preact JSX)
+
