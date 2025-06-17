@@ -53,6 +53,9 @@ export function useMessageHandling() {
       isGenerating: true
     };
 
+    // Declare fullContent outside try block so it's accessible in catch
+    let fullContent = '';
+
     try {
       addMessage(conversation.id, assistantMessage);
 
@@ -117,7 +120,6 @@ export function useMessageHandling() {
       });
       
       // Stream the response
-      let fullContent = '';
       
       for await (const part of result.fullStream) {
         console.log('[useMessageHandling] Stream part:', part);
@@ -149,8 +151,14 @@ export function useMessageHandling() {
         }
       }
     } catch (err) {
+      console.log('[useMessageHandling] Caught error:', err, 'Name:', (err as Error).name);
       if ((err as Error).name === 'AbortError') {
-        updateMessage(conversation.id, assistantMessage.id, { isGenerating: false });
+        // User stopped the generation
+        const currentContent = fullContent.trim();
+        updateMessage(conversation.id, assistantMessage.id, { 
+          isGenerating: false,
+          content: currentContent ? `${currentContent}\n\n(Generation stopped)` : '(Generation stopped)'
+        });
       } else {
         const errorResult = handleAIError(err, conversation.id, assistantMessage.id);
         
@@ -165,16 +173,23 @@ export function useMessageHandling() {
         }
       }
     } finally {
+      console.log('[useMessageHandling] Finally block - clearing streaming state');
       isStreaming.value = false;
       setAbortController(null);
     }
   };
 
   const stopGeneration = () => {
-    if (abortController) {
-      abortController.abort();
-      isStreaming.value = false;
-      setAbortController(null);
+    if (abortController && !abortController.signal.aborted) {
+      try {
+        abortController.abort();
+        // The streaming state will be cleared in the finally block of sendMessage
+      } catch (error) {
+        console.error('[stopGeneration] Error aborting:', error);
+        // Ensure we still clean up state even if abort fails
+        isStreaming.value = false;
+        setAbortController(null);
+      }
     }
   };
 

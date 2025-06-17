@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Improved stop generation functionality
+  - Stop button now properly cancels AI responses with visual feedback
+  - Shows "Stopping..." state while cancellation is in progress
+  - Preserves partial content and appends "(Generation stopped)" when cancelled
+  - Input remains enabled during generation so users can type their next message
+  - Simplified state management for more predictable behavior
+
 ## [1.1.0] - 2025-06-16
 
 ### Added
