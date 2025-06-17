@@ -152,9 +152,10 @@ export function useMessageHandling() {
       console.log('[useMessageHandling] Caught error:', err, 'Name:', (err as Error).name);
       if ((err as Error).name === 'AbortError') {
         // User stopped the generation
+        const currentContent = fullContent.trim();
         updateMessage(conversation.id, assistantMessage.id, { 
           isGenerating: false,
-          content: assistantMessage.content || '(Generation stopped)'
+          content: currentContent ? `${currentContent}\n\n(Generation stopped)` : '(Generation stopped)'
         });
       } else {
         const errorResult = handleAIError(err, conversation.id, assistantMessage.id);
