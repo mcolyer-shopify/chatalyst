@@ -33,7 +33,7 @@ function App() {
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   
   // Custom hooks
-  const { sendMessage, stopGeneration, generateConversationTitle } = useMessageHandling();
+  const { sendMessage, retryMessage, stopGeneration, generateConversationTitle } = useMessageHandling();
   
   // Conversation management
   const createNewConversation = () => {
@@ -163,6 +163,7 @@ function App() {
           <Conversation
             conversation={selectedConversation.value || null}
             onSendMessage={sendMessage}
+            onRetryMessage={retryMessage}
             onModelChange={handleConversationModelChange}
             onStopGeneration={stopGeneration}
           />

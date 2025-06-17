@@ -230,6 +230,24 @@ export function updateMessage(
   );
 }
 
+export function removeMessagesAfter(conversationId: string, timestamp: number) {
+  conversations.value = conversations.value.map((c) =>
+    c.id === conversationId
+      ? {
+        ...c,
+        messages: c.messages.filter((m) => m.timestamp <= timestamp),
+        sdkMessages: c.sdkMessages?.filter((_, index) => {
+          // Keep SDK messages up to and including the user message at the given timestamp
+          const messageAtTimestamp = c.messages.find(m => m.timestamp === timestamp);
+          const messageIndex = c.messages.findIndex(m => m.timestamp === timestamp);
+          return messageAtTimestamp && index <= messageIndex;
+        }),
+        updatedAt: Date.now()
+      }
+      : c
+  );
+}
+
 export function updateSettings(updates: Partial<Settings>) {
   settings.value = { ...settings.value, ...updates };
 }

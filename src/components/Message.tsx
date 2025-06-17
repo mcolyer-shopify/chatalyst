@@ -5,9 +5,10 @@ import { useEffect, useState } from 'preact/hooks';
 interface MessageProps {
   message: MessageType;
   collapsed?: boolean;
+  onRetry?: () => void;
 }
 
-export function Message({ message, collapsed = true }: MessageProps) {
+export function Message({ message, collapsed = true, onRetry }: MessageProps) {
   const [animationFrame, setAnimationFrame] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(message.role === 'tool' ? true : collapsed);
 
@@ -110,8 +111,20 @@ export function Message({ message, collapsed = true }: MessageProps) {
   return (
     <div class={`message message-${message.role}${message.isError ? ' message-error' : ''}`}>
       {renderContent()}
-      <div class="message-timestamp">
-        {new Date(message.timestamp).toLocaleTimeString()}
+      <div class="message-footer">
+        <div class="message-timestamp">
+          {new Date(message.timestamp).toLocaleTimeString()}
+        </div>
+        {message.role === 'user' && onRetry && (
+          <button
+            class="message-retry-button"
+            onClick={onRetry}
+            aria-label="Retry from this message"
+            title="Retry from this message"
+          >
+            ↻
+          </button>
+        )}
       </div>
     </div>
   );

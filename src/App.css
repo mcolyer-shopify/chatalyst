@@ -375,6 +375,10 @@ body {
   align-items: flex-start;
 }
 
+.message-tool {
+  align-items: flex-start;
+}
+
 .message-content {
   max-width: 70%;
   padding: 0.75rem 1rem;
@@ -653,11 +657,42 @@ body {
   text-decoration: none;
 }
 
+.message-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding: 0 0.5rem;
+}
+
 .message-timestamp {
   font-size: 0.75rem;
   color: #999;
-  margin-top: 0.25rem;
-  padding: 0 0.5rem;
+}
+
+.message-retry-button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-retry-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+  transform: rotate(90deg);
+}
+
+.message-retry-button:active {
+  transform: rotate(180deg);
 }
 
 /* Scroll to bottom button */

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Retry button for user messages
+  - Retry button with icon appears next to timestamp on user messages
+  - Clicking retry removes all subsequent messages and regenerates the assistant response
+  - Always visible for better discoverability
+  - Includes hover and active state animations for better user feedback
+
 ### Fixed
 - Improved stop generation functionality
   - Stop button now properly cancels AI responses with visual feedback

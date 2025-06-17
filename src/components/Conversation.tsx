@@ -8,15 +8,21 @@ import type { Conversation as ConversationType } from '../types';
 interface ConversationProps {
   conversation: ConversationType | null;
   onSendMessage: (message: string) => void;
+  onRetryMessage: (messageId: string) => void;
   onModelChange: (modelId: string) => void;
   onStopGeneration?: () => void;
 }
 
-export function Conversation({ conversation, onSendMessage, onModelChange, onStopGeneration }: ConversationProps) {
+export function Conversation({ conversation, onSendMessage, onRetryMessage, onModelChange, onStopGeneration }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [shouldScrollToUserMessage, setShouldScrollToUserMessage] = useState(false);
+
+  const handleRetry = (messageId: string) => {
+    if (!conversation) return;
+    onRetryMessage(messageId);
+  };
 
   // Check if user is at the bottom of scroll (checking against last message, not padding)
   const isAtBottom = () => {
@@ -189,6 +195,7 @@ export function Conversation({ conversation, onSendMessage, onModelChange, onSto
             <Message 
               key={message.id} 
               message={message}
+              onRetry={() => handleRetry(message.id)}
             />
           ))}
           <div ref={messagesEndRef} />
