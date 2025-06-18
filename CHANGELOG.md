@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Includes hover and active state animations for better user feedback
 
 ### Fixed
+- Retry functionality now properly regenerates responses
+  - Fixed issue where retry would remove messages but not generate new response
+  - Retry now correctly reconstructs conversation context from filtered messages
+  - Ensures AI receives clean conversation history up to retry point only
+
+### Fixed
 - Improved stop generation functionality
   - Stop button now properly cancels AI responses with visual feedback
   - Shows "Stopping..." state while cancellation is in progress
