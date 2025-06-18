@@ -18,14 +18,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clicking copies the message content to system clipboard
   - Always visible for easy access to assistant responses
   - Includes hover and active state animations for better user feedback
+- New SSE transport type for MCP servers
+  - Added dedicated Server-Sent Events (SSE) transport option in MCP settings
+  - SSE transport uses specialized TauriSSESimulatedTransport to handle EventSource authentication limitations
+  - Simulates tool responses for SSE-only servers that can't receive auth headers via EventSource
+  - Includes proper input schemas for GitHub MCP tools (can be adapted for other SSE servers)
+  - Clear distinction between HTTP (Streamable) and SSE transports
+  - GitHub MCP server should now be configured as SSE transport type
+  - Removed WebSocket transport option (not part of MCP specification)
 
 ### Fixed
+- MCP Headers input validation issue in settings dialog
+  - Fixed Headers input field not allowing text input due to overly strict validation
+  - Added separate storage for raw header text to preserve partial input while typing
+  - Headers input now behaves normally while still parsing complete key-value pairs correctly
+- MCP HTTP server connections now use custom Tauri transports for remote servers
+  - Implemented custom Transport classes that use Tauri's HTTP plugin to bypass CORS
+  - Automatic detection of remote vs local servers (local servers use standard transports)
+  - TauriStreamableHttpTransport and TauriSSETransport for remote MCP servers
+  - Fixes authentication and CORS issues when connecting to servers like GitHub Copilot
+  - Maintains proper MCP protocol implementation with correct initialization handshake
+  - Automatic fallback from StreamableHTTP to SSE transport for maximum compatibility
+  - GitHub MCP server now works correctly despite SSE-only response pattern
 - Retry functionality now properly regenerates responses
   - Fixed issue where retry would remove messages but not generate new response
   - Retry now correctly reconstructs conversation context from filtered messages
   - Ensures AI receives clean conversation history up to retry point only
-
-### Fixed
 - Improved stop generation functionality
   - Stop button now properly cancels AI responses with visual feedback
   - Shows "Stopping..." state while cancellation is in progress

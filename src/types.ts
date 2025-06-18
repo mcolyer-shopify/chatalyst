@@ -55,24 +55,22 @@ export interface StdioMCPServerConfig extends BaseMCPServerConfig {
   env?: Record<string, string>;
 }
 
-// Configuration for HTTP-based remote MCP servers
+// Configuration for HTTP-based remote MCP servers (streamable HTTP)
 export interface HttpMCPServerConfig extends BaseMCPServerConfig {
   transport: 'http';
   url: string;
   headers?: Record<string, string>;
 }
 
-// Configuration for WebSocket-based remote MCP servers
-export interface WebSocketMCPServerConfig extends BaseMCPServerConfig {
-  transport: 'websocket';
+// Configuration for SSE-based remote MCP servers
+export interface SSEMCPServerConfig extends BaseMCPServerConfig {
+  transport: 'sse';
   url: string;
   headers?: Record<string, string>;
-  reconnectAttempts?: number;
-  reconnectDelay?: number; // in milliseconds
 }
 
 // Union type for all MCP server configurations
-export type MCPServerConfig = StdioMCPServerConfig | HttpMCPServerConfig | WebSocketMCPServerConfig;
+export type MCPServerConfig = StdioMCPServerConfig | HttpMCPServerConfig | SSEMCPServerConfig;
 
 export interface MCPConfiguration {
   [key: string]: MCPServerConfig;

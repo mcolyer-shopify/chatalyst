@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import type { MCPServerConfig, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
+import type { MCPServerConfig, StdioMCPServerConfig, HttpMCPServerConfig, SSEMCPServerConfig } from '../types';
 import { EnvVarsTable } from './EnvVarsTable';
 
-type TransportType = 'stdio' | 'http' | 'websocket';
+type TransportType = 'stdio' | 'http' | 'sse';
 
 interface BaseMCPServer {
   id: string;
@@ -23,17 +23,17 @@ interface HttpMCPServer extends BaseMCPServer {
   transport: 'http';
   url: string;
   headers?: Record<string, string>;
+  headersText?: string;
 }
 
-interface WebSocketMCPServer extends BaseMCPServer {
-  transport: 'websocket';
+interface SSEMCPServer extends BaseMCPServer {
+  transport: 'sse';
   url: string;
   headers?: Record<string, string>;
-  reconnectAttempts?: number;
-  reconnectDelay?: number;
+  headersText?: string;
 }
 
-type MCPServer = StdioMCPServer | HttpMCPServer | WebSocketMCPServer;
+type MCPServer = StdioMCPServer | HttpMCPServer | SSEMCPServer;
 
 interface MCPSettingsModalProps {
   show: boolean;
@@ -85,18 +85,16 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
               transport: 'http',
               enabled: httpConfig.enabled !== false
             });
-          } else if (serverConfig.transport === 'websocket') {
-            const wsConfig = serverConfig as WebSocketMCPServerConfig;
+          } else if (serverConfig.transport === 'sse') {
+            const sseConfig = serverConfig as SSEMCPServerConfig;
             serverList.push({
               id,
-              name: wsConfig.name || '',
-              description: wsConfig.description || '',
-              url: wsConfig.url || '',
-              headers: wsConfig.headers || {},
-              reconnectAttempts: wsConfig.reconnectAttempts,
-              reconnectDelay: wsConfig.reconnectDelay,
-              transport: 'websocket',
-              enabled: wsConfig.enabled !== false
+              name: sseConfig.name || '',
+              description: sseConfig.description || '',
+              url: sseConfig.url || '',
+              headers: sseConfig.headers || {},
+              transport: 'sse',
+              enabled: sseConfig.enabled !== false
             });
           }
         }
@@ -209,20 +207,23 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         enabled: editingServer.enabled,
         transport: 'http',
         url: '',
-        headers: {}
+        headers: {},
+        headersText: ''
       };
-    } else {
+    } else if (newTransport === 'sse') {
       newServer = {
         id: editingServer.id,
         name: editingServer.name,
         description: editingServer.description,
         enabled: editingServer.enabled,
-        transport: 'websocket',
+        transport: 'sse',
         url: '',
         headers: {},
-        reconnectAttempts: 5,
-        reconnectDelay: 1000
+        headersText: ''
       };
+    } else {
+      // This should never happen with current transport types, but TypeScript needs it
+      throw new Error(`Unknown transport type: ${newTransport}`);
     }
     
     setEditingServer(newServer);
@@ -247,7 +248,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           setError(`Server "${server.id}" must have a command`);
           return;
         }
-      } else if (server.transport === 'http' || server.transport === 'websocket') {
+      } else if (server.transport === 'http' || server.transport === 'sse') {
         if (!server.url.trim()) {
           setError(`Server "${server.id}" must have a URL`);
           return;
@@ -305,29 +306,21 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         }
         
         config[server.id] = httpConfig;
-      } else if (server.transport === 'websocket') {
-        const wsServer = server as WebSocketMCPServer;
-        const wsConfig: WebSocketMCPServerConfig = {
-          name: wsServer.name,
-          description: wsServer.description,
-          transport: 'websocket',
-          url: wsServer.url,
-          enabled: wsServer.enabled
+      } else if (server.transport === 'sse') {
+        const sseServer = server as SSEMCPServer;
+        const sseConfig: SSEMCPServerConfig = {
+          name: sseServer.name,
+          description: sseServer.description,
+          transport: 'sse',
+          url: sseServer.url,
+          enabled: sseServer.enabled
         };
         
-        if (wsServer.headers && Object.keys(wsServer.headers).length > 0) {
-          wsConfig.headers = wsServer.headers;
+        if (sseServer.headers && Object.keys(sseServer.headers).length > 0) {
+          sseConfig.headers = sseServer.headers;
         }
         
-        if (wsServer.reconnectAttempts !== undefined) {
-          wsConfig.reconnectAttempts = wsServer.reconnectAttempts;
-        }
-        
-        if (wsServer.reconnectDelay !== undefined) {
-          wsConfig.reconnectDelay = wsServer.reconnectDelay;
-        }
-        
-        config[server.id] = wsConfig;
+        config[server.id] = sseConfig;
       }
     }
     
@@ -353,15 +346,27 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   };
 
   const getHeadersText = () => {
-    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket') || !editingServer.headers) return '';
+    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'sse')) return '';
+    
+    // If we have raw headers text, use that; otherwise convert from headers object
+    if (editingServer.headersText !== undefined) {
+      return editingServer.headersText;
+    }
+    
+    if (!editingServer.headers) return '';
     return Object.entries(editingServer.headers)
       .map(([key, value]) => `${key}: ${value}`)
       .join('\n');
   };
 
   const handleHeadersChange = (value: string) => {
-    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket')) return;
+    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'sse')) return;
     
+    // Store the raw text for immediate display
+    const updatedServer = { ...editingServer, headersText: value };
+    setEditingServer(updatedServer);
+    
+    // Parse only complete key-value pairs for the headers object
     const headers: Record<string, string> = {};
     const lines = value.split('\n');
     
@@ -370,15 +375,20 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         const colonIndex = line.indexOf(':');
         if (colonIndex > 0) {
           const key = line.substring(0, colonIndex).trim();
-          const value = line.substring(colonIndex + 1).trim();
+          const headerValue = line.substring(colonIndex + 1).trim();
           if (key) {
-            headers[key] = value;
+            headers[key] = headerValue;
           }
         }
       }
     }
     
-    handleServerChange('headers', headers);
+    // Update the server in the list with both raw text and parsed headers
+    setServers(servers.map(s => 
+      s.id === editingServer.id 
+        ? { ...s, headersText: value, headers }
+        : s
+    ));
   };
 
   return (
@@ -494,7 +504,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                       <span class="transport-dropdown-text">
                         {editingServer.transport === 'stdio' && 'Local Process (stdio)'}
                         {editingServer.transport === 'http' && 'Remote HTTP'}
-                        {editingServer.transport === 'websocket' && 'Remote WebSocket'}
+                        {editingServer.transport === 'sse' && 'Remote SSE'}
                       </span>
                       <span class="transport-dropdown-arrow">▼</span>
                     </button>
@@ -521,18 +531,18 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                           }}
                         >
                           <div class="transport-option-name">Remote HTTP</div>
-                          <div class="transport-option-description">Connect to remote HTTP/SSE servers</div>
+                          <div class="transport-option-description">Connect to remote HTTP servers (Streamable HTTP)</div>
                         </button>
                         <button
                           type="button"
-                          class={`transport-dropdown-option ${editingServer.transport === 'websocket' ? 'selected' : ''}`}
+                          class={`transport-dropdown-option ${editingServer.transport === 'sse' ? 'selected' : ''}`}
                           onClick={() => {
-                            handleTransportChange('websocket');
+                            handleTransportChange('sse');
                             setIsTransportDropdownOpen(false);
                           }}
                         >
-                          <div class="transport-option-name">Remote WebSocket</div>
-                          <div class="transport-option-description">Connect to remote WebSocket servers</div>
+                          <div class="transport-option-name">Remote SSE</div>
+                          <div class="transport-option-description">Connect to remote Server-Sent Events servers</div>
                         </button>
                       </div>
                     )}
@@ -605,7 +615,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                         autoCapitalize="off"
                         spellcheck={false}
                       />
-                      <small>The SDK will automatically try Streamable HTTP first, then fall back to SSE if needed.</small>
+                      <small>Uses Streamable HTTP transport for bidirectional communication.</small>
                     </div>
 
                     <div class="form-group">
@@ -623,20 +633,21 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                   </>
                 )}
 
-                {/* WebSocket-specific fields */}
-                {editingServer.transport === 'websocket' && (
+                {/* SSE-specific fields */}
+                {editingServer.transport === 'sse' && (
                   <>
                     <div class="form-group">
-                      <label>WebSocket URL:</label>
+                      <label>URL:</label>
                       <input
                         type="text"
                         value={editingServer.url}
                         onInput={(e) => handleServerChange('url', e.currentTarget.value)}
-                        placeholder="e.g., wss://api.example.com/mcp"
+                        placeholder="e.g., https://api.githubcopilot.com/mcp/"
                         autoCorrect="off"
                         autoCapitalize="off"
                         spellcheck={false}
                       />
+                      <small>Uses Server-Sent Events for receiving responses. Best for servers that only support SSE.</small>
                     </div>
 
                     <div class="form-group">
@@ -651,31 +662,9 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                         spellcheck={false}
                       />
                     </div>
-
-                    <div class="form-group">
-                      <label>Reconnect Attempts:</label>
-                      <input
-                        type="number"
-                        value={editingServer.reconnectAttempts ?? 5}
-                        onInput={(e) => handleServerChange('reconnectAttempts', parseInt(e.currentTarget.value) || 5)}
-                        min="0"
-                        max="20"
-                      />
-                    </div>
-
-                    <div class="form-group">
-                      <label>Reconnect Delay (milliseconds):</label>
-                      <input
-                        type="number"
-                        value={editingServer.reconnectDelay ?? 1000}
-                        onInput={(e) => handleServerChange('reconnectDelay', parseInt(e.currentTarget.value) || 1000)}
-                        min="100"
-                        max="60000"
-                        step="100"
-                      />
-                    </div>
                   </>
                 )}
+
 
               </>
             ) : (
