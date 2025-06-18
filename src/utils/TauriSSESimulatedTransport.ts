@@ -14,7 +14,7 @@ export class TauriSSESimulatedTransport implements Transport {
   private _headers: Record<string, string>;
   private _sessionId?: string;
   private _pendingRequests = new Map<string | number, {
-    resolve: () => void;
+    resolve: (value?: void | PromiseLike<void>) => void;
     reject: (error: Error) => void;
     timeout?: ReturnType<typeof setTimeout>;
   }>();
