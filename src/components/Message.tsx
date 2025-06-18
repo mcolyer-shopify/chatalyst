@@ -30,6 +30,14 @@ export function Message({ message, collapsed = true, onRetry }: MessageProps) {
     return frames[animationFrame];
   };
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+    } catch (err) {
+      console.error('Failed to copy message:', err);
+    }
+  };
+
   const renderContent = () => {
     if (message.role === 'tool') {
       return (
@@ -123,6 +131,16 @@ export function Message({ message, collapsed = true, onRetry }: MessageProps) {
             title="Retry from this message"
           >
             ↻
+          </button>
+        )}
+        {message.role === 'assistant' && (
+          <button
+            class="message-copy-button"
+            onClick={handleCopy}
+            aria-label="Copy message content"
+            title="Copy message content"
+          >
+            📋
           </button>
         )}
       </div>

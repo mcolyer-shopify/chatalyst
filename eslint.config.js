@@ -38,7 +38,8 @@ export default [
         clearInterval: 'readonly',
         AbortController: 'readonly',
         KeyboardEvent: 'readonly',
-        URL: 'readonly'
+        URL: 'readonly',
+        navigator: 'readonly'
       }
     },
     plugins: {
