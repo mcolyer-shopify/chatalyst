@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clicking retry removes all subsequent messages and regenerates the assistant response
   - Always visible for better discoverability
   - Includes hover and active state animations for better user feedback
+- Copy button for assistant messages
+  - Copy button with clipboard icon appears next to timestamp on assistant messages
+  - Clicking copies the message content to system clipboard
+  - Always visible for easy access to assistant responses
+  - Includes hover and active state animations for better user feedback
 
 ### Fixed
 - Improved stop generation functionality

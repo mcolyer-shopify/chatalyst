@@ -695,6 +695,31 @@ body {
   transform: rotate(180deg);
 }
 
+.message-copy-button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-copy-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+  transform: scale(1.1);
+}
+
+.message-copy-button:active {
+  transform: scale(0.95);
+}
+
 /* Scroll to bottom button */
 .scroll-to-bottom {
   position: sticky;
@@ -1469,6 +1494,15 @@ body {
   .message-send-button.stopping {
     background: #c53030;
     opacity: 0.8;
+  }
+
+  .message-copy-button {
+    color: #999;
+  }
+
+  .message-copy-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
   }
 
   /* Provider Selector Dark Mode */
