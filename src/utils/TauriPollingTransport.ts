@@ -2,7 +2,7 @@ import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage, JSONRPCResponse } from '@modelcontextprotocol/sdk/types.js';
 import { fetch } from '@tauri-apps/plugin-http';
 
-/* global setTimeout, clearTimeout, setInterval, clearInterval */
+
 
 /**
  * Polling-based transport for MCP servers that use HTTP but can't use SSE due to CORS.
@@ -47,7 +47,7 @@ export class TauriPollingTransport implements Transport {
     console.log('[TauriPollingTransport] Starting polling mechanism');
     
     // Poll every 500ms for pending responses
-    this._pollingInterval = setInterval(() => {
+    this._pollingInterval = globalThis.setInterval(() => {
       if (this._pendingRequests.size > 0) {
         this._pollForResponses();
       }
@@ -173,7 +173,7 @@ export class TauriPollingTransport implements Transport {
           
           // Don't need to poll for this one
           return;
-        } catch (error) {
+        } catch {
           console.log('[TauriPollingTransport] Response not JSON, might need polling');
         }
       }
@@ -202,7 +202,7 @@ export class TauriPollingTransport implements Transport {
     
     // Stop polling
     if (this._pollingInterval) {
-      clearInterval(this._pollingInterval);
+      globalThis.clearInterval(this._pollingInterval);
       this._pollingInterval = undefined;
     }
     

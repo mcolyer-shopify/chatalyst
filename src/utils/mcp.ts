@@ -115,7 +115,7 @@ async function connectWithHttpTransport(serverId: string, httpConfig: HttpMCPSer
   if (useTauriTransport) {
     console.log(`[MCP] Using Tauri transports for ${serverId} to bypass CORS`);
     console.log(`[MCP] URL: ${baseUrl.toString()}`);
-    console.log(`[MCP] Headers:`, httpConfig.headers);
+    console.log('[MCP] Headers:', httpConfig.headers);
     
     // Try Tauri streamable HTTP first
     try {
@@ -140,7 +140,7 @@ async function connectWithHttpTransport(serverId: string, httpConfig: HttpMCPSer
       return { client, transport };
     } catch (streamableError) {
       console.error(`[MCP] Tauri Streamable HTTP failed for ${serverId}:`, streamableError);
-      console.log(`[MCP] Error details:`, {
+      console.log('[MCP] Error details:', {
         message: streamableError instanceof Error ? streamableError.message : 'Unknown error',
         stack: streamableError instanceof Error ? streamableError.stack : undefined
       });
@@ -229,7 +229,7 @@ async function connectWithSSETransport(serverId: string, sseConfig: SSEMCPServer
   
   console.log(`[MCP] Connecting to SSE server ${serverId}`);
   console.log(`[MCP] URL: ${baseUrl.toString()}`);
-  console.log(`[MCP] Headers:`, sseConfig.headers);
+  console.log('[MCP] Headers:', sseConfig.headers);
   
   // For SSE servers, always use the Tauri SSE Simulated transport since EventSource doesn't support custom headers
   console.log(`[MCP] Using TauriSSESimulatedTransport for SSE server ${serverId}`);
@@ -371,7 +371,7 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     } else if (config.transport === 'http') {
       console.log(`[MCP] Starting HTTP transport for ${serverId}`);
       const httpConfig = config as HttpMCPServerConfig;
-      console.log(`[MCP] HTTP config:`, {
+      console.log('[MCP] HTTP config:', {
         url: httpConfig.url,
         headers: httpConfig.headers,
         enabled: httpConfig.enabled
@@ -383,7 +383,7 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     } else if (config.transport === 'sse') {
       console.log(`[MCP] Starting SSE transport for ${serverId}`);
       const sseConfig = config as SSEMCPServerConfig;
-      console.log(`[MCP] SSE config:`, {
+      console.log('[MCP] SSE config:', {
         url: sseConfig.url,
         headers: sseConfig.headers,
         enabled: sseConfig.enabled

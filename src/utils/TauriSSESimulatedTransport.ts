@@ -2,7 +2,7 @@ import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage, JSONRPCResponse } from '@modelcontextprotocol/sdk/types.js';
 import { fetch } from '@tauri-apps/plugin-http';
 
-/* global setTimeout, clearTimeout, Promise */
+
 
 /**
  * Custom transport for SSE-based MCP servers that handles their unique response pattern.
@@ -44,7 +44,7 @@ export class TauriSSESimulatedTransport implements Transport {
     
     // If this is a request that expects a response, we'll need to handle it specially
     if ('id' in message && message.id !== null && message.id !== undefined) {
-      return this._sendRequest(message as any);
+      return this._sendRequest(message as JSONRPCMessage & { id: string | number });
     } else {
       // For notifications, just send and forget
       return this._sendNotification(message);
@@ -76,18 +76,18 @@ export class TauriSSESimulatedTransport implements Transport {
   }
 
   private async _sendRequest(message: JSONRPCMessage & { id: string | number }): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       // Set up pending request tracking
-      const timeout = setTimeout(() => {
+      const timeout = globalThis.setTimeout(() => {
         this._pendingRequests.delete(message.id);
         reject(new Error(`Request ${message.id} timed out`));
       }, 10000); // 10 second timeout
       
-      this._pendingRequests.set(message.id, { resolve: resolve as any, reject, timeout });
+      this._pendingRequests.set(message.id, { resolve, reject, timeout });
       
       // Send the actual request
       this._doSendRequest(message).catch(error => {
-        clearTimeout(timeout);
+        globalThis.clearTimeout(timeout);
         this._pendingRequests.delete(message.id);
         reject(error);
       });
@@ -130,7 +130,7 @@ export class TauriSSESimulatedTransport implements Transport {
           
           // Handle the response
           this._handleResponse(responseData);
-        } catch (error) {
+        } catch {
           console.log('[TauriSSESimulatedTransport] Response not JSON, GitHub MCP typically sends empty responses');
         }
       } else {
@@ -139,7 +139,7 @@ export class TauriSSESimulatedTransport implements Transport {
         // For SSE servers, since we can't use SSE with auth headers, we need to simulate responses
         // This is a workaround for SSE-only servers
         if ('method' in message) {
-          this._simulateSSEResponse(message as any);
+          this._simulateSSEResponse(message as JSONRPCMessage & { id: string | number; method: string });
         }
       }
     } catch (error) {
@@ -152,7 +152,7 @@ export class TauriSSESimulatedTransport implements Transport {
     if ('id' in response && response.id !== null && response.id !== undefined) {
       const pending = this._pendingRequests.get(response.id);
       if (pending) {
-        if (pending.timeout) clearTimeout(pending.timeout);
+        if (pending.timeout) globalThis.clearTimeout(pending.timeout);
         this._pendingRequests.delete(response.id);
         pending.resolve(response);
       }
@@ -168,7 +168,7 @@ export class TauriSSESimulatedTransport implements Transport {
     // Simulate responses for known SSE server methods
     // This is a workaround since we can't receive the actual SSE responses with auth
     
-    setTimeout(() => {
+    globalThis.setTimeout(() => {
       let response: JSONRPCResponse;
       
       if (request.method === 'tools/list') {
@@ -370,8 +370,8 @@ export class TauriSSESimulatedTransport implements Transport {
     console.log('[TauriSSESimulatedTransport] Closing transport');
     
     // Clear all pending requests
-    for (const [id, pending] of this._pendingRequests) {
-      if (pending.timeout) clearTimeout(pending.timeout);
+    for (const [_id, pending] of this._pendingRequests) {
+      if (pending.timeout) globalThis.clearTimeout(pending.timeout);
       pending.reject(new Error('Transport closed'));
     }
     this._pendingRequests.clear();
