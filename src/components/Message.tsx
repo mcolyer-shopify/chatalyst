@@ -140,7 +140,7 @@ export function Message({ message, collapsed = true, onRetry }: MessageProps) {
             aria-label="Copy message content"
             title="Copy message content"
           >
-            📋
+            ⧉
           </button>
         )}
       </div>
