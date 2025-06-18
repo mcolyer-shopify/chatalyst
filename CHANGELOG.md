@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Includes proper input schemas for GitHub MCP tools (can be adapted for other SSE servers)
   - Clear distinction between HTTP (Streamable) and SSE transports
   - GitHub MCP server should now be configured as SSE transport type
+  - Removed WebSocket transport option (not part of MCP specification)
 
 ### Fixed
 - MCP Headers input validation issue in settings dialog

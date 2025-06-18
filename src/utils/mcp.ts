@@ -2,14 +2,13 @@ import { jsonSchema } from 'ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { TauriStdioTransport } from './TauriStdioTransport';
 import { TauriStreamableHttpTransport } from './TauriStreamableHttpTransport';
 import { TauriSSETransport } from './TauriSSETransport';
 import { TauriPollingTransport } from './TauriPollingTransport';
 import { TauriSSESimulatedTransport } from './TauriSSESimulatedTransport';
-import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, SSEMCPServerConfig, WebSocketMCPServerConfig } from '../types';
+import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, SSEMCPServerConfig } from '../types';
 import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, clearMCPServers, mcpServers } from '../store';
 
 interface MCPConnection {
@@ -393,21 +392,6 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
       client = result.client;
       transport = result.transport;
       console.log(`[MCP] SSE transport connected for ${serverId}`);
-    } else if (config.transport === 'websocket') {
-      const wsConfig = config as WebSocketMCPServerConfig;
-      const wsUrl = new URL(wsConfig.url);
-      
-      transport = new WebSocketClientTransport(wsUrl);
-      
-      client = new Client({
-        name: 'chatalyst',
-        version: '0.1.0'
-      }, {
-        capabilities: {}
-      });
-      
-      await client.connect(transport);
-      console.log(`MCP client connected for ${serverId}`);
     } else {
       throw new Error(`Unsupported transport type: ${(config as { transport?: string }).transport}`);
     }
@@ -634,16 +618,13 @@ function hasServerConfigChanged(oldConfig: MCPServerConfig, newConfig: MCPServer
       oldHttp.url !== newHttp.url ||
       JSON.stringify(oldHttp.headers) !== JSON.stringify(newHttp.headers)
     );
-  } else if (oldConfig.transport === 'websocket' && newConfig.transport === 'websocket') {
-    const oldWs = oldConfig as WebSocketMCPServerConfig;
-    const newWs = newConfig as WebSocketMCPServerConfig;
+  } else if (oldConfig.transport === 'sse' && newConfig.transport === 'sse') {
+    const oldSSE = oldConfig as SSEMCPServerConfig;
+    const newSSE = newConfig as SSEMCPServerConfig;
     return (
-      oldWs.url !== newWs.url ||
-      JSON.stringify(oldWs.headers) !== JSON.stringify(newWs.headers) ||
-      oldWs.reconnectAttempts !== newWs.reconnectAttempts ||
-      oldWs.reconnectDelay !== newWs.reconnectDelay
+      oldSSE.url !== newSSE.url ||
+      JSON.stringify(oldSSE.headers) !== JSON.stringify(newSSE.headers)
     );
-  }
   
   // Different transport types means config has changed
   return true;

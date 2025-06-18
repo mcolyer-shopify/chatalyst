@@ -69,17 +69,8 @@ export interface SSEMCPServerConfig extends BaseMCPServerConfig {
   headers?: Record<string, string>;
 }
 
-// Configuration for WebSocket-based remote MCP servers
-export interface WebSocketMCPServerConfig extends BaseMCPServerConfig {
-  transport: 'websocket';
-  url: string;
-  headers?: Record<string, string>;
-  reconnectAttempts?: number;
-  reconnectDelay?: number; // in milliseconds
-}
-
 // Union type for all MCP server configurations
-export type MCPServerConfig = StdioMCPServerConfig | HttpMCPServerConfig | SSEMCPServerConfig | WebSocketMCPServerConfig;
+export type MCPServerConfig = StdioMCPServerConfig | HttpMCPServerConfig | SSEMCPServerConfig;
 
 export interface MCPConfiguration {
   [key: string]: MCPServerConfig;
