@@ -9,11 +9,12 @@ interface ConversationProps {
   conversation: ConversationType | null;
   onSendMessage: (message: string) => void;
   onRetryMessage: (messageId: string) => void;
+  onDeleteMessage: (messageId: string) => void;
   onModelChange: (modelId: string) => void;
   onStopGeneration?: () => void;
 }
 
-export function Conversation({ conversation, onSendMessage, onRetryMessage, onModelChange, onStopGeneration }: ConversationProps) {
+export function Conversation({ conversation, onSendMessage, onRetryMessage, onDeleteMessage, onModelChange, onStopGeneration }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -22,6 +23,11 @@ export function Conversation({ conversation, onSendMessage, onRetryMessage, onMo
   const handleRetry = (messageId: string) => {
     if (!conversation) return;
     onRetryMessage(messageId);
+  };
+
+  const handleDelete = (messageId: string) => {
+    if (!conversation) return;
+    onDeleteMessage(messageId);
   };
 
   // Check if user is at the bottom of scroll (checking against last message, not padding)
@@ -196,6 +202,7 @@ export function Conversation({ conversation, onSendMessage, onRetryMessage, onMo
               key={message.id} 
               message={message}
               onRetry={() => handleRetry(message.id)}
+              onDelete={() => handleDelete(message.id)}
             />
           ))}
           <div ref={messagesEndRef} />
