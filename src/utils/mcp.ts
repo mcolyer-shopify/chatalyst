@@ -8,8 +8,8 @@ import { TauriStdioTransport } from './TauriStdioTransport';
 import { TauriStreamableHttpTransport } from './TauriStreamableHttpTransport';
 import { TauriSSETransport } from './TauriSSETransport';
 import { TauriPollingTransport } from './TauriPollingTransport';
-import { TauriGitHubTransport } from './TauriGitHubTransport';
-import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
+import { TauriSSESimulatedTransport } from './TauriSSESimulatedTransport';
+import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, SSEMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, clearMCPServers, mcpServers } from '../store';
 
 interface MCPConnection {
@@ -118,27 +118,7 @@ async function connectWithHttpTransport(serverId: string, httpConfig: HttpMCPSer
     console.log(`[MCP] URL: ${baseUrl.toString()}`);
     console.log(`[MCP] Headers:`, httpConfig.headers);
     
-    // Check if this is the GitHub MCP server
-    const isGitHubMCP = baseUrl.hostname === 'api.githubcopilot.com' || 
-                        baseUrl.hostname.includes('github') || 
-                        baseUrl.href.includes('githubcopilot');
-    
-    if (isGitHubMCP) {
-      console.log(`[MCP] Detected GitHub MCP server, using TauriGitHubTransport for ${serverId}`);
-      const client = new Client({
-        name: 'chatalyst',
-        version: '0.1.0'
-      }, {
-        capabilities: {}
-      });
-      
-      const transport = new TauriGitHubTransport(baseUrl, httpConfig.headers);
-      await client.connect(transport);
-      console.log(`[MCP] Connected to ${serverId} using Tauri GitHub transport`);
-      return { client, transport };
-    }
-    
-    // Try Tauri streamable HTTP first for non-GitHub servers
+    // Try Tauri streamable HTTP first
     try {
       console.log(`[MCP] Creating MCP Client for ${serverId}`);
       const client = new Client({
@@ -240,6 +220,33 @@ async function connectWithHttpTransport(serverId: string, httpConfig: HttpMCPSer
       return { client: sseClient, transport: sseTransport };
     }
   }
+}
+
+/**
+ * Connect to an SSE MCP server
+ */
+async function connectWithSSETransport(serverId: string, sseConfig: SSEMCPServerConfig): Promise<{ client: Client, transport: Transport }> {
+  const baseUrl = new URL(sseConfig.url);
+  
+  console.log(`[MCP] Connecting to SSE server ${serverId}`);
+  console.log(`[MCP] URL: ${baseUrl.toString()}`);
+  console.log(`[MCP] Headers:`, sseConfig.headers);
+  
+  // For SSE servers, always use the Tauri SSE Simulated transport since EventSource doesn't support custom headers
+  console.log(`[MCP] Using TauriSSESimulatedTransport for SSE server ${serverId}`);
+  
+  const client = new Client({
+    name: 'chatalyst',
+    version: '0.1.0'
+  }, {
+    capabilities: {}
+  });
+  
+  const transport = new TauriSSESimulatedTransport(baseUrl, sseConfig.headers);
+  await client.connect(transport);
+  console.log(`[MCP] Connected to ${serverId} using Tauri SSE Simulated transport`);
+  
+  return { client, transport };
 }
 
 /**
@@ -374,6 +381,18 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
       client = result.client;
       transport = result.transport;
       console.log(`[MCP] HTTP transport connected for ${serverId}`);
+    } else if (config.transport === 'sse') {
+      console.log(`[MCP] Starting SSE transport for ${serverId}`);
+      const sseConfig = config as SSEMCPServerConfig;
+      console.log(`[MCP] SSE config:`, {
+        url: sseConfig.url,
+        headers: sseConfig.headers,
+        enabled: sseConfig.enabled
+      });
+      const result = await connectWithSSETransport(serverId, sseConfig);
+      client = result.client;
+      transport = result.transport;
+      console.log(`[MCP] SSE transport connected for ${serverId}`);
     } else if (config.transport === 'websocket') {
       const wsConfig = config as WebSocketMCPServerConfig;
       const wsUrl = new URL(wsConfig.url);

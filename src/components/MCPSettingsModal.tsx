@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import type { MCPServerConfig, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
+import type { MCPServerConfig, StdioMCPServerConfig, HttpMCPServerConfig, SSEMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 import { EnvVarsTable } from './EnvVarsTable';
 
-type TransportType = 'stdio' | 'http' | 'websocket';
+type TransportType = 'stdio' | 'http' | 'sse' | 'websocket';
 
 interface BaseMCPServer {
   id: string;
@@ -26,6 +26,13 @@ interface HttpMCPServer extends BaseMCPServer {
   headersText?: string;
 }
 
+interface SSEMCPServer extends BaseMCPServer {
+  transport: 'sse';
+  url: string;
+  headers?: Record<string, string>;
+  headersText?: string;
+}
+
 interface WebSocketMCPServer extends BaseMCPServer {
   transport: 'websocket';
   url: string;
@@ -35,7 +42,7 @@ interface WebSocketMCPServer extends BaseMCPServer {
   reconnectDelay?: number;
 }
 
-type MCPServer = StdioMCPServer | HttpMCPServer | WebSocketMCPServer;
+type MCPServer = StdioMCPServer | HttpMCPServer | SSEMCPServer | WebSocketMCPServer;
 
 interface MCPSettingsModalProps {
   show: boolean;
@@ -86,6 +93,17 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
               headers: httpConfig.headers || {},
               transport: 'http',
               enabled: httpConfig.enabled !== false
+            });
+          } else if (serverConfig.transport === 'sse') {
+            const sseConfig = serverConfig as SSEMCPServerConfig;
+            serverList.push({
+              id,
+              name: sseConfig.name || '',
+              description: sseConfig.description || '',
+              url: sseConfig.url || '',
+              headers: sseConfig.headers || {},
+              transport: 'sse',
+              enabled: sseConfig.enabled !== false
             });
           } else if (serverConfig.transport === 'websocket') {
             const wsConfig = serverConfig as WebSocketMCPServerConfig;
@@ -214,6 +232,17 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         headers: {},
         headersText: ''
       };
+    } else if (newTransport === 'sse') {
+      newServer = {
+        id: editingServer.id,
+        name: editingServer.name,
+        description: editingServer.description,
+        enabled: editingServer.enabled,
+        transport: 'sse',
+        url: '',
+        headers: {},
+        headersText: ''
+      };
     } else {
       newServer = {
         id: editingServer.id,
@@ -251,7 +280,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
           setError(`Server "${server.id}" must have a command`);
           return;
         }
-      } else if (server.transport === 'http' || server.transport === 'websocket') {
+      } else if (server.transport === 'http' || server.transport === 'sse' || server.transport === 'websocket') {
         if (!server.url.trim()) {
           setError(`Server "${server.id}" must have a URL`);
           return;
@@ -309,6 +338,21 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         }
         
         config[server.id] = httpConfig;
+      } else if (server.transport === 'sse') {
+        const sseServer = server as SSEMCPServer;
+        const sseConfig: SSEMCPServerConfig = {
+          name: sseServer.name,
+          description: sseServer.description,
+          transport: 'sse',
+          url: sseServer.url,
+          enabled: sseServer.enabled
+        };
+        
+        if (sseServer.headers && Object.keys(sseServer.headers).length > 0) {
+          sseConfig.headers = sseServer.headers;
+        }
+        
+        config[server.id] = sseConfig;
       } else if (server.transport === 'websocket') {
         const wsServer = server as WebSocketMCPServer;
         const wsConfig: WebSocketMCPServerConfig = {
@@ -357,7 +401,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   };
 
   const getHeadersText = () => {
-    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket')) return '';
+    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'sse' && editingServer.transport !== 'websocket')) return '';
     
     // If we have raw headers text, use that; otherwise convert from headers object
     if (editingServer.headersText !== undefined) {
@@ -371,7 +415,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   };
 
   const handleHeadersChange = (value: string) => {
-    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket')) return;
+    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'sse' && editingServer.transport !== 'websocket')) return;
     
     // Store the raw text for immediate display
     const updatedServer = { ...editingServer, headersText: value };
@@ -515,6 +559,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                       <span class="transport-dropdown-text">
                         {editingServer.transport === 'stdio' && 'Local Process (stdio)'}
                         {editingServer.transport === 'http' && 'Remote HTTP'}
+                        {editingServer.transport === 'sse' && 'Remote SSE'}
                         {editingServer.transport === 'websocket' && 'Remote WebSocket'}
                       </span>
                       <span class="transport-dropdown-arrow">▼</span>
@@ -542,7 +587,18 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                           }}
                         >
                           <div class="transport-option-name">Remote HTTP</div>
-                          <div class="transport-option-description">Connect to remote HTTP/SSE servers</div>
+                          <div class="transport-option-description">Connect to remote HTTP servers (Streamable HTTP)</div>
+                        </button>
+                        <button
+                          type="button"
+                          class={`transport-dropdown-option ${editingServer.transport === 'sse' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleTransportChange('sse');
+                            setIsTransportDropdownOpen(false);
+                          }}
+                        >
+                          <div class="transport-option-name">Remote SSE</div>
+                          <div class="transport-option-description">Connect to remote Server-Sent Events servers</div>
                         </button>
                         <button
                           type="button"
@@ -626,7 +682,39 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
                         autoCapitalize="off"
                         spellcheck={false}
                       />
-                      <small>The SDK will automatically try Streamable HTTP first, then fall back to SSE if needed.</small>
+                      <small>Uses Streamable HTTP transport for bidirectional communication.</small>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Headers (Key: Value format):</label>
+                      <textarea
+                        value={getHeadersText()}
+                        onInput={(e) => handleHeadersChange(e.currentTarget.value)}
+                        rows={3}
+                        placeholder="e.g., Authorization: Bearer token"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* SSE-specific fields */}
+                {editingServer.transport === 'sse' && (
+                  <>
+                    <div class="form-group">
+                      <label>URL:</label>
+                      <input
+                        type="text"
+                        value={editingServer.url}
+                        onInput={(e) => handleServerChange('url', e.currentTarget.value)}
+                        placeholder="e.g., https://api.githubcopilot.com/mcp/"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellcheck={false}
+                      />
+                      <small>Uses Server-Sent Events for receiving responses. Best for servers that only support SSE.</small>
                     </div>
 
                     <div class="form-group">

@@ -5,11 +5,11 @@ import { fetch } from '@tauri-apps/plugin-http';
 /* global setTimeout, clearTimeout, Promise */
 
 /**
- * Custom transport specifically for GitHub MCP server that handles its unique response pattern.
- * GitHub MCP returns empty HTTP responses and expects to send actual responses via SSE,
- * but since we can't use SSE due to CORS, we need a workaround.
+ * Custom transport for SSE-based MCP servers that handles their unique response pattern.
+ * SSE servers often return empty HTTP responses and expect to send actual responses via SSE,
+ * but since EventSource doesn't support custom headers for authentication, we need a workaround.
  */
-export class TauriGitHubTransport implements Transport {
+export class TauriSSESimulatedTransport implements Transport {
   private _url: URL;
   private _headers: Record<string, string>;
   private _sessionId?: string;
@@ -31,16 +31,16 @@ export class TauriGitHubTransport implements Transport {
       ...(headers || {})
     };
     
-    console.log('[TauriGitHubTransport] Created with URL:', url.toString());
+    console.log('[TauriSSESimulatedTransport] Created with URL:', url.toString());
   }
 
   async start(): Promise<void> {
-    console.log('[TauriGitHubTransport] Starting transport');
+    console.log('[TauriSSESimulatedTransport] Starting transport');
     // For GitHub MCP, we'll handle everything through HTTP POST
   }
 
   async send(message: JSONRPCMessage): Promise<void> {
-    console.log('[TauriGitHubTransport] Sending message:', message);
+    console.log('[TauriSSESimulatedTransport] Sending message:', message);
     
     // If this is a request that expects a response, we'll need to handle it specially
     if ('id' in message && message.id !== null && message.id !== undefined) {
@@ -68,7 +68,7 @@ export class TauriGitHubTransport implements Transport {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      console.log('[TauriGitHubTransport] Notification sent successfully');
+      console.log('[TauriSSESimulatedTransport] Notification sent successfully');
     } catch (error) {
       console.error('[TauriGitHubTransport] Failed to send notification:', error);
       throw error;
@@ -107,12 +107,12 @@ export class TauriGitHubTransport implements Transport {
         body: JSON.stringify(message)
       });
 
-      console.log('[TauriGitHubTransport] Response status:', response.status);
+      console.log('[TauriSSESimulatedTransport] Response status:', response.status);
 
       // Check for session ID
       const sessionId = response.headers.get('Mcp-Session-Id') || response.headers.get('mcp-session-id');
       if (sessionId && sessionId !== this._sessionId) {
-        console.log('[TauriGitHubTransport] Got new session ID:', sessionId);
+        console.log('[TauriSSESimulatedTransport] Got new session ID:', sessionId);
         this._sessionId = sessionId;
       }
 
@@ -126,24 +126,24 @@ export class TauriGitHubTransport implements Transport {
       if (responseText) {
         try {
           const responseData = JSON.parse(responseText) as JSONRPCResponse;
-          console.log('[TauriGitHubTransport] Got immediate response:', responseData);
+          console.log('[TauriSSESimulatedTransport] Got immediate response:', responseData);
           
           // Handle the response
           this._handleResponse(responseData);
         } catch (error) {
-          console.log('[TauriGitHubTransport] Response not JSON, GitHub MCP typically sends empty responses');
+          console.log('[TauriSSESimulatedTransport] Response not JSON, GitHub MCP typically sends empty responses');
         }
       } else {
-        console.log('[TauriGitHubTransport] Empty response - GitHub MCP sends responses via SSE');
+        console.log('[TauriSSESimulatedTransport] Empty response - SSE server sends responses via SSE');
         
-        // For GitHub MCP, since we can't use SSE, we need to simulate responses
-        // This is a workaround for the specific case of GitHub MCP
+        // For SSE servers, since we can't use SSE with auth headers, we need to simulate responses
+        // This is a workaround for SSE-only servers
         if ('method' in message) {
-          this._simulateGitHubResponse(message as any);
+          this._simulateSSEResponse(message as any);
         }
       }
     } catch (error) {
-      console.error('[TauriGitHubTransport] Request error:', error);
+      console.error('[TauriSSESimulatedTransport] Request error:', error);
       throw error;
     }
   }
@@ -164,15 +164,16 @@ export class TauriGitHubTransport implements Transport {
     }
   }
 
-  private _simulateGitHubResponse(request: JSONRPCMessage & { id: string | number; method: string }): void {
-    // Simulate responses for known GitHub MCP methods
-    // This is a workaround since we can't receive the actual SSE responses
+  private _simulateSSEResponse(request: JSONRPCMessage & { id: string | number; method: string }): void {
+    // Simulate responses for known SSE server methods
+    // This is a workaround since we can't receive the actual SSE responses with auth
     
     setTimeout(() => {
       let response: JSONRPCResponse;
       
       if (request.method === 'tools/list') {
-        // Simulate the GitHub MCP tools response with proper input schemas
+        // Simulate a GitHub-style MCP tools response with proper input schemas
+        // This is specifically for GitHub MCP but can be adapted for other SSE servers
         response = {
           jsonrpc: '2.0',
           id: request.id,
@@ -332,7 +333,7 @@ export class TauriGitHubTransport implements Transport {
           }
         };
         
-        console.log('[TauriGitHubTransport] Simulating tools/list response');
+        console.log('[TauriSSESimulatedTransport] Simulating tools/list response');
         this._handleResponse(response);
       } else if (request.method === 'initialize') {
         // Simulate initialize response
@@ -350,7 +351,7 @@ export class TauriGitHubTransport implements Transport {
             }
           }
         };
-        console.log('[TauriGitHubTransport] Simulating initialize response');
+        console.log('[TauriSSESimulatedTransport] Simulating initialize response');
         this._handleResponse(response);
       } else {
         // For other methods, just acknowledge
@@ -366,7 +367,7 @@ export class TauriGitHubTransport implements Transport {
   }
 
   async close(): Promise<void> {
-    console.log('[TauriGitHubTransport] Closing transport');
+    console.log('[TauriSSESimulatedTransport] Closing transport');
     
     // Clear all pending requests
     for (const [id, pending] of this._pendingRequests) {

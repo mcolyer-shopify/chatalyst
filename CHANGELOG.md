@@ -18,11 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clicking copies the message content to system clipboard
   - Always visible for easy access to assistant responses
   - Includes hover and active state animations for better user feedback
-- GitHub MCP server integration with custom transport
-  - TauriGitHubTransport specifically designed for GitHub Copilot MCP API
-  - Simulates tool responses that would normally come through SSE
-  - Includes proper input schemas for all GitHub tools
-  - Automatic detection of GitHub MCP servers for specialized handling
+- New SSE transport type for MCP servers
+  - Added dedicated Server-Sent Events (SSE) transport option in MCP settings
+  - SSE transport uses specialized TauriSSESimulatedTransport to handle EventSource authentication limitations
+  - Simulates tool responses for SSE-only servers that can't receive auth headers via EventSource
+  - Includes proper input schemas for GitHub MCP tools (can be adapted for other SSE servers)
+  - Clear distinction between HTTP (Streamable) and SSE transports
+  - GitHub MCP server should now be configured as SSE transport type
 
 ### Fixed
 - MCP Headers input validation issue in settings dialog
