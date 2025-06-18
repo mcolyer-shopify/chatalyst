@@ -14,7 +14,7 @@ export class TauriSSESimulatedTransport implements Transport {
   private _headers: Record<string, string>;
   private _sessionId?: string;
   private _pendingRequests = new Map<string | number, {
-    resolve: (response: JSONRPCResponse) => void;
+    resolve: () => void;
     reject: (error: Error) => void;
     timeout?: ReturnType<typeof setTimeout>;
   }>();
@@ -154,7 +154,7 @@ export class TauriSSESimulatedTransport implements Transport {
       if (pending) {
         if (pending.timeout) globalThis.clearTimeout(pending.timeout);
         this._pendingRequests.delete(response.id);
-        pending.resolve(response);
+        pending.resolve();
       }
     }
     

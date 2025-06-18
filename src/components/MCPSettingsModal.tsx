@@ -221,6 +221,9 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         headers: {},
         headersText: ''
       };
+    } else {
+      // This should never happen with current transport types, but TypeScript needs it
+      throw new Error(`Unknown transport type: ${newTransport}`);
     }
     
     setEditingServer(newServer);
