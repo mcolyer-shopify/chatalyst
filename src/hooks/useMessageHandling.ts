@@ -282,26 +282,24 @@ Title:`,
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
       
-      // Use SDK messages if available, otherwise create from scratch
-      const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];
+      // For retry, always reconstruct conversation messages from scratch to ensure clean state
+      const conversationMessages: CoreMessage[] = [];
       
-      // If SDK messages are not available or incomplete, reconstruct from conversation
-      if (!conversation.sdkMessages || conversation.sdkMessages.length === 0) {
-        // Build messages from conversation history up to and including the retry point
-        for (const msg of conversation.messages) {
-          if (msg.timestamp > userMessage.timestamp) break;
-          
-          if (msg.role === 'user' || msg.role === 'assistant') {
-            conversationMessages.push({
-              role: msg.role,
-              content: msg.content
-            });
-          }
+      // Build messages from conversation history up to and including the retry point
+      for (const msg of conversation.messages) {
+        if (msg.timestamp > userMessage.timestamp) break;
+        
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          conversationMessages.push({
+            role: msg.role,
+            content: msg.content
+          });
         }
       }
       
       // Track tool messages by ID to update them when results come in
       const toolMessagesMap = new Map<string, Message>();
+      
       
       const result = await streamText({
         model: aiProvider(modelToUse),
@@ -347,7 +345,6 @@ Title:`,
       
       // Stream the response
       for await (const part of result.fullStream) {
-        console.log('[useMessageHandling] Stream part:', part);
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
           
