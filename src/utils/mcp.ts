@@ -625,6 +625,7 @@ function hasServerConfigChanged(oldConfig: MCPServerConfig, newConfig: MCPServer
       oldSSE.url !== newSSE.url ||
       JSON.stringify(oldSSE.headers) !== JSON.stringify(newSSE.headers)
     );
+  }
   
   // Different transport types means config has changed
   return true;
