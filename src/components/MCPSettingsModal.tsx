@@ -23,12 +23,14 @@ interface HttpMCPServer extends BaseMCPServer {
   transport: 'http';
   url: string;
   headers?: Record<string, string>;
+  headersText?: string;
 }
 
 interface WebSocketMCPServer extends BaseMCPServer {
   transport: 'websocket';
   url: string;
   headers?: Record<string, string>;
+  headersText?: string;
   reconnectAttempts?: number;
   reconnectDelay?: number;
 }
@@ -209,7 +211,8 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         enabled: editingServer.enabled,
         transport: 'http',
         url: '',
-        headers: {}
+        headers: {},
+        headersText: ''
       };
     } else {
       newServer = {
@@ -220,6 +223,7 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         transport: 'websocket',
         url: '',
         headers: {},
+        headersText: '',
         reconnectAttempts: 5,
         reconnectDelay: 1000
       };
@@ -353,7 +357,14 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   };
 
   const getHeadersText = () => {
-    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket') || !editingServer.headers) return '';
+    if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket')) return '';
+    
+    // If we have raw headers text, use that; otherwise convert from headers object
+    if (editingServer.headersText !== undefined) {
+      return editingServer.headersText;
+    }
+    
+    if (!editingServer.headers) return '';
     return Object.entries(editingServer.headers)
       .map(([key, value]) => `${key}: ${value}`)
       .join('\n');
@@ -362,6 +373,11 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
   const handleHeadersChange = (value: string) => {
     if (!editingServer || (editingServer.transport !== 'http' && editingServer.transport !== 'websocket')) return;
     
+    // Store the raw text for immediate display
+    const updatedServer = { ...editingServer, headersText: value };
+    setEditingServer(updatedServer);
+    
+    // Parse only complete key-value pairs for the headers object
     const headers: Record<string, string> = {};
     const lines = value.split('\n');
     
@@ -370,15 +386,20 @@ export function MCPSettingsModal({ show, mcpConfiguration, onSave, onCancel }: M
         const colonIndex = line.indexOf(':');
         if (colonIndex > 0) {
           const key = line.substring(0, colonIndex).trim();
-          const value = line.substring(colonIndex + 1).trim();
+          const headerValue = line.substring(colonIndex + 1).trim();
           if (key) {
-            headers[key] = value;
+            headers[key] = headerValue;
           }
         }
       }
     }
     
-    handleServerChange('headers', headers);
+    // Update the server in the list with both raw text and parsed headers
+    setServers(servers.map(s => 
+      s.id === editingServer.id 
+        ? { ...s, headersText: value, headers }
+        : s
+    ));
   };
 
   return (

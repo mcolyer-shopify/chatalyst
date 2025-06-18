@@ -5,6 +5,10 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { TauriStdioTransport } from './TauriStdioTransport';
+import { TauriStreamableHttpTransport } from './TauriStreamableHttpTransport';
+import { TauriSSETransport } from './TauriSSETransport';
+import { TauriPollingTransport } from './TauriPollingTransport';
+import { TauriGitHubTransport } from './TauriGitHubTransport';
 import type { MCPConfiguration, MCPServerConfig, MCPServerStatus, Conversation, StdioMCPServerConfig, HttpMCPServerConfig, WebSocketMCPServerConfig } from '../types';
 import { showError, addMCPServer, updateMCPServerStatus, removeMCPServer, clearMCPServers, mcpServers } from '../store';
 
@@ -106,34 +110,135 @@ export async function initializeMCPConnections(configString: string | undefined)
 async function connectWithHttpTransport(serverId: string, httpConfig: HttpMCPServerConfig): Promise<{ client: Client, transport: Transport }> {
   const baseUrl = new URL(httpConfig.url);
   
-  // Try streamable HTTP first
-  try {
-    const client = new Client({
-      name: 'chatalyst',
-      version: '0.1.0'
-    }, {
-      capabilities: {}
-    });
+  // Check if we should use Tauri transports (for remote servers that need CORS bypass)
+  const useTauriTransport = baseUrl.hostname !== 'localhost' && baseUrl.hostname !== '127.0.0.1';
+  
+  if (useTauriTransport) {
+    console.log(`[MCP] Using Tauri transports for ${serverId} to bypass CORS`);
+    console.log(`[MCP] URL: ${baseUrl.toString()}`);
+    console.log(`[MCP] Headers:`, httpConfig.headers);
     
-    const transport = new StreamableHTTPClientTransport(baseUrl, httpConfig.headers);
-    await client.connect(transport);
-    console.log(`Connected to ${serverId} using Streamable HTTP transport`);
-    return { client, transport };
-  } catch (streamableError) {
-    console.log(`Streamable HTTP failed for ${serverId}, trying SSE:`, streamableError);
+    // Check if this is the GitHub MCP server
+    const isGitHubMCP = baseUrl.hostname === 'api.githubcopilot.com' || 
+                        baseUrl.hostname.includes('github') || 
+                        baseUrl.href.includes('githubcopilot');
     
-    // Create a new client for SSE attempt
-    const sseClient = new Client({
-      name: 'chatalyst',
-      version: '0.1.0'
-    }, {
-      capabilities: {}
-    });
+    if (isGitHubMCP) {
+      console.log(`[MCP] Detected GitHub MCP server, using TauriGitHubTransport for ${serverId}`);
+      const client = new Client({
+        name: 'chatalyst',
+        version: '0.1.0'
+      }, {
+        capabilities: {}
+      });
+      
+      const transport = new TauriGitHubTransport(baseUrl, httpConfig.headers);
+      await client.connect(transport);
+      console.log(`[MCP] Connected to ${serverId} using Tauri GitHub transport`);
+      return { client, transport };
+    }
     
-    const sseTransport = new SSEClientTransport(baseUrl, httpConfig.headers);
-    await sseClient.connect(sseTransport);
-    console.log(`Connected to ${serverId} using SSE transport`);
-    return { client: sseClient, transport: sseTransport };
+    // Try Tauri streamable HTTP first for non-GitHub servers
+    try {
+      console.log(`[MCP] Creating MCP Client for ${serverId}`);
+      const client = new Client({
+        name: 'chatalyst',
+        version: '0.1.0'
+      }, {
+        capabilities: {}
+      });
+      
+      console.log(`[MCP] Creating TauriStreamableHttpTransport for ${serverId}`);
+      const transport = new TauriStreamableHttpTransport(baseUrl, {
+        requestInit: {
+          headers: httpConfig.headers
+        }
+      });
+      
+      console.log(`[MCP] Calling client.connect() for ${serverId}`);
+      await client.connect(transport);
+      console.log(`[MCP] Connected to ${serverId} using Tauri Streamable HTTP transport`);
+      return { client, transport };
+    } catch (streamableError) {
+      console.error(`[MCP] Tauri Streamable HTTP failed for ${serverId}:`, streamableError);
+      console.log(`[MCP] Error details:`, {
+        message: streamableError instanceof Error ? streamableError.message : 'Unknown error',
+        stack: streamableError instanceof Error ? streamableError.stack : undefined
+      });
+      console.log(`[MCP] Trying Tauri SSE transport for ${serverId}`);
+      
+      // Create a new client for SSE attempt
+      const sseClient = new Client({
+        name: 'chatalyst',
+        version: '0.1.0'
+      }, {
+        capabilities: {}
+      });
+      
+      console.log(`[MCP] Creating TauriSSETransport for ${serverId}`);
+      const sseTransport = new TauriSSETransport(baseUrl, httpConfig.headers);
+      console.log(`[MCP] Calling client.connect() with SSE for ${serverId}`);
+      
+      try {
+        await sseClient.connect(sseTransport);
+        console.log(`[MCP] Connected to ${serverId} using Tauri SSE transport`);
+        return { client: sseClient, transport: sseTransport };
+      } catch (sseError) {
+        console.error(`[MCP] Tauri SSE failed for ${serverId}:`, sseError);
+        console.log(`[MCP] Trying polling transport as last resort for ${serverId}`);
+        
+        // Last resort: try polling transport
+        const pollingClient = new Client({
+          name: 'chatalyst',
+          version: '0.1.0'
+        }, {
+          capabilities: {}
+        });
+        
+        const pollingTransport = new TauriPollingTransport(baseUrl, httpConfig.headers);
+        await pollingClient.connect(pollingTransport);
+        console.log(`[MCP] Connected to ${serverId} using Tauri Polling transport`);
+        return { client: pollingClient, transport: pollingTransport };
+      }
+    }
+  } else {
+    // Use standard transports for local servers
+    console.log(`Using standard transports for local server ${serverId}`);
+    
+    // Try streamable HTTP first
+    try {
+      const client = new Client({
+        name: 'chatalyst',
+        version: '0.1.0'
+      }, {
+        capabilities: {}
+      });
+      
+      const transport = new StreamableHTTPClientTransport(baseUrl, {
+        requestInit: {
+          headers: httpConfig.headers
+        }
+      });
+      
+      await client.connect(transport);
+      console.log(`Connected to ${serverId} using Streamable HTTP transport`);
+      return { client, transport };
+    } catch (streamableError) {
+      console.log(`Streamable HTTP failed for ${serverId}, trying SSE:`, streamableError);
+      
+      // Create a new client for SSE attempt
+      const sseClient = new Client({
+        name: 'chatalyst',
+        version: '0.1.0'
+      }, {
+        capabilities: {}
+      });
+      
+      const sseTransport = new SSEClientTransport(baseUrl, httpConfig.headers);
+      await sseClient.connect(sseTransport);
+      console.log(`Connected to ${serverId} using SSE transport`);
+      return { client: sseClient, transport: sseTransport };
+    }
   }
 }
 
@@ -258,10 +363,17 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
       await client.connect(transport);
       console.log(`MCP client connected for ${serverId}`);
     } else if (config.transport === 'http') {
+      console.log(`[MCP] Starting HTTP transport for ${serverId}`);
       const httpConfig = config as HttpMCPServerConfig;
+      console.log(`[MCP] HTTP config:`, {
+        url: httpConfig.url,
+        headers: httpConfig.headers,
+        enabled: httpConfig.enabled
+      });
       const result = await connectWithHttpTransport(serverId, httpConfig);
       client = result.client;
       transport = result.transport;
+      console.log(`[MCP] HTTP transport connected for ${serverId}`);
     } else if (config.transport === 'websocket') {
       const wsConfig = config as WebSocketMCPServerConfig;
       const wsUrl = new URL(wsConfig.url);
@@ -284,32 +396,45 @@ async function startMCPServer(serverId: string, config: MCPServerConfig) {
     // Setup error handlers for graceful failure handling
     setupConnectionErrorHandlers(serverId, transport);
 
-    // List available tools
-    const toolsResponse = await client.listTools();
-    console.log(`MCP server ${serverId} tools:`, toolsResponse.tools);
-
-    // Convert MCP tools to our format
-    const tools = toolsResponse.tools.map(mcpTool => ({
-      name: mcpTool.name,
-      description: mcpTool.description,
-      enabled: false // Default to disabled
-    }));
-
-    // Store the connection with client
-    activeConnections.set(serverId, {
-      serverId,
-      config,
-      client,
-      transport
-    });
-
-    console.log(`MCP server ${serverId} started successfully with ${tools.length} tools`);
+    console.log(`[MCP] Connection established for ${serverId}, now listing tools...`);
     
-    // Update server status to running with discovered tools
-    updateMCPServerStatus(serverId, { 
-      status: 'running',
-      tools
-    });
+    // List available tools
+    try {
+      console.log(`[MCP] Calling client.listTools() for ${serverId}`);
+      const toolsResponse = await client.listTools();
+      console.log(`[MCP] Tools response for ${serverId}:`, toolsResponse);
+      console.log(`[MCP] Number of tools found: ${toolsResponse.tools?.length || 0}`);
+      
+      // Convert MCP tools to our format
+      const tools = toolsResponse.tools.map(mcpTool => ({
+        name: mcpTool.name,
+        description: mcpTool.description,
+        enabled: false // Default to disabled
+      }));
+      
+      console.log(`[MCP] Processed tools for ${serverId}:`, tools);
+      
+      // Store the connection with client
+      activeConnections.set(serverId, {
+        serverId,
+        config,
+        client,
+        transport
+      });
+
+      console.log(`[MCP] Server ${serverId} started successfully with ${tools.length} tools`);
+      
+      // Update server status to running with discovered tools
+      updateMCPServerStatus(serverId, { 
+        status: 'running',
+        tools
+      });
+      
+      console.log(`[MCP] Updated server status for ${serverId} to running`);
+    } catch (toolsError) {
+      console.error(`[MCP] Failed to list tools for ${serverId}:`, toolsError);
+      throw toolsError;
+    }
   } catch (error) {
     console.error(`Failed to start MCP server ${serverId}:`, error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
