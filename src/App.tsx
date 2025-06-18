@@ -17,7 +17,8 @@ import {
   updateConversationTitle,
   updateConversationModel,
   updateSettings,
-  clearError
+  clearError,
+  deleteMessage
 } from './store';
 import { restartMCPConnections } from './utils/mcp';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -59,6 +60,12 @@ function App() {
 
   const handleDeleteConversation = (id: string) => {
     deleteConversation(id);
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    const conversation = selectedConversation.value;
+    if (!conversation) return;
+    deleteMessage(conversation.id, messageId);
   };
 
   const handleGenerateTitle = async (id: string) => {
@@ -164,6 +171,7 @@ function App() {
             conversation={selectedConversation.value || null}
             onSendMessage={sendMessage}
             onRetryMessage={retryMessage}
+            onDeleteMessage={handleDeleteMessage}
             onModelChange={handleConversationModelChange}
             onStopGeneration={stopGeneration}
           />

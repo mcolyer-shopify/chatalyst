@@ -6,11 +6,13 @@ interface MessageProps {
   message: MessageType;
   collapsed?: boolean;
   onRetry?: () => void;
+  onDelete?: () => void;
 }
 
-export function Message({ message, collapsed = true, onRetry }: MessageProps) {
+export function Message({ message, collapsed = true, onRetry, onDelete }: MessageProps) {
   const [animationFrame, setAnimationFrame] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(message.role === 'tool' ? true : collapsed);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (message.isGenerating) {
@@ -36,6 +38,26 @@ export function Message({ message, collapsed = true, onRetry }: MessageProps) {
     } catch (err) {
       console.error('Failed to copy message:', err);
     }
+  };
+
+  const handleDelete = () => {
+    console.log('Delete button clicked', { messageId: message.id, onDelete: !!onDelete });
+    if (onDelete) {
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    console.log('User confirmed deletion, calling onDelete');
+    setShowDeleteConfirm(false);
+    if (onDelete) {
+      onDelete();
+    }
+  };
+
+  const cancelDelete = () => {
+    console.log('User cancelled deletion');
+    setShowDeleteConfirm(false);
   };
 
   const renderContent = () => {
@@ -133,6 +155,16 @@ export function Message({ message, collapsed = true, onRetry }: MessageProps) {
             ↻
           </button>
         )}
+        {message.role === 'user' && onDelete && (
+          <button
+            class="message-delete-button"
+            onClick={handleDelete}
+            aria-label="Delete this message and all following messages"
+            title="Delete this message and all following messages"
+          >
+            🗑️
+          </button>
+        )}
         {message.role === 'assistant' && (
           <button
             class="message-copy-button"
@@ -144,6 +176,22 @@ export function Message({ message, collapsed = true, onRetry }: MessageProps) {
           </button>
         )}
       </div>
+      {showDeleteConfirm && (
+        <div class="delete-confirm-overlay">
+          <div class="delete-confirm-dialog">
+            <h3>Confirm Deletion</h3>
+            <p>Delete this message and all messages after it? This cannot be undone.</p>
+            <div class="delete-confirm-buttons">
+              <button class="delete-confirm-cancel" onClick={cancelDelete}>
+                Cancel
+              </button>
+              <button class="delete-confirm-ok" onClick={confirmDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
