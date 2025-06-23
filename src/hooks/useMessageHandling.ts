@@ -210,11 +210,10 @@ export function useMessageHandling() {
         .map(msg => `${msg.role}: ${msg.content}`)
         .join('\n');
 
-      // Create AI provider and generate title
+      // Create AI provider and generate title using default model for consistency
       const aiProvider = createAIProvider(settings.value);
-      const modelToUse = conversation.model || settings.value.defaultModel || DEFAULT_MODEL;
+      const modelToUse = settings.value.defaultModel || DEFAULT_MODEL;
       
-      // Try with a more compatible configuration for title generation
       const result = await generateText({
         model: aiProvider(modelToUse),
         prompt: `Based on the following conversation, generate a brief 3-5 word title that captures the main topic. Respond with only the title, no additional text, quotes, or punctuation.
@@ -224,8 +223,7 @@ ${conversationContext}
 
 Title:`,
         temperature: 0.3, // Lower temperature for more consistent results
-        maxTokens: 15,    // Fewer tokens for simpler response
-        // Add additional options for better compatibility
+        maxTokens: 50,    // Sufficient tokens to avoid truncation issues
         topP: 1,
         frequencyPenalty: 0,
         presencePenalty: 0
@@ -239,20 +237,9 @@ Title:`,
       // Update the conversation title if we got a valid response
       if (cleanTitle && cleanTitle.length > 0 && cleanTitle.length < 100) {
         updateConversationTitle(conversationId, cleanTitle);
-      } else if (title) {
-        console.warn('Generated title was empty or too long:', title);
       }
     } catch (error) {
       console.error('Failed to generate title:', error);
-      // Check if it's a specific AI error that we should handle
-      if (error && typeof error === 'object' && 'message' in error) {
-        const errorMessage = (error as { message: string }).message;
-        if (errorMessage.includes('Invalid JSON') || errorMessage.includes('JSON')) {
-          console.warn('AI provider returned invalid JSON for title generation - this is likely a provider configuration issue. Consider switching to a different model or provider for title generation.');
-        } else if (errorMessage.includes('model')) {
-          console.warn('Model error during title generation:', errorMessage);
-        }
-      }
       // Silently fail - don't show error to user for title generation
     } finally {
       // Clear loading state

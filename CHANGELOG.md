@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed WebSocket transport option (not part of MCP specification)
 
 ### Fixed
+- Title generation reliability issues
+  - Use default model instead of conversation model for consistent title generation
+  - Increase maxTokens from 15 to 50 to prevent response truncation
+  - Add title cleanup to remove quotes and extra punctuation
+  - Improve error handling for AI provider compatibility issues
 - MCP Headers input validation issue in settings dialog
   - Fixed Headers input field not allowing text input due to overly strict validation
   - Added separate storage for raw header text to preserve partial input while typing
