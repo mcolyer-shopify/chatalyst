@@ -153,6 +153,33 @@ export function createConversation(
   return newConversation;
 }
 
+export function startFreshConversation(
+  templateId: string,
+  title?: string
+): ConversationType | null {
+  const templateConversation = conversations.value.find(c => c.id === templateId);
+  if (!templateConversation) {
+    return null;
+  }
+
+  const newConversation: ConversationType = {
+    id: Date.now().toString(),
+    title: title || 'Fresh start',
+    model: templateConversation.model,
+    enabledTools: templateConversation.enabledTools,
+    messages: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+
+  batch(() => {
+    conversations.value = [...conversations.value, newConversation];
+    selectedConversationId.value = newConversation.id;
+  });
+
+  return newConversation;
+}
+
 export function deleteConversation(id: string) {
   batch(() => {
     conversations.value = conversations.value.filter((c) => c.id !== id);

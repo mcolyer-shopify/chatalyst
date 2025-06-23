@@ -210,9 +210,9 @@ export function useMessageHandling() {
         .map(msg => `${msg.role}: ${msg.content}`)
         .join('\n');
 
-      // Create AI provider and generate title
+      // Create AI provider and generate title using default model for consistency
       const aiProvider = createAIProvider(settings.value);
-      const modelToUse = conversation.model || settings.value.defaultModel || DEFAULT_MODEL;
+      const modelToUse = settings.value.defaultModel || DEFAULT_MODEL;
       
       const result = await generateText({
         model: aiProvider(modelToUse),
@@ -222,15 +222,21 @@ Conversation:
 ${conversationContext}
 
 Title:`,
-        temperature: 0.7,
-        maxTokens: 20
+        temperature: 0.3, // Lower temperature for more consistent results
+        maxTokens: 50,    // Sufficient tokens to avoid truncation issues
+        topP: 1,
+        frequencyPenalty: 0,
+        presencePenalty: 0
       });
 
-      const title = result.text.trim();
+      const title = result.text?.trim();
+      
+      // Clean up the title - remove quotes, extra punctuation, etc.
+      const cleanTitle = title?.replace(/^["']|["']$/g, '').replace(/[.!?]+$/, '').trim();
       
       // Update the conversation title if we got a valid response
-      if (title && title.length > 0 && title.length < 100) {
-        updateConversationTitle(conversationId, title);
+      if (cleanTitle && cleanTitle.length > 0 && cleanTitle.length < 100) {
+        updateConversationTitle(conversationId, cleanTitle);
       }
     } catch (error) {
       console.error('Failed to generate title:', error);

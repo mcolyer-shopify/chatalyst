@@ -36,6 +36,8 @@ describe('ConversationList', () => {
     onDelete: vi.fn(),
     onArchive: vi.fn(),
     onUnarchive: vi.fn(),
+    onGenerateTitle: vi.fn(),
+    onStartFresh: vi.fn(),
     onSettingsClick: vi.fn(),
     defaultModel: 'gpt-4',
     onDefaultModelChange: vi.fn()
@@ -88,6 +90,7 @@ describe('ConversationList', () => {
     const dropdown = container.querySelector('.dropdown-menu');
     expect(dropdown).toBeInTheDocument();
     expect(dropdown).toHaveTextContent('Rename');
+    expect(dropdown).toHaveTextContent('Start Fresh');
     expect(dropdown).toHaveTextContent('Archive');
     expect(dropdown).toHaveTextContent('Delete');
   });
@@ -193,10 +196,27 @@ describe('ConversationList', () => {
     fireEvent.click(menuButtons[0]);
     
     const dropdown = container.querySelector('.dropdown-menu');
-    const archiveButton = dropdown?.querySelector('button:nth-child(2)'); // Archive is second button
+    const archiveButton = Array.from(dropdown!.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Archive')
+    );
     fireEvent.click(archiveButton!);
     
     expect(mockProps.onArchive).toHaveBeenCalledWith('1');
+  });
+
+  it('calls onStartFresh when start fresh is clicked', () => {
+    const { container } = render(<ConversationList {...mockProps} />);
+    
+    const menuButtons = container.querySelectorAll('.menu-button');
+    fireEvent.click(menuButtons[0]);
+    
+    const dropdown = container.querySelector('.dropdown-menu');
+    const startFreshButton = Array.from(dropdown!.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Start Fresh')
+    );
+    fireEvent.click(startFreshButton!);
+    
+    expect(mockProps.onStartFresh).toHaveBeenCalledWith('1');
   });
 
   it('renders empty state correctly', () => {

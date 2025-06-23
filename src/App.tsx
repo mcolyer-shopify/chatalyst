@@ -11,6 +11,7 @@ import {
   settings,
   errorMessage,
   createConversation,
+  startFreshConversation,
   deleteConversation,
   archiveConversation,
   unarchiveConversation,
@@ -70,6 +71,10 @@ function App() {
 
   const handleGenerateTitle = async (id: string) => {
     await generateConversationTitle(id);
+  };
+
+  const handleStartFresh = (id: string) => {
+    startFreshConversation(id);
   };
 
   // Settings management
@@ -136,6 +141,7 @@ function App() {
             onArchive={archiveConversation}
             onUnarchive={unarchiveConversation}
             onGenerateTitle={handleGenerateTitle}
+            onStartFresh={handleStartFresh}
             onSettingsClick={() => setShowSettings(true)}
             defaultModel={settings.value.defaultModel}
             onDefaultModelChange={handleDefaultModelChange}
