@@ -248,6 +248,26 @@ export function removeMessagesAfter(conversationId: string, timestamp: number) {
   );
 }
 
+export function deleteMessage(conversationId: string, messageId: string) {
+  conversations.value = conversations.value.map((c) => {
+    if (c.id !== conversationId) return c;
+    
+    const targetMessage = c.messages.find(m => m.id === messageId);
+    if (!targetMessage) return c;
+    
+    return {
+      ...c,
+      messages: c.messages.filter((m) => m.timestamp < targetMessage.timestamp),
+      sdkMessages: c.sdkMessages?.filter((_, index) => {
+        // Keep SDK messages up to but excluding the target message
+        const messageIndex = c.messages.findIndex(m => m.id === messageId);
+        return messageIndex !== -1 && index < messageIndex;
+      }),
+      updatedAt: Date.now()
+    };
+  });
+}
+
 export function updateSettings(updates: Partial<Settings>) {
   settings.value = { ...settings.value, ...updates };
 }

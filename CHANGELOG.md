@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clicking copies the message content to system clipboard
   - Always visible for easy access to assistant responses
   - Includes hover and active state animations for better user feedback
+- Delete button for user messages
+  - Delete button with trash icon appears next to retry button on user messages
+  - Clicking delete removes the selected message and all messages after it
+  - Includes confirmation dialog to prevent accidental deletions
+  - Uses neutral black and white styling to match existing UI design
 - New SSE transport type for MCP servers
   - Added dedicated Server-Sent Events (SSE) transport option in MCP settings
   - SSE transport uses specialized TauriSSESimulatedTransport to handle EventSource authentication limitations
