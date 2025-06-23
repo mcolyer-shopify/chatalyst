@@ -226,7 +226,7 @@ Title:`,
         maxTokens: 20
       });
 
-      const title = result.text.trim();
+      const title = result.text?.trim();
       
       // Update the conversation title if we got a valid response
       if (title && title.length > 0 && title.length < 100) {
@@ -234,6 +234,13 @@ Title:`,
       }
     } catch (error) {
       console.error('Failed to generate title:', error);
+      // Check if it's a specific AI error that we should handle
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = (error as { message: string }).message;
+        if (errorMessage.includes('Invalid JSON') || errorMessage.includes('JSON')) {
+          console.warn('AI provider returned invalid JSON for title generation - this is likely a provider configuration issue');
+        }
+      }
       // Silently fail - don't show error to user for title generation
     } finally {
       // Clear loading state
