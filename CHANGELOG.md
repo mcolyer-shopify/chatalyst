@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Start Fresh feature for conversations
+  - New "Start Fresh" option in conversation dropdown menu
+  - Creates a new conversation with the same model and tool configuration
+  - Preserves all MCP tool settings from the original conversation
+  - Starts with empty message history for a clean slate
 - Retry button for user messages
   - Retry button with icon appears next to timestamp on user messages
   - Clicking retry removes all subsequent messages and regenerates the assistant response
