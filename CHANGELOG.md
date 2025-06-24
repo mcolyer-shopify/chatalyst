@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Keyboard shortcuts for conversation management
+  - E: Archive the current conversation (when no input is focused)
+  - T: Generate title for the current conversation (when no input is focused)
+  - X: Delete the current conversation (when no input is focused)
+  - Escape: Defocus input field to enable keyboard shortcuts
+  - Enhanced existing Ctrl/Cmd+N shortcut for creating new conversations
+  - Smart input focus detection ensures shortcuts don't interfere with typing
 - Model favorites functionality
   - Star icon next to each model in the dropdown to mark/unmark as favorite
   - Favorite models appear at the top of the dropdown for easy access

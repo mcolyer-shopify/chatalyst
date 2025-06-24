@@ -4,6 +4,18 @@ A native MCP llm client.
 
 ![Screenshot v0.2.1](https://github.com/user-attachments/assets/f05122c6-f8b8-4eb8-8976-b43cdeb9cd8a)
 
+## Keyboard Shortcuts
+
+Chatalyst supports the following keyboard shortcuts for efficient conversation management:
+
+- **Ctrl/Cmd + N**: Create a new conversation
+- **E**: Archive the current conversation
+- **T**: Generate a title for the current conversation
+- **X**: Delete the current conversation
+- **Escape**: Defocus input field to enable keyboard shortcuts
+
+**Note:** Letter shortcuts (E, T, X) only work when no input field is focused. Use Escape to defocus inputs if needed.
+
 ## Development
 
 Use `claude` for development. Create PRs with feature branches and ensure they are rebased with the latest `main` branch before merging.
