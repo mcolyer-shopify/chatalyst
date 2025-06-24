@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Model favorites functionality
+  - Star icon next to each model in the dropdown to mark/unmark as favorite
+  - Favorite models appear at the top of the dropdown for easy access
+  - Favorites are sorted alphabetically among themselves, then non-favorites below
+  - When searching, all matching models are shown alphabetically regardless of favorite status
+  - Favorites persist across app sessions with automatic storage
+  - Visual feedback with filled (★) and empty (☆) star icons
 - Start Fresh feature for conversations
   - New "Start Fresh" option in conversation dropdown menu
   - Creates a new conversation with the same model and tool configuration

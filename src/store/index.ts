@@ -15,7 +15,9 @@ import {
   loadSettings,
   saveSettings,
   loadModelsCache,
-  saveModelsCache
+  saveModelsCache,
+  loadFavoriteModels,
+  saveFavoriteModels
 } from '../utils/enhancedStorage';
 
 // Default settings
@@ -47,6 +49,7 @@ export const modelsCache = signal<
   Map<string, { models: Model[]; timestamp: number }>
 >(new Map());
 export const availableModels = signal<Model[]>([]);
+export const favoriteModels = signal<string[]>([]);
 export const failedModelFetchCache = signal<
   Map<string, { error: string; timestamp: number }>
 >(new Map());
@@ -99,6 +102,10 @@ async function initializeFromStorage() {
         modelsCache.value = new Map(Object.entries(savedModelsCache));
       }
     }
+
+    // Load favorite models using enhanced storage
+    const savedFavoriteModels = await loadFavoriteModels();
+    favoriteModels.value = savedFavoriteModels;
   } catch (error) {
     console.error('Failed to initialize from storage:', error);
   }
@@ -137,6 +144,14 @@ effect(() => {
   const cacheData = modelsCache.value;
   if (isInitialized) {
     saveModelsCache(cacheData);
+  }
+});
+
+effect(() => {
+  // Always access .value to ensure subscription
+  const favoritesData = favoriteModels.value;
+  if (isInitialized) {
+    saveFavoriteModels(favoritesData);
   }
 });
 
@@ -341,6 +356,19 @@ export function setFailedFetch(baseURL: string, error: string) {
   const newCache = new Map(failedModelFetchCache.value);
   newCache.set(baseURL, { error, timestamp: Date.now() });
   failedModelFetchCache.value = newCache;
+}
+
+export function toggleFavoriteModel(modelId: string) {
+  const currentFavorites = favoriteModels.value;
+  if (currentFavorites.includes(modelId)) {
+    favoriteModels.value = currentFavorites.filter(id => id !== modelId);
+  } else {
+    favoriteModels.value = [...currentFavorites, modelId];
+  }
+}
+
+export function isFavoriteModel(modelId: string): boolean {
+  return favoriteModels.value.includes(modelId);
 }
 
 // Error handling functions
