@@ -1325,6 +1325,51 @@ body {
   color: #0288d1;
 }
 
+.model-selector-option-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.model-selector-option-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.model-selector-favorite-btn {
+  background: none;
+  border: none;
+  font-size: 1.125rem;
+  color: #ccc;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.model-selector-favorite-btn:hover {
+  color: #ffd700;
+  background-color: rgba(255, 215, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.model-selector-favorite-btn.favorited {
+  color: #ffd700;
+}
+
+.model-selector-favorite-btn.favorited:hover {
+  color: #ffed4e;
+}
+
 .sidebar-model-selector {
   display: flex;
   align-items: center;
@@ -1560,6 +1605,23 @@ body {
 
   .model-selector-option.highlighted {
     background: #4a4a4a;
+  }
+
+  .model-selector-favorite-btn {
+    color: #666;
+  }
+
+  .model-selector-favorite-btn:hover {
+    color: #ffd700;
+    background-color: rgba(255, 215, 0, 0.15);
+  }
+
+  .model-selector-favorite-btn.favorited {
+    color: #ffd700;
+  }
+
+  .model-selector-favorite-btn.favorited:hover {
+    color: #ffed4e;
   }
 
   .model-selector-option.selected.highlighted {

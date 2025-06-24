@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Model } from '../types';
-import { settings, getCachedModels, setCachedModels, availableModels, getFailedFetchError, setFailedFetch, failedModelFetchCache } from '../store';
+import { settings, getCachedModels, setCachedModels, availableModels, getFailedFetchError, setFailedFetch, failedModelFetchCache, favoriteModels, toggleFavoriteModel, isFavoriteModel } from '../store';
 
 interface ModelSelectorProps {
   selectedModel?: string;
@@ -41,14 +41,39 @@ export function ModelSelector({
     }
   };
 
-  // Computed filtered models based on local search term
-  const filteredModels = availableModels.value.filter(model => {
+  // Computed filtered models based on local search term with favorites sorting
+  const filteredModels = (() => {
+    // First filter based on search term
+    let filtered = availableModels.value.filter(model => {
+      if (searchTerm.trim() === '') {
+        return true;
+      }
+      return model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             (model.description && model.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    });
+
+    // If no search term, sort favorites first
     if (searchTerm.trim() === '') {
-      return true;
+      const favorites = favoriteModels.value;
+      filtered = filtered.sort((a, b) => {
+        const aIsFavorite = favorites.includes(a.id);
+        const bIsFavorite = favorites.includes(b.id);
+        
+        // If both are favorites or both are not favorites, sort alphabetically
+        if (aIsFavorite === bIsFavorite) {
+          return a.name.localeCompare(b.name);
+        }
+        
+        // Favorites come first
+        return bIsFavorite ? 1 : -1;
+      });
+    } else {
+      // When searching, sort alphabetically
+      filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
-    return model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           (model.description && model.description.toLowerCase().includes(searchTerm.toLowerCase()));
-  });
+
+    return filtered;
+  })();
 
   useEffect(() => {
     // For Ollama, we don't need an API key
@@ -246,6 +271,11 @@ export function ModelSelector({
     setHighlightedIndex(-1);
   };
 
+  const handleFavoriteToggle = (e: Event, modelId: string) => {
+    e.stopPropagation(); // Prevent model selection when clicking star
+    toggleFavoriteModel(modelId);
+  };
+
   const handleDropdownToggle = () => {
     const newIsOpen = !isOpen;
     setIsOpen(newIsOpen);
@@ -365,12 +395,23 @@ export function ModelSelector({
                       onClick={() => handleModelSelect(model.id)}
                       onMouseEnter={() => setHighlightedIndex(index)}
                     >
-                      <div className="model-selector-option-name">{model.name}</div>
-                      {model.description && (
-                        <div className="model-selector-option-description">
-                          {model.description}
+                      <div className="model-selector-option-content">
+                        <div className="model-selector-option-text">
+                          <div className="model-selector-option-name">{model.name}</div>
+                          {model.description && (
+                            <div className="model-selector-option-description">
+                              {model.description}
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <button
+                          className={`model-selector-favorite-btn ${isFavoriteModel(model.id) ? 'favorited' : ''}`}
+                          onClick={(e) => handleFavoriteToggle(e, model.id)}
+                          title={isFavoriteModel(model.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          {isFavoriteModel(model.id) ? '★' : '☆'}
+                        </button>
+                      </div>
                     </button>
                   ))
                 ) : (

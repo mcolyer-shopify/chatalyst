@@ -11,10 +11,18 @@ vi.mock('../../store', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
   const { signal } = require('@preact/signals');
   return {
-    settings: signal({ baseURL: 'https://api.test.com', apiKey: 'test-key', defaultModel: '' }),
+    settings: signal({ 
+      baseURL: 'https://api.test.com', 
+      apiKey: 'test-key', 
+      defaultModel: '',
+      provider: 'openrouter'
+    }),
     getCachedModels: vi.fn(),
     setCachedModels: vi.fn(),
     availableModels: signal([]),
+    favoriteModels: signal([]),
+    toggleFavoriteModel: vi.fn(),
+    isFavoriteModel: vi.fn(),
     errorMessage: signal(null),
     errorTimestamp: signal(null),
     showError: vi.fn(),
@@ -43,7 +51,9 @@ describe('ModelSelector', () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockClear();
     (store.getCachedModels as ReturnType<typeof vi.fn>).mockReturnValue(null);
     (store.getFailedFetchError as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    (store.isFavoriteModel as ReturnType<typeof vi.fn>).mockReturnValue(false);
     store.availableModels.value = [];
+    store.favoriteModels.value = [];
     store.failedModelFetchCache.value = new Map();
   });
 
@@ -317,5 +327,183 @@ describe('ModelSelector', () => {
     fireEvent.click(firstOption);
     
     expect(mockProps.onModelChange).toHaveBeenCalledWith('model-1');
+  });
+
+  it('displays favorite button for each model', async () => {
+    store.availableModels.value = [
+      { id: 'gpt-4', name: 'gpt-4', description: 'GPT-4 model' },
+      { id: 'gpt-3.5-turbo', name: 'gpt-3.5-turbo', description: 'GPT-3.5 Turbo' }
+    ];
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      // Should have favorite buttons for both models
+      const favoriteButtons = screen.getAllByTitle(/Add to favorites|Remove from favorites/);
+      expect(favoriteButtons).toHaveLength(2);
+    });
+  });
+
+  it('toggles favorite when star button is clicked', async () => {
+    store.availableModels.value = [
+      { id: 'gpt-4', name: 'gpt-4', description: 'GPT-4 model' }
+    ];
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const favoriteButton = screen.getByTitle('Add to favorites');
+      fireEvent.click(favoriteButton);
+    });
+
+    expect(store.toggleFavoriteModel).toHaveBeenCalledWith('gpt-4');
+  });
+
+  it('prevents model selection when clicking favorite button', async () => {
+    store.availableModels.value = [
+      { id: 'gpt-4', name: 'gpt-4', description: 'GPT-4 model' }
+    ];
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const favoriteButton = screen.getByTitle('Add to favorites');
+      fireEvent.click(favoriteButton);
+    });
+
+    // Should not trigger model selection
+    expect(mockProps.onModelChange).not.toHaveBeenCalled();
+  });
+
+  it('shows filled star for favorited models', async () => {
+    store.availableModels.value = [
+      { id: 'gpt-4', name: 'gpt-4', description: 'GPT-4 model' }
+    ];
+    
+    // Mock one model as favorite
+    (store.isFavoriteModel as ReturnType<typeof vi.fn>).mockImplementation((id: string) => id === 'gpt-4');
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const favoriteButton = screen.getByTitle('Remove from favorites');
+      expect(favoriteButton).toHaveTextContent('★');
+      expect(favoriteButton).toHaveClass('favorited');
+    });
+  });
+
+  it('shows empty star for non-favorited models', async () => {
+    store.availableModels.value = [
+      { id: 'gpt-4', name: 'gpt-4', description: 'GPT-4 model' }
+    ];
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const favoriteButton = screen.getByTitle('Add to favorites');
+      expect(favoriteButton).toHaveTextContent('☆');
+      expect(favoriteButton).not.toHaveClass('favorited');
+    });
+  });
+
+  it('sorts favorites first when not searching', async () => {
+    store.availableModels.value = [
+      { id: 'model-a', name: 'model-a', description: 'Model A' },
+      { id: 'model-b', name: 'model-b', description: 'Model B' },
+      { id: 'model-c', name: 'model-c', description: 'Model C' }
+    ];
+    
+    store.favoriteModels.value = ['model-c', 'model-a'];
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const modelOptions = screen.getAllByText(/^model-[abc]$/);
+      // First should be model-a (favorite), second model-c (favorite), third model-b (not favorite)
+      expect(modelOptions[0]).toHaveTextContent('model-a');
+      expect(modelOptions[1]).toHaveTextContent('model-c'); 
+      expect(modelOptions[2]).toHaveTextContent('model-b');
+    });
+  });
+
+  it('sorts alphabetically when searching regardless of favorites', async () => {
+    store.availableModels.value = [
+      { id: 'test-z', name: 'test-z', description: 'Test Z' },
+      { id: 'test-a', name: 'test-a', description: 'Test A' },
+      { id: 'test-m', name: 'test-m', description: 'Test M' }
+    ];
+    
+    store.favoriteModels.value = ['test-z'];
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const searchInput = screen.getByPlaceholderText('Search models...');
+      fireEvent.input(searchInput, { target: { value: 'test' } });
+    });
+
+    await waitFor(() => {
+      const modelOptions = screen.getAllByText(/^test-[azm]$/);
+      // Should be sorted alphabetically regardless of favorites when searching
+      expect(modelOptions[0]).toHaveTextContent('test-a');
+      expect(modelOptions[1]).toHaveTextContent('test-m');
+      expect(modelOptions[2]).toHaveTextContent('test-z');
+    });
+  });
+
+  it('handles provider-specific favorites correctly', async () => {
+    // This test verifies that the component works with the provider-specific favorites system
+    // The actual provider switching logic is tested in the store tests
+    store.availableModels.value = [
+      { id: 'model-1', name: 'model-1', description: 'Model 1' }
+    ];
+    
+    // Mock that model-1 is favorite for current provider
+    (store.isFavoriteModel as ReturnType<typeof vi.fn>).mockImplementation((id: string) => id === 'model-1');
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const favoriteButton = screen.getByTitle('Remove from favorites');
+      expect(favoriteButton).toHaveTextContent('★');
+      expect(favoriteButton).toHaveClass('favorited');
+    });
+
+    // Clicking the star should still call toggleFavoriteModel
+    const favoriteButton = screen.getByTitle('Remove from favorites');
+    fireEvent.click(favoriteButton);
+    expect(store.toggleFavoriteModel).toHaveBeenCalledWith('model-1');
   });
 });
