@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clicking retry removes all subsequent messages and regenerates the assistant response
   - Always visible for better discoverability
   - Includes hover and active state animations for better user feedback
+- Enhanced storage system with unlimited space
+  - Automatically migrates data from localStorage to Tauri Store for unlimited storage capacity
+  - Seamless upgrade with no data loss during migration
+  - Fallback to localStorage in environments where Tauri Store is unavailable
+  - Supports larger conversation histories and more extensive data storage
+
+### Fixed
+- MCP servers now properly initialize and appear in sidebar when configured
+  - Fixed reactivity issue where MCP configuration changes weren't triggering reconnection
+  - MCP initialization now properly responds to settings updates
 - Copy button for assistant messages
   - Copy button with clipboard icon appears next to timestamp on assistant messages
   - Clicking copies the message content to system clipboard
