@@ -103,9 +103,13 @@ async function initializeFromStorage() {
       }
     }
 
-    // Load favorite models using enhanced storage
-    const savedFavoriteModels = await loadFavoriteModels();
-    favoriteModels.value = savedFavoriteModels;
+    // Load favorite models for current provider using enhanced storage
+    const currentProvider = settings.value.provider;
+    const currentBaseURL = settings.value.baseURL;
+    if (currentProvider && currentBaseURL) {
+      const savedFavoriteModels = await loadFavoriteModels(currentProvider, currentBaseURL);
+      favoriteModels.value = savedFavoriteModels;
+    }
   } catch (error) {
     console.error('Failed to initialize from storage:', error);
   }
@@ -150,8 +154,9 @@ effect(() => {
 effect(() => {
   // Always access .value to ensure subscription
   const favoritesData = favoriteModels.value;
-  if (isInitialized) {
-    saveFavoriteModels(favoritesData);
+  const currentSettings = settings.value;
+  if (isInitialized && currentSettings.provider && currentSettings.baseURL) {
+    saveFavoriteModels(currentSettings.provider, currentSettings.baseURL, favoritesData);
   }
 });
 
@@ -320,7 +325,29 @@ export function deleteMessage(conversationId: string, messageId: string) {
 }
 
 export function updateSettings(updates: Partial<Settings>) {
-  settings.value = { ...settings.value, ...updates };
+  const oldSettings = settings.value;
+  const newSettings = { ...oldSettings, ...updates };
+  
+  // Check if provider or baseURL changed
+  const providerChanged = updates.provider && updates.provider !== oldSettings.provider;
+  const baseURLChanged = updates.baseURL && updates.baseURL !== oldSettings.baseURL;
+  
+  settings.value = newSettings;
+  
+  // Load favorites for new provider/baseURL combination
+  if ((providerChanged || baseURLChanged) && newSettings.provider && newSettings.baseURL) {
+    loadFavoriteModelsForProvider(newSettings.provider, newSettings.baseURL);
+  }
+}
+
+async function loadFavoriteModelsForProvider(provider: string, baseURL: string) {
+  try {
+    const savedFavoriteModels = await loadFavoriteModels(provider, baseURL);
+    favoriteModels.value = savedFavoriteModels;
+  } catch (error) {
+    console.warn('Failed to load favorites for provider:', error);
+    favoriteModels.value = [];
+  }
 }
 
 export function getCachedModels(baseURL: string): Model[] | null {

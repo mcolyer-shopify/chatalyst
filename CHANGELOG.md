@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Favorites are sorted alphabetically among themselves, then non-favorites below
   - When searching, all matching models are shown alphabetically regardless of favorite status
   - Favorites persist across app sessions with automatic storage
+  - Provider-specific favorites - each LLM provider (OpenRouter, Ollama, etc.) maintains separate favorites
   - Visual feedback with filled (★) and empty (☆) star icons
 - Start Fresh feature for conversations
   - New "Start Fresh" option in conversation dropdown menu

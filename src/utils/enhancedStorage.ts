@@ -22,7 +22,7 @@ interface StorageData {
   [STORAGE_KEYS.selectedConversation]: string | null;
   [STORAGE_KEYS.settings]: Settings;
   [STORAGE_KEYS.modelsCache]: Record<string, { models: Model[]; timestamp: number }>;
-  [STORAGE_KEYS.favoriteModels]: string[];
+  [STORAGE_KEYS.favoriteModels]: Record<string, string[]>;
   [STORAGE_KEYS.windowGeometry]: { width: number; height: number; x: number; y: number };
   [STORAGE_KEYS.migrationVersion]: number;
 }
@@ -301,18 +301,23 @@ export async function saveWindowGeometry(geometry: { width: number; height: numb
   }
 }
 
-export async function loadFavoriteModels(): Promise<string[]> {
+export async function loadFavoriteModels(provider: string, baseURL: string): Promise<string[]> {
   try {
-    return await enhancedStorage.get(STORAGE_KEYS.favoriteModels) || [];
+    const allFavorites = await enhancedStorage.get(STORAGE_KEYS.favoriteModels) || {};
+    const providerKey = `${provider}:${baseURL}`;
+    return allFavorites[providerKey] || [];
   } catch (error) {
     console.warn('Failed to load favorite models:', error);
     return [];
   }
 }
 
-export async function saveFavoriteModels(favoriteModels: string[]): Promise<void> {
+export async function saveFavoriteModels(provider: string, baseURL: string, favoriteModels: string[]): Promise<void> {
   try {
-    await enhancedStorage.set(STORAGE_KEYS.favoriteModels, favoriteModels);
+    const allFavorites = await enhancedStorage.get(STORAGE_KEYS.favoriteModels) || {};
+    const providerKey = `${provider}:${baseURL}`;
+    allFavorites[providerKey] = favoriteModels;
+    await enhancedStorage.set(STORAGE_KEYS.favoriteModels, allFavorites);
   } catch (error) {
     console.warn('Failed to save favorite models:', error);
   }

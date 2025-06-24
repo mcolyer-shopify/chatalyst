@@ -11,7 +11,12 @@ vi.mock('../../store', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
   const { signal } = require('@preact/signals');
   return {
-    settings: signal({ baseURL: 'https://api.test.com', apiKey: 'test-key', defaultModel: '' }),
+    settings: signal({ 
+      baseURL: 'https://api.test.com', 
+      apiKey: 'test-key', 
+      defaultModel: '',
+      provider: 'openrouter'
+    }),
     getCachedModels: vi.fn(),
     setCachedModels: vi.fn(),
     availableModels: signal([]),
@@ -472,5 +477,33 @@ describe('ModelSelector', () => {
       expect(modelOptions[1]).toHaveTextContent('test-m');
       expect(modelOptions[2]).toHaveTextContent('test-z');
     });
+  });
+
+  it('handles provider-specific favorites correctly', async () => {
+    // This test verifies that the component works with the provider-specific favorites system
+    // The actual provider switching logic is tested in the store tests
+    store.availableModels.value = [
+      { id: 'model-1', name: 'model-1', description: 'Model 1' }
+    ];
+    
+    // Mock that model-1 is favorite for current provider
+    (store.isFavoriteModel as ReturnType<typeof vi.fn>).mockImplementation((id: string) => id === 'model-1');
+
+    render(<ModelSelector {...mockProps} />);
+
+    // Open dropdown
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const favoriteButton = screen.getByTitle('Remove from favorites');
+      expect(favoriteButton).toHaveTextContent('★');
+      expect(favoriteButton).toHaveClass('favorited');
+    });
+
+    // Clicking the star should still call toggleFavoriteModel
+    const favoriteButton = screen.getByTitle('Remove from favorites');
+    fireEvent.click(favoriteButton);
+    expect(store.toggleFavoriteModel).toHaveBeenCalledWith('model-1');
   });
 });
