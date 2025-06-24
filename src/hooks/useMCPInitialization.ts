@@ -27,5 +27,5 @@ export function useMCPInitialization(mcpConfiguration: string) {
         unlistenClose();
       }
     };
-  }, []);
+  }, [mcpConfiguration]);
 }

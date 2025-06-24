@@ -11,8 +11,12 @@ import {
   loadConversations,
   saveConversations,
   loadSelectedConversationId,
-  saveSelectedConversationId
-} from '../utils/storage';
+  saveSelectedConversationId,
+  loadSettings,
+  saveSettings,
+  loadModelsCache,
+  saveModelsCache
+} from '../utils/enhancedStorage';
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
@@ -57,47 +61,53 @@ export const selectedConversation = computed(() =>
 
 export const defaultModel = computed(() => settings.value.defaultModel);
 
-// Initialize from localStorage
-function initializeFromStorage() {
+// Initialize from enhanced storage
+async function initializeFromStorage() {
   try {
-    // Load conversations using utility function
-    conversations.value = loadConversations();
+    // Load conversations using enhanced storage
+    conversations.value = await loadConversations();
     
     // Load selected conversation ID and validate it exists
-    const savedSelectedId = loadSelectedConversationId();
+    const savedSelectedId = await loadSelectedConversationId();
     if (savedSelectedId && conversations.value.some(c => c.id === savedSelectedId)) {
       selectedConversationId.value = savedSelectedId;
     }
 
-    const savedSettings = localStorage.getItem('chatalyst-settings');
+    // Load settings using enhanced storage
+    const savedSettings = await loadSettings();
     if (savedSettings) {
-      const parsed = JSON.parse(savedSettings);
       // Migrate old settings without provider
-      if (!parsed.provider) {
+      if (!savedSettings.provider) {
         // If there's a base URL set, assume it's custom, otherwise default to openrouter
-        parsed.provider = parsed.baseURL ? 'custom' : 'openrouter';
+        savedSettings.provider = savedSettings.baseURL ? 'custom' : 'openrouter';
         // Set default base URL for openrouter if not set
-        if (parsed.provider === 'openrouter' && !parsed.baseURL) {
-          parsed.baseURL = 'https://openrouter.ai/api/v1';
+        if (savedSettings.provider === 'openrouter' && !savedSettings.baseURL) {
+          savedSettings.baseURL = 'https://openrouter.ai/api/v1';
         }
       }
-      settings.value = parsed;
+      settings.value = savedSettings;
     }
 
-    const savedModelsCache = localStorage.getItem('chatalyst-models-cache');
+    // Load models cache using enhanced storage
+    const savedModelsCache = await loadModelsCache();
     if (savedModelsCache) {
-      const parsed = JSON.parse(savedModelsCache);
-      modelsCache.value = new Map(Object.entries(parsed));
+      // Convert back to Map if it's a plain object
+      if (savedModelsCache instanceof Map) {
+        modelsCache.value = savedModelsCache;
+      } else {
+        // It's a plain object, convert to Map
+        modelsCache.value = new Map(Object.entries(savedModelsCache));
+      }
     }
-  } catch {
-    // Silently fail if localStorage is not available
+  } catch (error) {
+    console.error('Failed to initialize from storage:', error);
   }
 
   // Mark as initialized after loading data
   isInitialized = true;
 }
 
-// Auto-save to localStorage (only after initialization)
+// Auto-save to enhanced storage (only after initialization)
 effect(() => {
   // Always access .value to ensure subscription
   const conversationsData = conversations.value;
@@ -118,7 +128,7 @@ effect(() => {
   // Always access .value to ensure subscription
   const settingsData = settings.value;
   if (isInitialized) {
-    localStorage.setItem('chatalyst-settings', JSON.stringify(settingsData));
+    saveSettings(settingsData);
   }
 });
 
@@ -126,8 +136,7 @@ effect(() => {
   // Always access .value to ensure subscription
   const cacheData = modelsCache.value;
   if (isInitialized) {
-    const cacheObj = Object.fromEntries(cacheData);
-    localStorage.setItem('chatalyst-models-cache', JSON.stringify(cacheObj));
+    saveModelsCache(cacheData);
   }
 });
 
@@ -449,4 +458,6 @@ export function enableAllToolsOnAllServers(conversationId: string) {
 }
 
 // Initialize on module load
-initializeFromStorage();
+initializeFromStorage().catch(error => {
+  console.error('Failed to initialize storage on module load:', error);
+});

@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
 import { MCPSidebar } from './components/MCPSidebar';
@@ -45,7 +45,16 @@ function App() {
   
   // Setup hooks
   useWindowGeometry();
-  useMCPInitialization(settings.value.mcpConfiguration || '');
+  
+  // MCP initialization that reacts to settings changes
+  const [currentMcpConfig, setCurrentMcpConfig] = useState(settings.value.mcpConfiguration || '');
+  
+  useEffect(() => {
+    const newConfig = settings.value.mcpConfiguration || '';
+    setCurrentMcpConfig(newConfig);
+  }, [settings.value.mcpConfiguration]);
+  
+  useMCPInitialization(currentMcpConfig);
   useKeyboardShortcuts([
     {
       key: 'n',
