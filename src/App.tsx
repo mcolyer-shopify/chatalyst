@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { ConversationList } from './components/ConversationList';
 import { Conversation } from './components/Conversation';
 import { MCPSidebar } from './components/MCPSidebar';
@@ -33,6 +33,7 @@ function App() {
   const [showMcpSettings, setShowMcpSettings] = useState(false);
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const appRef = useRef<HTMLDivElement>(null);
   
   // Custom hooks
   const { sendMessage, retryMessage, stopGeneration, generateConversationTitle } = useMessageHandling();
@@ -41,6 +42,40 @@ function App() {
   const createNewConversation = () => {
     const title = `New Conversation ${conversations.value.length + 1}`;
     createConversation(title, settings.value.defaultModel);
+  };
+
+  // Keyboard shortcut handlers
+  const handleArchiveConversation = () => {
+    const conversation = selectedConversation.value;
+    if (conversation) {
+      archiveConversation(conversation.id);
+    }
+  };
+
+  const handleTitleConversation = () => {
+    const conversation = selectedConversation.value;
+    if (conversation) {
+      handleGenerateTitle(conversation.id);
+    }
+  };
+
+  const handleDeleteCurrentConversation = () => {
+    const conversation = selectedConversation.value;
+    if (conversation) {
+      deleteConversation(conversation.id);
+    }
+  };
+
+  const handleEscapeKey = () => {
+    // Blur the currently focused input to enable keyboard shortcuts
+    const activeElement = document.activeElement;
+    if (activeElement && (
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.getAttribute('contenteditable') === 'true'
+    )) {
+      (activeElement as HTMLElement).blur();
+    }
   };
   
   // Setup hooks
@@ -61,6 +96,25 @@ function App() {
       ctrl: true,
       meta: true,
       handler: createNewConversation
+    },
+    {
+      key: 'e',
+      handler: handleArchiveConversation,
+      globalOnly: true
+    },
+    {
+      key: 't',
+      handler: handleTitleConversation,
+      globalOnly: true
+    },
+    {
+      key: 'x',
+      handler: handleDeleteCurrentConversation,
+      globalOnly: true
+    },
+    {
+      key: 'Escape',
+      handler: handleEscapeKey
     }
   ]);
 
@@ -117,7 +171,7 @@ function App() {
   };
 
   return (
-    <div class="app">
+    <div class="app" ref={appRef}>
       <SettingsModal
         show={showSettings}
         settings={settings.value}
