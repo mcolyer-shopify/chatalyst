@@ -668,9 +668,9 @@ body {
 .message-user .message-content img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.375rem;
-  margin: 0.5rem 0;
+  margin: 0;
   display: block;
+  background: transparent;
 }
 
 .message-footer {
