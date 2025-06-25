@@ -79,7 +79,6 @@ export function MessageInput({
 }: MessageInputProps) {
   const [state, dispatch] = useReducer(messageInputReducer, initialState);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [openFileDialogFn, setOpenFileDialogFn] = useState<(() => void) | null>(null);
 
   // Initialize message history hook
   const { handleKeyDown } = useMessageHistory({
@@ -146,17 +145,10 @@ export function MessageInput({
       
       <ImageAttachment
         pendingImages={state.pendingImages}
-        setPendingImages={(images: PendingImage[] | ((prev: PendingImage[]) => PendingImage[])) => {
-          if (typeof images === 'function') {
-            dispatch({ type: 'SET_PENDING_IMAGES', payload: images(state.pendingImages) });
-          } else {
-            dispatch({ type: 'SET_PENDING_IMAGES', payload: images });
-          }
-        }}
-        setErrorMessage={(message: string | null) => dispatch({ type: 'SET_ERROR_MESSAGE', payload: message })}
         isProcessingImages={state.isProcessingImages}
-        setIsProcessingImages={(processing: boolean) => dispatch({ type: 'SET_IS_PROCESSING_IMAGES', payload: processing })}
-        onOpenFileDialog={setOpenFileDialogFn}
+        onRemove={(imageId: string) => {
+          dispatch({ type: 'SET_PENDING_IMAGES', payload: state.pendingImages.filter(img => img.id !== imageId) });
+        }}
       />
       
       <MessageForm
@@ -179,8 +171,35 @@ export function MessageInput({
         onKeyDown={handleKeyDown}
         onPaste={handleImagePaste}
         inputRef={inputRef}
-        openFileDialog={openFileDialogFn || undefined}
         isProcessingImages={state.isProcessingImages}
+        onImageSelect={async (files: File[]) => {
+          dispatch({ type: 'SET_IS_PROCESSING_IMAGES', payload: true });
+          const validImages: PendingImage[] = [];
+          
+          try {
+            for (const file of files) {
+              const validation = await validateImageFileSecure(file);
+              if (validation.valid) {
+                try {
+                  const pendingImage = await createPendingImage(file);
+                  validImages.push(pendingImage);
+                } catch (error) {
+                  console.error('Failed to create image preview:', error);
+                  dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Failed to process image "${file.name}": ${error instanceof Error ? error.message : 'Unknown error'}` });
+                }
+              } else {
+                console.error('Invalid image file:', validation.error);
+                dispatch({ type: 'SET_ERROR_MESSAGE', payload: `${file.name}: ${validation.error}` });
+              }
+            }
+            
+            if (validImages.length > 0) {
+              dispatch({ type: 'SET_PENDING_IMAGES', payload: [...state.pendingImages, ...validImages] });
+            }
+          } finally {
+            dispatch({ type: 'SET_IS_PROCESSING_IMAGES', payload: false });
+          }
+        }}
       />
     </div>
   );

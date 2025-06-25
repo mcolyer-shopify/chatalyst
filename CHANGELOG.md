@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced querySelector with ref-based approach in ImagePreview component for better performance and React patterns
 - Consolidated useState calls in MessageInput with useReducer for better state management and reduced component complexity
 - Moved attachment button inline with message input for improved UX and cleaner layout
+- Fixed attachment button functionality and platform-specific keyboard shortcuts (Cmd+V on macOS, Ctrl+V elsewhere)
 
 ### Added
 - Image attachment support in conversations

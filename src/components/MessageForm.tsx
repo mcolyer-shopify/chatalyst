@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
-import { AttachmentButton } from './ImageAttachment';
+import { handleFileInput } from '../utils/images';
 import type { PendingImage } from '../types';
 
 interface MessageFormProps {
@@ -16,8 +16,8 @@ interface MessageFormProps {
   onKeyDown: (e: KeyboardEvent) => void;
   onPaste: (e: ClipboardEvent) => void;
   inputRef: { current: HTMLTextAreaElement | null };
-  openFileDialog?: () => void;
-  isProcessingImages?: boolean;
+  isProcessingImages: boolean;
+  onImageSelect: (files: File[]) => Promise<void>;
 }
 
 export function MessageForm({
@@ -34,10 +34,14 @@ export function MessageForm({
   onKeyDown,
   onPaste,
   inputRef,
-  openFileDialog,
-  isProcessingImages = false
+  isProcessingImages,
+  onImageSelect
 }: MessageFormProps) {
   const [isStopping, setIsStopping] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Detect if we're on macOS
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   // Auto-resize textarea based on content
   useEffect(() => {
@@ -46,6 +50,21 @@ export function MessageForm({
       inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
     }
   }, [message]);
+
+  const handleFileInputChange = (event: Event) => {
+    const files = handleFileInput(event);
+    if (files.length > 0) {
+      onImageSelect(files);
+    }
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleSubmit = (e?: Event) => {
     if (e) e.preventDefault();
@@ -79,20 +98,25 @@ export function MessageForm({
   return (
     <form class="message-input" onSubmit={handleSubmit}>
       <div class="message-input-content">
-        {openFileDialog && (
-          <AttachmentButton
-            onClick={openFileDialog}
-            disabled={disabled && !isGenerating}
-            isProcessingImages={isProcessingImages}
-          />
-        )}
+        <button
+          type="button"
+          onClick={openFileDialog}
+          disabled={disabled && !isGenerating}
+          class={`message-input-attach-button ${isProcessingImages ? 'processing' : ''}`}
+          title={isProcessingImages ? 'Processing images...' : 'Attach image'}
+          aria-label={isProcessingImages ? 'Processing images, please wait' : 'Attach image file'}
+        >
+          <span aria-hidden="true">
+            {isProcessingImages ? '⏳' : '📎'}
+          </span>
+        </button>
         <textarea
           ref={inputRef}
           value={message}
           onInput={(e) => setMessage(e.currentTarget.value)}
           onKeyDown={combinedKeyDown}
           onPaste={onPaste}
-          placeholder="Type a message... (Shift+Enter for new line, Ctrl+V to paste images)"
+          placeholder={`Type a message... (Shift+Enter for new line, ${isMac ? 'Cmd+V' : 'Ctrl+V'} to paste images)`}
           disabled={disabled && !isGenerating}
           class="message-input-field"
           rows={1}
@@ -116,8 +140,19 @@ export function MessageForm({
         id="message-input-instructions" 
         class="sr-only"
       >
-        Use Shift+Enter for new line, Ctrl+V to paste images, or click the attach button to select image files.
+        Use Shift+Enter for new line, {isMac ? 'Cmd+V' : 'Ctrl+V'} to paste images, or click the attach button to select image files.
       </div>
+      
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileInputChange}
+        style={{ display: 'none' }}
+        aria-label="Select image files to attach"
+      />
     </form>
   );
 }

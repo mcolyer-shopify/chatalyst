@@ -1,85 +1,17 @@
-import { useRef, useEffect } from 'preact/hooks';
 import { ImagePreview } from './ImagePreview';
-import { createPendingImage, validateImageFileSecure, handleFileInput, getImageFromClipboard } from '../utils/images';
 import type { PendingImage } from '../types';
 
 interface ImageAttachmentProps {
   pendingImages: PendingImage[];
-  setPendingImages: (images: PendingImage[] | ((prev: PendingImage[]) => PendingImage[])) => void;
-  setErrorMessage: (message: string | null) => void;
   isProcessingImages: boolean;
-  setIsProcessingImages: (processing: boolean) => void;
-  onOpenFileDialog?: (fn: () => void) => void;
+  onRemove: (imageId: string) => void;
 }
 
 export function ImageAttachment({
   pendingImages,
-  setPendingImages,
-  setErrorMessage,
   isProcessingImages,
-  setIsProcessingImages,
-  onOpenFileDialog
+  onRemove
 }: ImageAttachmentProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageSelect = async (files: File[]) => {
-    if (files.length === 0) return;
-    
-    setIsProcessingImages(true);
-    const validImages: PendingImage[] = [];
-    
-    try {
-      for (const file of files) {
-        const validation = await validateImageFileSecure(file);
-        if (validation.valid) {
-          try {
-            const pendingImage = await createPendingImage(file);
-            validImages.push(pendingImage);
-          } catch (error) {
-            console.error('Failed to create image preview:', error);
-            setErrorMessage(`Failed to process image "${file.name}": ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
-        } else {
-          console.error('Invalid image file:', validation.error);
-          setErrorMessage(`${file.name}: ${validation.error}`);
-        }
-      }
-      
-      if (validImages.length > 0) {
-        setPendingImages(prev => [...prev, ...validImages]);
-      }
-    } finally {
-      setIsProcessingImages(false);
-    }
-  };
-
-  const handleFileInputChange = (event: Event) => {
-    const files = handleFileInput(event);
-    if (files.length > 0) {
-      handleImageSelect(files);
-    }
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const removeImage = (imageId: string) => {
-    setPendingImages(prev => prev.filter(img => img.id !== imageId));
-  };
-
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Expose the openFileDialog function to parent component
-  useEffect(() => {
-    if (onOpenFileDialog) {
-      onOpenFileDialog(openFileDialog);
-    }
-  }, [onOpenFileDialog]);
-
-
   return (
     <>
       {/* Only show processing and preview sections when there's something to show */}
@@ -96,20 +28,9 @@ export function ImageAttachment({
               <span class="processing-spinner" aria-hidden="true">⏳</span>
             </div>
           )}
-          <ImagePreview images={pendingImages} onRemove={removeImage} />
+          <ImagePreview images={pendingImages} onRemove={onRemove} />
         </div>
       )}
-      
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFileInputChange}
-        style={{ display: 'none' }}
-        aria-label="Select image files to attach"
-      />
     </>
   );
 }
