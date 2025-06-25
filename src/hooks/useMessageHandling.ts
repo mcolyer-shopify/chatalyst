@@ -10,6 +10,7 @@ import {
   addMessage,
   updateMessage,
   clearError,
+  showError,
   updateConversationSDKMessages,
   updateConversationTitle,
   generatingTitleFor,
@@ -38,7 +39,8 @@ export function useMessageHandling() {
         imageIds = uploadedImages.map(img => img.id);
       } catch (error) {
         console.error('Failed to upload images:', error);
-        // TODO: Show error notification to user
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+        showError(`Failed to upload images: ${errorMsg}`);
         return;
       }
     }

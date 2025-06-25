@@ -26,20 +26,34 @@ export default [
         HTMLInputElement: 'readonly',
         HTMLButtonElement: 'readonly',
         HTMLTextAreaElement: 'readonly',
+        HTMLImageElement: 'readonly',
         Event: 'readonly',
         MouseEvent: 'readonly',
+        ClipboardEvent: 'readonly',
         requestAnimationFrame: 'readonly',
         Node: 'readonly',
+        NodeList: 'readonly',
+        NodeListOf: 'readonly',
+        DataTransfer: 'readonly',
         global: 'readonly',
         process: 'readonly',
         fetch: 'readonly',
         setTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        clearTimeout: 'readonly',
         AbortController: 'readonly',
         KeyboardEvent: 'readonly',
         URL: 'readonly',
-        navigator: 'readonly'
+        navigator: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        btoa: 'readonly',
+        atob: 'readonly',
+        Blob: 'readonly',
+        BlobPart: 'readonly',
+        FilePropertyBag: 'readonly',
+        React: 'readonly'
       }
     },
     plugins: {
@@ -70,7 +84,11 @@ export default [
         afterAll: 'readonly',
         vi: 'readonly',
         jest: 'readonly',
-        fetch: 'readonly'
+        fetch: 'readonly',
+        File: 'readonly',
+        HTMLImageElement: 'readonly',
+        ClipboardEvent: 'readonly',
+        Event: 'readonly'
       }
     }
   },

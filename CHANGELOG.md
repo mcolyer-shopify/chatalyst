@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Refactored MessageInput component for better maintainability by extracting into focused sub-components
+
 ### Added
 - Image attachment support in conversations
   - File picker button (📎) in message input toolbar for selecting images
