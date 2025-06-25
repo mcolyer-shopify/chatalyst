@@ -31,14 +31,6 @@ export function ImagePreview({ images, onRemove }: ImagePreviewProps): JSX.Eleme
               ×
             </button>
           </div>
-          <div class="image-preview-info">
-            <div class="image-preview-filename" title={image.file.name}>
-              {image.file.name}
-            </div>
-            <div class="image-preview-size">
-              {formatFileSize(image.file.size)}
-            </div>
-          </div>
         </div>
       ))}
     </div>
