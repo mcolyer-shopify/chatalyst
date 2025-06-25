@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved attachment button inline with message input for improved UX and cleaner layout
 - Fixed attachment button functionality and platform-specific keyboard shortcuts (Cmd+V on macOS, Ctrl+V elsewhere)
 - Improved image preview container layout with proper padding and full-width border
+- Cleaned up Rust backend by removing placeholder Tauri commands for image operations
+- Added debug logging for AI SDK stream processing to investigate external image URL handling issues
 
 ### Added
 - Image attachment support in conversations

@@ -173,6 +173,10 @@ export function useMessageHandling() {
       // Stream the response
       
       for await (const part of result.fullStream) {
+        // Debug: Log all stream parts to identify image processing
+        if (part.type !== 'text-delta') {
+          console.log('[DEBUG] Stream part:', part.type, JSON.stringify(part, null, 2));
+        }
         console.log('[useMessageHandling] Stream part:', part);
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
@@ -401,6 +405,10 @@ Title:`,
       
       // Stream the response
       for await (const part of result.fullStream) {
+        // Debug: Log all stream parts to identify image processing
+        if (part.type !== 'text-delta') {
+          console.log('[DEBUG] Stream part:', part.type, JSON.stringify(part, null, 2));
+        }
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
           

@@ -22,14 +22,7 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![
             greet,
-            images::calculate_image_hash,
-            images::store_image,
-            images::get_image,
-            images::get_image_by_hash,
-            images::get_conversation_images,
-            images::delete_conversation_images,
-            images::cleanup_orphaned_images,
-            images::get_image_stats
+            images::calculate_image_hash
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
