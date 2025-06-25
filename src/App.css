@@ -2001,7 +2001,6 @@ body {
 .message-image-container {
   border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid #e0e0e0;
   max-width: 100%;
   width: fit-content;
 }
