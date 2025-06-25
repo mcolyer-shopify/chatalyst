@@ -78,9 +78,8 @@ fn calculate_hash(data: &[u8]) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-// Simple hash calculation for image deduplication  
+// Simple hash calculation for image deduplication
 #[tauri::command]
 pub async fn calculate_image_hash(data: Vec<u8>) -> Result<String, String> {
     Ok(calculate_hash(&data))
 }
-
