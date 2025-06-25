@@ -7,7 +7,7 @@ interface MessageHistoryProps {
   tempMessage: string;
   setTempMessage: (message: string) => void;
   userMessages: string[];
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: { current: HTMLTextAreaElement | null };
 }
 
 export function useMessageHistory({

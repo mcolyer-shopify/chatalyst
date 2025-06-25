@@ -1,4 +1,4 @@
-import { useRef } from 'preact/hooks';
+import { useRef, useEffect } from 'preact/hooks';
 import { ImagePreview } from './ImagePreview';
 import { createPendingImage, validateImageFileSecure, handleFileInput, getImageFromClipboard } from '../utils/images';
 import type { PendingImage } from '../types';
@@ -9,8 +9,7 @@ interface ImageAttachmentProps {
   setErrorMessage: (message: string | null) => void;
   isProcessingImages: boolean;
   setIsProcessingImages: (processing: boolean) => void;
-  disabled: boolean;
-  isGenerating: boolean;
+  onOpenFileDialog?: (fn: () => void) => void;
 }
 
 export function ImageAttachment({
@@ -19,8 +18,7 @@ export function ImageAttachment({
   setErrorMessage,
   isProcessingImages,
   setIsProcessingImages,
-  disabled,
-  isGenerating
+  onOpenFileDialog
 }: ImageAttachmentProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -29,7 +27,6 @@ export function ImageAttachment({
     
     setIsProcessingImages(true);
     const validImages: PendingImage[] = [];
-    let _hasErrors = false;
     
     try {
       for (const file of files) {
@@ -41,12 +38,10 @@ export function ImageAttachment({
           } catch (error) {
             console.error('Failed to create image preview:', error);
             setErrorMessage(`Failed to process image "${file.name}": ${error instanceof Error ? error.message : 'Unknown error'}`);
-            _hasErrors = true;
           }
         } else {
           console.error('Invalid image file:', validation.error);
           setErrorMessage(`${file.name}: ${validation.error}`);
-          _hasErrors = true;
         }
       }
       
@@ -77,43 +72,35 @@ export function ImageAttachment({
     fileInputRef.current?.click();
   };
 
-  const handleAttachKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      openFileDialog();
+  // Expose the openFileDialog function to parent component
+  useEffect(() => {
+    if (onOpenFileDialog) {
+      onOpenFileDialog(openFileDialog);
     }
-  };
+  }, [onOpenFileDialog]);
+
 
   return (
     <>
-      {isProcessingImages && (
-        <div 
-          class="image-processing-indicator"
-          role="status"
-          aria-live="polite"
-          aria-label="Processing images"
-        >
-          <span class="processing-text">Processing images...</span>
-          <span class="processing-spinner" aria-hidden="true">⏳</span>
+      {/* Only show processing and preview sections when there's something to show */}
+      {(isProcessingImages || pendingImages.length > 0) && (
+        <div class="image-attachment-section">
+          {isProcessingImages && (
+            <div 
+              class="image-processing-indicator"
+              role="status"
+              aria-live="polite"
+              aria-label="Processing images"
+            >
+              <span class="processing-text">Processing images...</span>
+              <span class="processing-spinner" aria-hidden="true">⏳</span>
+            </div>
+          )}
+          <ImagePreview images={pendingImages} onRemove={removeImage} />
         </div>
       )}
-      <ImagePreview images={pendingImages} onRemove={removeImage} />
-      <div class="message-input-toolbar">
-        <button
-          type="button"
-          onClick={openFileDialog}
-          onKeyDown={handleAttachKeyDown}
-          disabled={(disabled && !isGenerating) || isProcessingImages}
-          class={`message-input-attach-button ${isProcessingImages ? 'processing' : ''}`}
-          title={isProcessingImages ? 'Processing images...' : 'Attach image'}
-          aria-label={isProcessingImages ? 'Processing images, please wait' : 'Attach image file'}
-          aria-describedby={isProcessingImages ? 'processing-status' : undefined}
-        >
-          <span aria-hidden="true">
-            {isProcessingImages ? '⏳' : '📎'}
-          </span>
-        </button>
-      </div>
+      
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -124,6 +111,41 @@ export function ImageAttachment({
         aria-label="Select image files to attach"
       />
     </>
+  );
+}
+
+// Export the attachment button as a separate component to be used inline with the form
+export function AttachmentButton({
+  onClick,
+  disabled,
+  isProcessingImages
+}: {
+  onClick: () => void;
+  disabled: boolean;
+  isProcessingImages: boolean;
+}) {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      disabled={disabled || isProcessingImages}
+      class={`message-input-attach-button ${isProcessingImages ? 'processing' : ''}`}
+      title={isProcessingImages ? 'Processing images...' : 'Attach image'}
+      aria-label={isProcessingImages ? 'Processing images, please wait' : 'Attach image file'}
+      aria-describedby={isProcessingImages ? 'processing-status' : undefined}
+    >
+      <span aria-hidden="true">
+        {isProcessingImages ? '⏳' : '📎'}
+      </span>
+    </button>
   );
 }
 

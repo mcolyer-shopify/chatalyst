@@ -1,4 +1,4 @@
-import { useReducer, useRef, useEffect } from 'preact/hooks';
+import { useReducer, useRef, useEffect, useState } from 'preact/hooks';
 import { ErrorToast } from './ErrorToast';
 import { ImageAttachment } from './ImageAttachment';
 import { MessageForm } from './MessageForm';
@@ -79,6 +79,7 @@ export function MessageInput({
 }: MessageInputProps) {
   const [state, dispatch] = useReducer(messageInputReducer, initialState);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [openFileDialogFn, setOpenFileDialogFn] = useState<(() => void) | null>(null);
 
   // Initialize message history hook
   const { handleKeyDown } = useMessageHistory({
@@ -155,8 +156,7 @@ export function MessageInput({
         setErrorMessage={(message: string | null) => dispatch({ type: 'SET_ERROR_MESSAGE', payload: message })}
         isProcessingImages={state.isProcessingImages}
         setIsProcessingImages={(processing: boolean) => dispatch({ type: 'SET_IS_PROCESSING_IMAGES', payload: processing })}
-        disabled={disabled}
-        isGenerating={isGenerating}
+        onOpenFileDialog={setOpenFileDialogFn}
       />
       
       <MessageForm
@@ -179,6 +179,8 @@ export function MessageInput({
         onKeyDown={handleKeyDown}
         onPaste={handleImagePaste}
         inputRef={inputRef}
+        openFileDialog={openFileDialogFn || undefined}
+        isProcessingImages={state.isProcessingImages}
       />
     </div>
   );

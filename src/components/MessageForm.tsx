@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
+import { AttachmentButton } from './ImageAttachment';
 import type { PendingImage } from '../types';
 
 interface MessageFormProps {
@@ -14,7 +15,9 @@ interface MessageFormProps {
   setTempMessage: (message: string) => void;
   onKeyDown: (e: KeyboardEvent) => void;
   onPaste: (e: ClipboardEvent) => void;
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: { current: HTMLTextAreaElement | null };
+  openFileDialog?: () => void;
+  isProcessingImages?: boolean;
 }
 
 export function MessageForm({
@@ -30,7 +33,9 @@ export function MessageForm({
   setTempMessage,
   onKeyDown,
   onPaste,
-  inputRef
+  inputRef,
+  openFileDialog,
+  isProcessingImages = false
 }: MessageFormProps) {
   const [isStopping, setIsStopping] = useState(false);
 
@@ -74,6 +79,13 @@ export function MessageForm({
   return (
     <form class="message-input" onSubmit={handleSubmit}>
       <div class="message-input-content">
+        {openFileDialog && (
+          <AttachmentButton
+            onClick={openFileDialog}
+            disabled={disabled && !isGenerating}
+            isProcessingImages={isProcessingImages}
+          />
+        )}
         <textarea
           ref={inputRef}
           value={message}
