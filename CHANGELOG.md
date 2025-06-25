@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Image attachment support in conversations
+  - File picker button (📎) in message input toolbar for selecting images
+  - Paste images directly from clipboard using Ctrl+V
+  - Image preview above input field with remove buttons
+  - Support for JPEG, PNG, GIF, and WebP formats up to 10MB per image
+  - Images displayed inline within messages
+  - Content-addressable storage using SHA-256 hashing to prevent duplicates
+  - SQLite database storage for efficient image management
+  - Automatic garbage collection removes orphaned images
+  - Images are automatically cleaned up when conversations are deleted
 - Model favorites functionality
   - Star icon next to each model in the dropdown to mark/unmark as favorite
   - Favorite models appear at the top of the dropdown for easy access

@@ -1,6 +1,7 @@
 import type { Message as MessageType } from '../types';
 import { marked } from 'marked';
 import { useEffect, useState } from 'preact/hooks';
+import { MessageImage } from './MessageImage';
 
 interface MessageProps {
   message: MessageType;
@@ -60,6 +61,20 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
     setShowDeleteConfirm(false);
   };
 
+  const renderImages = () => {
+    if (!message.imageIds || message.imageIds.length === 0) {
+      return null;
+    }
+
+    return (
+      <div class="message-images">
+        {message.imageIds.map((imageId) => (
+          <MessageImage key={imageId} imageId={imageId} />
+        ))}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (message.role === 'tool') {
       return (
@@ -107,10 +122,12 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
       });
       
       return (
-        <div 
-          class="message-content"
-          dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
-        />
+        <div class="message-content">
+          {renderImages()}
+          <div 
+            dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
+          />
+        </div>
       );
     }
     
@@ -124,10 +141,14 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
       });
       
       return (
-        <div 
-          class="message-content"
-          dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
-        />
+        <div class="message-content">
+          {renderImages()}
+          {message.content && (
+            <div 
+              dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
+            />
+          )}
+        </div>
       );
     }
     

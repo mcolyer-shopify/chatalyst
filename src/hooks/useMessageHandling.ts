@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { streamText, generateText } from 'ai';
 import type { CoreMessage } from 'ai';
-import type { Message, Conversation } from '../types';
+import type { Message, Conversation, PendingImage } from '../types';
 import { 
   conversations,
   selectedConversation,
@@ -20,20 +20,36 @@ import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
 import { DEFAULT_MODEL, MAX_TOOL_STEPS } from '../constants/ai';
+import { storeImage } from '../utils/images';
 
 export function useMessageHandling() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, images?: PendingImage[]) => {
     const conversation = selectedConversation.value;
-    if (!conversation || !content.trim()) return;
+    if (!conversation || (!content.trim() && (!images || images.length === 0))) return;
+
+    // Upload images first if any
+    let imageIds: number[] = [];
+    if (images && images.length > 0) {
+      try {
+        const uploadPromises = images.map(image => storeImage(image.file, conversation.id));
+        const uploadedImages = await Promise.all(uploadPromises);
+        imageIds = uploadedImages.map(img => img.id);
+      } catch (error) {
+        console.error('Failed to upload images:', error);
+        // TODO: Show error notification to user
+        return;
+      }
+    }
 
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      imageIds: imageIds.length > 0 ? imageIds : undefined
     };
 
     addMessage(conversation.id, userMessage);

@@ -19,6 +19,7 @@ import {
   loadFavoriteModels,
   saveFavoriteModels
 } from '../utils/enhancedStorage';
+import { deleteConversationImages, cleanupOrphanedImages } from '../utils/images';
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
@@ -209,17 +210,34 @@ export function startFreshConversation(
   return newConversation;
 }
 
-export function deleteConversation(id: string) {
-  batch(() => {
-    conversations.value = conversations.value.filter((c) => c.id !== id);
-    if (selectedConversationId.value === id) {
-      // Find first non-archived conversation, or any conversation if all are archived
-      const activeConversations = conversations.value.filter(c => !c.archived);
-      selectedConversationId.value =
-        activeConversations.length > 0 ? activeConversations[0].id :
-          conversations.value.length > 0 ? conversations.value[0].id : null;
-    }
-  });
+export async function deleteConversation(id: string) {
+  try {
+    // Delete associated images first
+    await deleteConversationImages(id);
+    
+    batch(() => {
+      conversations.value = conversations.value.filter((c) => c.id !== id);
+      if (selectedConversationId.value === id) {
+        // Find first non-archived conversation, or any conversation if all are archived
+        const activeConversations = conversations.value.filter(c => !c.archived);
+        selectedConversationId.value =
+          activeConversations.length > 0 ? activeConversations[0].id :
+            conversations.value.length > 0 ? conversations.value[0].id : null;
+      }
+    });
+  } catch (error) {
+    console.error('Failed to delete conversation images:', error);
+    // Still delete the conversation even if image cleanup fails
+    batch(() => {
+      conversations.value = conversations.value.filter((c) => c.id !== id);
+      if (selectedConversationId.value === id) {
+        const activeConversations = conversations.value.filter(c => !c.archived);
+        selectedConversationId.value =
+          activeConversations.length > 0 ? activeConversations[0].id :
+            conversations.value.length > 0 ? conversations.value[0].id : null;
+      }
+    });
+  }
 }
 
 export function archiveConversation(id: string) {
@@ -512,7 +530,38 @@ export function enableAllToolsOnAllServers(conversationId: string) {
   });
 }
 
+// Periodic cleanup of orphaned images (every 10 minutes)
+let cleanupInterval: number;
+
+export function startImageCleanup() {
+  // Clear any existing interval
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+  }
+  
+  // Run cleanup every 10 minutes
+  cleanupInterval = setInterval(async () => {
+    try {
+      const deletedCount = await cleanupOrphanedImages();
+      if (deletedCount > 0) {
+        console.log(`Cleaned up ${deletedCount} orphaned images`);
+      }
+    } catch (error) {
+      console.error('Failed to cleanup orphaned images:', error);
+    }
+  }, 10 * 60 * 1000); // 10 minutes
+}
+
+export function stopImageCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+  }
+}
+
 // Initialize on module load
 initializeFromStorage().catch(error => {
   console.error('Failed to initialize storage on module load:', error);
+}).finally(() => {
+  // Start periodic cleanup after initialization
+  startImageCleanup();
 });

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri_plugin_sql::{Migration, MigrationKind};
-use chrono;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StoredImage {
@@ -79,60 +78,57 @@ fn calculate_hash(data: &[u8]) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-// For now, let's just provide a basic stub implementation
-// The actual database operations will be handled from the frontend using invoke
+// Simple hash calculation for image deduplication  
+#[tauri::command]
+pub async fn calculate_image_hash(data: Vec<u8>) -> Result<String, String> {
+    Ok(calculate_hash(&data))
+}
+
+// Placeholder functions - the actual database operations will be handled from frontend
+// using direct SQL calls through the tauri-plugin-sql
+
 #[tauri::command]
 pub async fn store_image(
-    data: Vec<u8>,
-    mime_type: String,
-    conversation_id: String,
+    _data: Vec<u8>,
+    _mime_type: String,
+    _conversation_id: String,
 ) -> Result<ImageMetadata, String> {
-    let hash = calculate_hash(&data);
-    let size = data.len() as i64;
-    
-    // This is a stub - the actual implementation will need to be done differently
-    // or we can use the frontend to make SQL calls directly
-    Ok(ImageMetadata {
-        id: 1, // placeholder
-        hash,
-        mime_type,
-        size,
-        created_at: chrono::Utc::now().to_rfc3339(),
-    })
+    // This will be handled from the frontend using SQL calls
+    Err("Use frontend SQL implementation".to_string())
 }
 
 #[tauri::command]
-pub async fn get_image(image_id: i64) -> Result<StoredImage, String> {
-    // Stub implementation
-    Err("Not implemented yet".to_string())
+pub async fn get_image(_image_id: i64) -> Result<StoredImage, String> {
+    // This will be handled from the frontend using SQL calls
+    Err("Use frontend SQL implementation".to_string())
 }
 
 #[tauri::command]
-pub async fn get_image_by_hash(hash: String) -> Result<Option<StoredImage>, String> {
-    // Stub implementation
+pub async fn get_image_by_hash(_hash: String) -> Result<Option<StoredImage>, String> {
+    // This will be handled from the frontend using SQL calls
     Ok(None)
 }
 
 #[tauri::command]
-pub async fn get_conversation_images(conversation_id: String) -> Result<Vec<ImageMetadata>, String> {
-    // Stub implementation
+pub async fn get_conversation_images(_conversation_id: String) -> Result<Vec<ImageMetadata>, String> {
+    // This will be handled from the frontend using SQL calls
     Ok(vec![])
 }
 
 #[tauri::command]
-pub async fn delete_conversation_images(conversation_id: String) -> Result<i64, String> {
-    // Stub implementation
+pub async fn delete_conversation_images(_conversation_id: String) -> Result<i64, String> {
+    // This will be handled from the frontend using SQL calls
     Ok(0)
 }
 
 #[tauri::command]
 pub async fn cleanup_orphaned_images() -> Result<i64, String> {
-    // Stub implementation
+    // This will be handled from the frontend using SQL calls
     Ok(0)
 }
 
 #[tauri::command]
 pub async fn get_image_stats() -> Result<(i64, i64), String> {
-    // Stub implementation
+    // This will be handled from the frontend using SQL calls
     Ok((0, 0))
 }

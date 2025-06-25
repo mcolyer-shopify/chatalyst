@@ -22,6 +22,7 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![
             greet,
+            images::calculate_image_hash,
             images::store_image,
             images::get_image,
             images::get_image_by_hash,

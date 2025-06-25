@@ -3,11 +3,11 @@ import { Message } from './Message';
 import { MessageInput } from './MessageInput';
 import { ModelSelector } from './ModelSelector';
 import { isStreaming } from '../store';
-import type { Conversation as ConversationType } from '../types';
+import type { Conversation as ConversationType, PendingImage } from '../types';
 
 interface ConversationProps {
   conversation: ConversationType | null;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, images?: PendingImage[]) => void;
   onRetryMessage: (messageId: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onModelChange: (modelId: string) => void;
@@ -218,8 +218,8 @@ export function Conversation({ conversation, onSendMessage, onRetryMessage, onDe
         )}
       </div>
       <MessageInput 
-        onSend={(message) => {
-          onSendMessage(message);
+        onSend={(message, images) => {
+          onSendMessage(message, images);
           // Set flag to trigger scroll to user message after DOM updates
           setShouldScrollToUserMessage(true);
         }} 
