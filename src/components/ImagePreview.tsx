@@ -1,5 +1,5 @@
 import { JSX } from 'preact';
-import { useRef } from 'preact/hooks';
+import { useRef, useEffect } from 'preact/hooks';
 import type { PendingImage } from '../types';
 
 interface ImagePreviewProps {
@@ -8,17 +8,19 @@ interface ImagePreviewProps {
 }
 
 export function ImagePreview({ images, onRemove }: ImagePreviewProps): JSX.Element | null {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Reset button refs when images change
+  useEffect(() => {
+    buttonRefs.current = buttonRefs.current.slice(0, images.length);
+  }, [images.length]);
 
   if (images.length === 0) {
     return null;
   }
 
   const handleKeyDown = (e: KeyboardEvent, imageId: string, index: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const buttons = container.querySelectorAll('.image-preview-remove') as NodeListOf<HTMLButtonElement>;
+    const buttons = buttonRefs.current;
     
     switch (e.key) {
     case 'Delete':
@@ -66,7 +68,6 @@ export function ImagePreview({ images, onRemove }: ImagePreviewProps): JSX.Eleme
 
   return (
     <div 
-      ref={containerRef}
       class="image-preview-container"
       role="region"
       aria-label={`${images.length} image${images.length === 1 ? '' : 's'} attached. Use arrow keys to navigate, Delete or Backspace to remove.`}
@@ -81,6 +82,7 @@ export function ImagePreview({ images, onRemove }: ImagePreviewProps): JSX.Eleme
               role="img"
             />
             <button
+              ref={(el) => { buttonRefs.current[index] = el; }}
               class="image-preview-remove"
               onClick={() => onRemove(image.id)}
               onKeyDown={(e) => handleKeyDown(e, image.id, index)}
