@@ -3,7 +3,7 @@ import { ErrorToast } from './ErrorToast';
 import { ImageAttachment } from './ImageAttachment';
 import { MessageForm } from './MessageForm';
 import { useMessageHistory } from './MessageHistory';
-import { getImageFromClipboard, validateImageFile, createPendingImage } from '../utils/images';
+import { getImageFromClipboard, validateImageFileSecure, createPendingImage } from '../utils/images';
 import type { PendingImage } from '../types';
 
 interface MessageInputProps {
@@ -72,7 +72,7 @@ export function MessageInput({
       
       setIsProcessingImages(true);
       try {
-        const validation = validateImageFile(imageFile);
+        const validation = await validateImageFileSecure(imageFile);
         if (validation.valid) {
           const pendingImage = await createPendingImage(imageFile);
           setPendingImages(prev => [...prev, pendingImage]);

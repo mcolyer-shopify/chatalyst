@@ -1,6 +1,6 @@
 import { useRef } from 'preact/hooks';
 import { ImagePreview } from './ImagePreview';
-import { createPendingImage, validateImageFile, handleFileInput, getImageFromClipboard } from '../utils/images';
+import { createPendingImage, validateImageFileSecure, handleFileInput, getImageFromClipboard } from '../utils/images';
 import type { PendingImage } from '../types';
 
 interface ImageAttachmentProps {
@@ -33,7 +33,7 @@ export function ImageAttachment({
     
     try {
       for (const file of files) {
-        const validation = validateImageFile(file);
+        const validation = await validateImageFileSecure(file);
         if (validation.valid) {
           try {
             const pendingImage = await createPendingImage(file);

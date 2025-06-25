@@ -14,6 +14,24 @@ const SUPPORTED_TYPES = [
   'image/webp'
 ];
 
+// File magic numbers (signatures) for security validation
+const IMAGE_SIGNATURES = [
+  // JPEG
+  { signature: [0xFF, 0xD8, 0xFF], type: 'image/jpeg', name: 'JPEG' },
+  // PNG
+  { signature: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], type: 'image/png', name: 'PNG' },
+  // GIF87a
+  { signature: [0x47, 0x49, 0x46, 0x38, 0x37, 0x61], type: 'image/gif', name: 'GIF87a' },
+  // GIF89a
+  { signature: [0x47, 0x49, 0x46, 0x38, 0x39, 0x61], type: 'image/gif', name: 'GIF89a' },
+  // WebP
+  { signature: [0x52, 0x49, 0x46, 0x46], type: 'image/webp', name: 'WebP', offset: 0, additionalCheck: (bytes: Uint8Array) => {
+    // WebP files have "WEBP" at offset 8-11 after RIFF header
+    return bytes.length >= 12 && 
+           bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+  }}
+];
+
 // Database instance (cached)
 let db: Database | null = null;
 
@@ -32,6 +50,63 @@ export function isValidImageSize(size: number): boolean {
   return size <= MAX_FILE_SIZE;
 }
 
+/**
+ * Validates file by checking magic numbers (file signatures) for security
+ * This prevents malicious files from being uploaded with fake MIME types
+ */
+export async function validateImageMagicNumbers(file: File): Promise<{ valid: boolean; detectedType?: string; error?: string }> {
+  try {
+    // Read first 16 bytes to check magic numbers (enough for all image formats)
+    const buffer = await file.slice(0, 16).arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    
+    if (bytes.length === 0) {
+      return { valid: false, error: 'File is empty' };
+    }
+    
+    // Check each known image signature
+    for (const sig of IMAGE_SIGNATURES) {
+      const startOffset = sig.offset || 0;
+      let matches = true;
+      
+      // Check if we have enough bytes
+      if (bytes.length < startOffset + sig.signature.length) {
+        continue;
+      }
+      
+      // Compare signature bytes
+      for (let i = 0; i < sig.signature.length; i++) {
+        if (bytes[startOffset + i] !== sig.signature[i]) {
+          matches = false;
+          break;
+        }
+      }
+      
+      // Additional validation for formats that need it (like WebP)
+      if (matches && sig.additionalCheck) {
+        matches = sig.additionalCheck(bytes);
+      }
+      
+      if (matches) {
+        return { 
+          valid: true, 
+          detectedType: sig.type
+        };
+      }
+    }
+    
+    return { 
+      valid: false, 
+      error: 'File signature does not match any supported image format. This may be a security risk.' 
+    };
+  } catch (error) {
+    return { 
+      valid: false, 
+      error: `Failed to read file for validation: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    };
+  }
+}
+
 export function validateImageFile(file: File): { valid: boolean; error?: string } {
   if (!isValidImageType(file.type)) {
     return {
@@ -48,6 +123,44 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
   }
 
   return { valid: true };
+}
+
+/**
+ * Comprehensive async validation that includes magic number checking for security
+ * Use this for thorough validation when security is a concern
+ */
+export async function validateImageFileSecure(file: File): Promise<{ valid: boolean; error?: string; detectedType?: string }> {
+  // First do the basic synchronous checks
+  const basicValidation = validateImageFile(file);
+  if (!basicValidation.valid) {
+    return basicValidation;
+  }
+  
+  // Then do the magic number validation
+  const magicValidation = await validateImageMagicNumbers(file);
+  if (!magicValidation.valid) {
+    return magicValidation;
+  }
+  
+  // Check if detected type matches declared MIME type (security check)
+  const declaredType = file.type.toLowerCase();
+  const detectedType = magicValidation.detectedType?.toLowerCase();
+  
+  // Allow 'image/jpg' to match 'image/jpeg' 
+  const normalizedDeclared = declaredType === 'image/jpg' ? 'image/jpeg' : declaredType;
+  const normalizedDetected = detectedType === 'image/jpg' ? 'image/jpeg' : detectedType;
+  
+  if (normalizedDeclared !== normalizedDetected) {
+    return {
+      valid: false,
+      error: `File type mismatch: declared as ${declaredType} but detected as ${detectedType}. This may be a security risk.`
+    };
+  }
+  
+  return { 
+    valid: true, 
+    detectedType: magicValidation.detectedType 
+  };
 }
 
 export function formatFileSize(bytes: number): string {

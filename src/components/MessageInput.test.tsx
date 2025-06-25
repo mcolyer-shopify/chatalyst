@@ -5,7 +5,7 @@ import type { PendingImage } from '../types';
 
 // Mock the image utils module
 vi.mock('../utils/images', () => ({
-  validateImageFile: vi.fn(),
+  validateImageFileSecure: vi.fn(),
   createPendingImage: vi.fn(),
   getImageFromClipboard: vi.fn(),
   handleFileInput: vi.fn()
@@ -25,7 +25,7 @@ describe('MessageInput', () => {
   const mockOnSend = vi.fn();
   const placeholder = 'Type a message... (Shift+Enter for new line, Ctrl+V to paste images)';
   
-  const mockValidateImageFile = vi.mocked(imageUtils.validateImageFile);
+  const mockValidateImageFileSecure = vi.mocked(imageUtils.validateImageFileSecure);
   const mockCreatePendingImage = vi.mocked(imageUtils.createPendingImage);
   const mockGetImageFromClipboard = vi.mocked(imageUtils.getImageFromClipboard);
   const mockHandleFileInput = vi.mocked(imageUtils.handleFileInput);
@@ -311,7 +311,7 @@ describe('MessageInput', () => {
       const mockPendingImage = createMockPendingImage('1', 'test.jpg');
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ valid: true });
+      mockValidateImageFileSecure.mockResolvedValue({ valid: true });
       mockCreatePendingImage.mockResolvedValue(mockPendingImage);
       
       render(<MessageInput onSend={mockOnSend} />);
@@ -332,7 +332,7 @@ describe('MessageInput', () => {
       const mockPendingImage = createMockPendingImage('1', 'test.jpg');
       
       mockGetImageFromClipboard.mockReturnValue(mockFile);
-      mockValidateImageFile.mockReturnValue({ valid: true });
+      mockValidateImageFileSecure.mockResolvedValue({ valid: true });
       mockCreatePendingImage.mockResolvedValue(mockPendingImage);
       
       render(<MessageInput onSend={mockOnSend} />);
@@ -424,7 +424,7 @@ describe('MessageInput', () => {
       const mockFile = new File(['test'], 'test.pdf', { type: 'application/pdf' });
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ 
+      mockValidateImageFileSecure.mockResolvedValue({ 
         valid: false, 
         error: 'Unsupported image type: application/pdf' 
       });
@@ -447,7 +447,7 @@ describe('MessageInput', () => {
       const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ valid: true });
+      mockValidateImageFileSecure.mockResolvedValue({ valid: true });
       mockCreatePendingImage.mockRejectedValue(new Error('Failed to read file'));
       
       render(<MessageInput onSend={mockOnSend} />);
@@ -468,7 +468,7 @@ describe('MessageInput', () => {
       const mockFile = new File(['test'], 'test.pdf', { type: 'application/pdf' });
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ 
+      mockValidateImageFileSecure.mockResolvedValue({ 
         valid: false, 
         error: 'Unsupported image type' 
       });
@@ -495,7 +495,7 @@ describe('MessageInput', () => {
       const mockFile = new File(['test'], 'test.pdf', { type: 'application/pdf' });
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ 
+      mockValidateImageFileSecure.mockResolvedValue({ 
         valid: false, 
         error: 'Unsupported image type' 
       });
@@ -523,7 +523,7 @@ describe('MessageInput', () => {
       const mockPendingImage = createMockPendingImage('1', 'test.jpg');
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ valid: true });
+      mockValidateImageFileSecure.mockResolvedValue({ valid: true });
       mockCreatePendingImage.mockResolvedValue(mockPendingImage);
       
       render(<MessageInput onSend={mockOnSend} />);
@@ -547,7 +547,7 @@ describe('MessageInput', () => {
       const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ valid: true });
+      mockValidateImageFileSecure.mockResolvedValue({ valid: true });
       // Mock createPendingImage with a delay to test loading state
       mockCreatePendingImage.mockImplementation(() => 
         new Promise(resolve => 
@@ -603,7 +603,7 @@ describe('MessageInput', () => {
       const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
       mockHandleFileInput.mockReturnValue([mockFile]);
-      mockValidateImageFile.mockReturnValue({ valid: true });
+      mockValidateImageFileSecure.mockResolvedValue({ valid: true });
       mockCreatePendingImage.mockImplementation(() => 
         new Promise(resolve => 
           setTimeout(() => resolve(createMockPendingImage('1', 'test.jpg')), 50)
