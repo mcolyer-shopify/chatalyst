@@ -363,7 +363,7 @@ async function loadFavoriteModelsForProvider(provider: string, baseURL: string) 
     const savedFavoriteModels = await loadFavoriteModels(provider, baseURL);
     favoriteModels.value = savedFavoriteModels;
   } catch (error) {
-    console.warn('Failed to load favorites for provider:', error);
+    console.error('Failed to load favorites for provider:', error);
     favoriteModels.value = [];
   }
 }
@@ -542,10 +542,8 @@ export function startImageCleanup() {
   // Run cleanup every 10 minutes
   cleanupInterval = setInterval(async () => {
     try {
-      const deletedCount = await cleanupOrphanedImages();
-      if (deletedCount > 0) {
-        console.log(`Cleaned up ${deletedCount} orphaned images`);
-      }
+      await cleanupOrphanedImages();
+      // Silently clean up orphaned images
     } catch (error) {
       console.error('Failed to cleanup orphaned images:', error);
     }

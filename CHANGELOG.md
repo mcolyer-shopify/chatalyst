@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Refactored MessageInput component for better maintainability by extracting into focused sub-components
 - Enhanced image validation with magic number (file signature) checking for improved security
+- Removed production console statements for cleaner release builds while preserving console.error statements
 
 ### Added
 - Image attachment support in conversations

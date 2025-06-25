@@ -42,14 +42,12 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
   };
 
   const handleDelete = () => {
-    console.log('Delete button clicked', { messageId: message.id, onDelete: !!onDelete });
     if (onDelete) {
       setShowDeleteConfirm(true);
     }
   };
 
   const confirmDelete = () => {
-    console.log('User confirmed deletion, calling onDelete');
     setShowDeleteConfirm(false);
     if (onDelete) {
       onDelete();
@@ -57,7 +55,6 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
   };
 
   const cancelDelete = () => {
-    console.log('User cancelled deletion');
     setShowDeleteConfirm(false);
   };
 

@@ -202,61 +202,40 @@ export async function storeImage(
   file: File,
   conversationId: string
 ): Promise<ImageMetadata> {
-  console.log('🔄 [storeImage] Starting image upload:', {
-    fileName: file.name,
-    fileSize: file.size,
-    fileType: file.type,
-    conversationId
-  });
-
   const database = await getDatabase();
-  console.log('✅ [storeImage] Database connection established');
-
   const data = await fileToUint8Array(file);
-  console.log('✅ [storeImage] File converted to Uint8Array, size:', data.length);
-
   const hash = await calculateImageHash(data);
-  console.log('✅ [storeImage] Hash calculated:', hash);
   
   // Check if image already exists
   const existingImages = await database.select<StoredImage[]>(
     'SELECT * FROM images WHERE hash = ?',
     [hash]
   );
-  console.log('✅ [storeImage] Checked for existing images, found:', existingImages.length);
   
   let imageId: number;
   
   if (existingImages.length > 0) {
     // Image already exists, use existing ID
     imageId = existingImages[0].id;
-    console.log('♻️ [storeImage] Using existing image ID:', imageId);
   } else {
     // Store new image - use array format since SQLite converts everything to JSON anyway
-    console.log('💾 [storeImage] Storing new image in database...');
-    console.log('🔍 [storeImage] Data type being stored:', typeof data, data.constructor.name);
-    
     const dataArray = Array.from(data);
-    console.log('🔍 [storeImage] Converting to array for storage, length:', dataArray.length);
     
     const result = await database.execute(
       'INSERT INTO images (hash, data, mime_type, size) VALUES (?, ?, ?, ?)',
       [hash, dataArray, file.type, file.size]
     );
     imageId = result.lastInsertId;
-    console.log('✅ [storeImage] New image stored with ID:', imageId);
   }
   
   // Add reference to conversation (ignore if already exists)
   try {
-    console.log('🔗 [storeImage] Creating image reference...');
     await database.execute(
       'INSERT OR IGNORE INTO image_references (image_id, conversation_id) VALUES (?, ?)',
       [imageId, conversationId]
     );
-    console.log('✅ [storeImage] Image reference created');
   } catch (error) {
-    console.warn('⚠️ [storeImage] Failed to create image reference (may already exist):', error);
+    console.error('Failed to create image reference (may already exist):', error);
   }
   
   const result = {
@@ -267,61 +246,41 @@ export async function storeImage(
     created_at: new Date().toISOString()
   };
   
-  console.log('🎉 [storeImage] Image upload complete:', result);
   return result;
 }
 
 export async function getImage(imageId: number): Promise<StoredImage> {
-  console.log('🔍 [getImage] Fetching image:', imageId);
-  
   const database = await getDatabase();
-  console.log('✅ [getImage] Database connection established');
   
   const images = await database.select<StoredImage[]>(
     'SELECT * FROM images WHERE id = ?',
     [imageId]
   );
-  console.log('✅ [getImage] Database query completed, found images:', images.length);
   
   if (images.length === 0) {
-    console.error('❌ [getImage] Image not found:', imageId);
     throw new Error(`Image not found: ${imageId}`);
   }
   
   const image = images[0];
-  console.log('✅ [getImage] Raw image from database:', {
-    id: image.id,
-    hash: image.hash,
-    mimeType: image.mime_type,
-    size: image.size,
-    dataType: typeof image.data,
-    dataConstructor: image.data?.constructor?.name,
-    dataLength: Array.isArray(image.data) ? image.data.length : (image.data?.length || 'no length')
-  });
   
   // Parse JSON array string back to array of numbers
   let processedData: number[];
   if (typeof image.data === 'string') {
-    console.log('🔍 [getImage] Data string sample:', image.data.substring(0, 50) + '...');
-    console.log('🔍 [getImage] Data string length:', image.data.length);
-    
     try {
       // Parse JSON array string back to actual array
       processedData = JSON.parse(image.data);
       if (!Array.isArray(processedData)) {
         throw new Error('Parsed data is not an array');
       }
-      console.log('✅ [getImage] Parsed JSON array, length:', processedData.length);
     } catch (error) {
-      console.error('❌ [getImage] Failed to parse JSON array:', error);
-      console.error('❌ [getImage] First 100 chars of invalid JSON:', image.data.substring(0, 100));
+      console.error('Failed to parse JSON array:', error);
+      console.error('First 100 chars of invalid JSON:', image.data.substring(0, 100));
       throw new Error('Failed to parse image data');
     }
   } else if (Array.isArray(image.data)) {
     processedData = image.data;
-    console.log('✅ [getImage] Data is already an array, length:', processedData.length);
   } else {
-    console.error('❌ [getImage] Unexpected data format:', typeof image.data, image.data?.constructor?.name);
+    console.error('Unexpected data format:', typeof image.data, image.data?.constructor?.name);
     throw new Error(`Unsupported image data format: ${typeof image.data}`);
   }
   
@@ -330,7 +289,6 @@ export async function getImage(imageId: number): Promise<StoredImage> {
     data: processedData
   };
   
-  console.log('✅ [getImage] Image processed successfully, data length:', processedData.length);
   return processedImage;
 }
 
@@ -419,29 +377,19 @@ export async function getImageStats(): Promise<[number, number]> {
 }
 
 export function createDataURL(data: number[], mimeType: string): string {
-  console.log('🔄 [createDataURL] Creating data URL:', {
-    mimeType,
-    dataType: typeof data,
-    dataLength: Array.isArray(data) ? data.length : 'not array',
-    firstFewBytes: Array.isArray(data) ? data.slice(0, 10) : 'not array'
-  });
-  
   if (!Array.isArray(data)) {
-    console.error('❌ [createDataURL] Data is not an array:', typeof data);
+    console.error('Data is not an array:', typeof data);
     throw new Error('Image data must be an array of numbers');
   }
   
   const uint8Array = new Uint8Array(data);
-  console.log('✅ [createDataURL] Uint8Array created, length:', uint8Array.length);
   
   try {
     const base64 = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
     const dataUrl = `data:${mimeType};base64,${base64}`;
-    console.log('✅ [createDataURL] Data URL created successfully, length:', dataUrl.length);
-    console.log('📄 [createDataURL] Data URL preview:', dataUrl.substring(0, 100) + '...');
     return dataUrl;
   } catch (error) {
-    console.error('❌ [createDataURL] Failed to create base64:', error);
+    console.error('Failed to create base64:', error);
     throw error;
   }
 }
