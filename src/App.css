@@ -572,6 +572,14 @@ body {
   text-decoration: underline;
 }
 
+.message-assistant .message-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  margin: 0.5rem 0;
+  display: block;
+}
+
 .message-assistant .message-content table {
   border-collapse: collapse;
   margin: 0.5rem 0;
@@ -655,6 +663,14 @@ body {
 
 .message-user .message-content a:hover {
   text-decoration: none;
+}
+
+.message-user .message-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  margin: 0.5rem 0;
+  display: block;
 }
 
 .message-footer {
@@ -1986,11 +2002,13 @@ body {
   border-radius: 0.5rem;
   overflow: hidden;
   border: 1px solid #e0e0e0;
-  max-width: 300px;
+  max-width: 100%;
+  width: fit-content;
 }
 
 .message-image {
-  width: 100%;
+  max-width: min(100%, 500px);
+  width: auto;
   height: auto;
   display: block;
   max-height: 400px;
