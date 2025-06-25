@@ -20,7 +20,7 @@ import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
 import { DEFAULT_MODEL, MAX_TOOL_STEPS } from '../constants/ai';
-import { storeImage } from '../utils/images';
+import { storeImage, getImage, createDataURL } from '../utils/images';
 
 export function useMessageHandling() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
@@ -85,10 +85,42 @@ export function useMessageHandling() {
       const toolsObject = createToolsObject(activeTools);
       
       // Use SDK messages if available, otherwise create from scratch
-      const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];      
+      const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];
+      
+      // Create user message content with images if any
+      let messageContent: string | Array<any> = content;
+      
+      if (imageIds.length > 0) {
+        // Get the stored images and convert to data URLs
+        const imageDataUrls: string[] = [];
+        for (const imageId of imageIds) {
+          try {
+            const imageData = await getImage(imageId);
+            const dataUrl = createDataURL(imageData.data, imageData.mime_type);
+            imageDataUrls.push(dataUrl);
+          } catch (error) {
+            console.error('Failed to get image for AI:', error);
+          }
+        }
+        
+        // Create message content with images
+        const contentParts = [];
+        if (content.trim()) {
+          contentParts.push({ type: 'text', text: content });
+        }
+        imageDataUrls.forEach(dataUrl => {
+          contentParts.push({
+            type: 'image',
+            image: dataUrl
+          });
+        });
+        
+        messageContent = contentParts;
+      }
+      
       conversationMessages.push({
         role: 'user',
-        content
+        content: messageContent
       });
       
       // Track tool messages by ID to update them when results come in
