@@ -433,7 +433,8 @@ export async function saveConversations(conversations: Conversation[]): Promise<
       throw error;
     }
   } catch (error) {
-    showError(`Failed to save conversations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('saveConversations error details:', error);
+    showError(`Failed to save conversations: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

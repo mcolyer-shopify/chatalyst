@@ -556,10 +556,26 @@ export function stopImageCleanup() {
   }
 }
 
-// Initialize on module load
-initializeFromStorage().catch(error => {
-  console.error('Failed to initialize storage on module load:', error);
-}).finally(() => {
-  // Start periodic cleanup after initialization
-  startImageCleanup();
-});
+// Initialize when DOM is ready to avoid import timing issues
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeFromStorage().catch(error => {
+        console.error('Failed to initialize storage on module load:', error);
+      }).finally(() => {
+        // Start periodic cleanup after initialization
+        startImageCleanup();
+      });
+    });
+  } else {
+    // DOM already loaded
+    setTimeout(() => {
+      initializeFromStorage().catch(error => {
+        console.error('Failed to initialize storage on module load:', error);
+      }).finally(() => {
+        // Start periodic cleanup after initialization
+        startImageCleanup();
+      });
+    }, 0);
+  }
+}
