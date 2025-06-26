@@ -101,7 +101,7 @@ export function MessageForm({
         <button
           type="button"
           onClick={openFileDialog}
-          disabled={disabled && !isGenerating}
+          disabled={(disabled && !isGenerating) || isProcessingImages}
           class={`message-input-attach-button ${isProcessingImages ? 'processing' : ''}`}
           title={isProcessingImages ? 'Processing images...' : 'Attach image'}
           aria-label={isProcessingImages ? 'Processing images, please wait' : 'Attach image file'}
