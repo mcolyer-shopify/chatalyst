@@ -20,6 +20,10 @@ const CURRENT_MIGRATION_VERSION = 2;
 let db: Database | null = null;
 let dbInitPromise: Promise<Database> | null = null;
 
+// Mutex to prevent concurrent save operations
+let saveInProgress = false;
+const saveQueue: Array<() => void> = [];
+
 async function getDatabase(): Promise<Database> {
   if (db) {
     return db;
@@ -386,6 +390,26 @@ export async function loadConversations(): Promise<Conversation[]> {
 }
 
 export async function saveConversations(conversations: Conversation[]): Promise<void> {
+  // Wait for any ongoing save operations to complete
+  if (saveInProgress) {
+    await new Promise<void>((resolve) => {
+      saveQueue.push(resolve);
+    });
+  }
+  
+  saveInProgress = true;
+  
+  try {
+    await saveConversationsInternal(conversations);
+  } finally {
+    saveInProgress = false;
+    // Process queue
+    const next = saveQueue.shift();
+    if (next) next();
+  }
+}
+
+async function saveConversationsInternal(conversations: Conversation[]): Promise<void> {
   // Retry logic for database lock errors
   const maxRetries = 3;
   const retryDelay = 100; // ms
@@ -400,71 +424,79 @@ export async function saveConversations(conversations: Conversation[]): Promise<
       try {
         await database.execute('BEGIN IMMEDIATE TRANSACTION');
         inTransaction = true;
-      } catch (error) {
-        // If BEGIN fails, we might already be in a transaction
-        console.log('Transaction already active, proceeding without new transaction');
-      }
-    
-    try {
-      for (const conv of conversations) {
-        // Save conversation
-        await database.execute(
-          `INSERT OR REPLACE INTO conversations 
-           (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
-           VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
-          [
-            conv.id,
-            conv.title,
-            conv.model,
-            conv.enabledTools ? JSON.stringify(conv.enabledTools) : null,
-            conv.archived ? 1 : 0,
-            conv.archivedAt ? new Date(conv.archivedAt).toISOString() : null,
-            (conv.createdAt / 1000).toString(),
-            (conv.updatedAt / 1000).toString()
-          ]
-        );
-
-        // Clear existing messages
-        await database.execute(
-          'DELETE FROM conversation_messages WHERE conversation_id = ?',
-          [conv.id]
-        );
-
-        // Save messages
-        if (conv.messages) {
-          for (const message of conv.messages) {
-            await database.execute(
-              `INSERT INTO conversation_messages 
-               (id, conversation_id, role, content, timestamp, model, image_ids) 
-               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [
-                message.id,
-                conv.id,
-                message.role,
-                message.content,
-                message.timestamp,
-                (message as unknown as { model?: string }).model || null,
-                message.imageIds ? JSON.stringify(message.imageIds) : null
-              ]
-            );
-          }
+      } catch (transactionError) {
+        // If BEGIN fails, check if it's because we're already in a transaction
+        const errorMsg = transactionError instanceof Error ? transactionError.message : String(transactionError);
+        if (errorMsg.includes('cannot start a transaction within a transaction')) {
+          console.log('Transaction already active, proceeding without new transaction');
+        } else {
+          // If it's a different error (like database locked), let it propagate
+          throw transactionError;
         }
       }
       
-      if (inTransaction) {
-        await database.execute('COMMIT');
-      }
-      return; // Success, exit retry loop
-    } catch (error) {
-      if (inTransaction) {
-        try {
-          await database.execute('ROLLBACK');
-        } catch (rollbackError) {
-          console.error('Failed to rollback transaction:', rollbackError);
+      try {
+        for (const conv of conversations) {
+          // Save conversation
+          await database.execute(
+            `INSERT OR REPLACE INTO conversations 
+             (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+            [
+              conv.id,
+              conv.title,
+              conv.model,
+              conv.enabledTools ? JSON.stringify(conv.enabledTools) : null,
+              conv.archived ? 1 : 0,
+              conv.archivedAt ? new Date(conv.archivedAt).toISOString() : null,
+              (conv.createdAt / 1000).toString(),
+              (conv.updatedAt / 1000).toString()
+            ]
+          );
+
+          // Clear existing messages
+          await database.execute(
+            'DELETE FROM conversation_messages WHERE conversation_id = ?',
+            [conv.id]
+          );
+
+          // Save messages
+          if (conv.messages) {
+            for (const message of conv.messages) {
+              await database.execute(
+                `INSERT INTO conversation_messages 
+                 (id, conversation_id, role, content, timestamp, model, image_ids) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  message.id,
+                  conv.id,
+                  message.role,
+                  message.content,
+                  message.timestamp,
+                  (message as unknown as { model?: string }).model || null,
+                  message.imageIds ? JSON.stringify(message.imageIds) : null
+                ]
+              );
+            }
+          }
         }
+        
+        if (inTransaction) {
+          await database.execute('COMMIT');
+        }
+        return; // Success, exit retry loop
+        
+      } catch (operationError) {
+        if (inTransaction) {
+          try {
+            await database.execute('ROLLBACK');
+          } catch (rollbackError) {
+            console.error('Failed to rollback transaction:', rollbackError);
+          }
+        }
+        throw operationError;
       }
-      throw error;
-    }
+      
     } catch (error) {
       console.error(`saveConversations attempt ${attempt} failed:`, error);
       
@@ -472,12 +504,12 @@ export async function saveConversations(conversations: Conversation[]): Promise<
       if (error instanceof Error && 
           error.message.includes('database is locked') && 
           attempt < maxRetries) {
-        console.log(`Database locked, retrying in ${retryDelay}ms... (attempt ${attempt}/${maxRetries})`);
+        console.log(`Database locked, retrying in ${retryDelay * attempt}ms... (attempt ${attempt}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
         continue; // Retry
       }
       
-      // If not a lock error or out of retries, throw the error
+      // If not a lock error or out of retries, show error and throw
       showError(`Failed to save conversations: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
