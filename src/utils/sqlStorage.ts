@@ -1,5 +1,5 @@
 import Database from '@tauri-apps/plugin-sql';
-import type { Conversation, Settings, Model } from '../types';
+import type { Conversation, Settings, Model, Message } from '../types';
 import { showError } from '../store';
 
 // Storage keys for migration
@@ -59,7 +59,7 @@ class SqlStorage {
       const database = await getDatabase();
       
       // Check current migration version
-      let versionResult;
+      let versionResult: { value: string }[] = [];
       try {
         versionResult = await database.select<{ value: string }[]>(
           'SELECT value FROM migration_metadata WHERE key = ?',
@@ -342,9 +342,9 @@ export async function loadConversations(): Promise<Conversation[]> {
         [conv.id]
       );
       
-      const processedMessages = messages.map(msg => ({
+      const processedMessages: Message[] = messages.map(msg => ({
         id: msg.id,
-        role: msg.role,
+        role: msg.role as 'user' | 'assistant' | 'tool' | 'system',
         content: msg.content,
         timestamp: msg.timestamp,
         model: msg.model || undefined,
