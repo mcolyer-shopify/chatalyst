@@ -1,4 +1,4 @@
-import { useReducer, useRef, useEffect, useState } from 'preact/hooks';
+import { useReducer, useRef, useEffect } from 'preact/hooks';
 import { ErrorToast } from './ErrorToast';
 import { ImageAttachment } from './ImageAttachment';
 import { MessageForm } from './MessageForm';

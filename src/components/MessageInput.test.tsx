@@ -339,7 +339,7 @@ describe('MessageInput', () => {
       
       const textarea = screen.getByPlaceholderText(placeholder);
       
-      const pasteEvent = new Event('paste') as any;
+      const pasteEvent = new Event('paste') as ClipboardEvent;
       pasteEvent.clipboardData = {
         items: [{
           type: 'image/jpeg',

@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned up Rust backend by removing placeholder Tauri commands for image operations
 - Added debug logging for AI SDK stream processing to investigate external image URL handling issues
 
+### Fixed
+- Fixed linting errors: missing import for getImageFromClipboard, unused useState import, and TypeScript any type usage
+- Fixed Rust code formatting issues with trailing whitespace
+
 ### Added
 - Image attachment support in conversations
   - File picker button (📎) in message input toolbar for selecting images

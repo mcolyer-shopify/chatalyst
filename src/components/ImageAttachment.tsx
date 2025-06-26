@@ -1,5 +1,6 @@
 import { ImagePreview } from './ImagePreview';
 import type { PendingImage } from '../types';
+import { getImageFromClipboard } from '../utils/images';
 
 interface ImageAttachmentProps {
   pendingImages: PendingImage[];
