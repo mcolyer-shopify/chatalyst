@@ -18,12 +18,24 @@ const CURRENT_MIGRATION_VERSION = 2;
 
 // Database instance (cached)
 let db: Database | null = null;
+let dbInitPromise: Promise<Database> | null = null;
 
 async function getDatabase(): Promise<Database> {
-  if (!db) {
-    db = await Database.load('sqlite:chatalyst.db');
+  if (db) {
+    return db;
   }
-  return db;
+  
+  if (dbInitPromise) {
+    return await dbInitPromise;
+  }
+  
+  dbInitPromise = Database.load('sqlite:chatalyst.db');
+  try {
+    db = await dbInitPromise;
+    return db;
+  } finally {
+    dbInitPromise = null;
+  }
 }
 
 // SQL Storage implementation
@@ -374,19 +386,24 @@ export async function loadConversations(): Promise<Conversation[]> {
 }
 
 export async function saveConversations(conversations: Conversation[]): Promise<void> {
-  try {
-    await sqlStorage.init();
-    const database = await getDatabase();
-    
-    // Check if we're already in a transaction to avoid nested transactions
-    let inTransaction = false;
+  // Retry logic for database lock errors
+  const maxRetries = 3;
+  const retryDelay = 100; // ms
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await database.execute('BEGIN TRANSACTION');
-      inTransaction = true;
-    } catch (error) {
-      // If BEGIN fails, we might already be in a transaction
-      console.log('Transaction already active, proceeding without new transaction');
-    }
+      await sqlStorage.init();
+      const database = await getDatabase();
+      
+      // Check if we're already in a transaction to avoid nested transactions
+      let inTransaction = false;
+      try {
+        await database.execute('BEGIN IMMEDIATE TRANSACTION');
+        inTransaction = true;
+      } catch (error) {
+        // If BEGIN fails, we might already be in a transaction
+        console.log('Transaction already active, proceeding without new transaction');
+      }
     
     try {
       for (const conv of conversations) {
@@ -437,15 +454,33 @@ export async function saveConversations(conversations: Conversation[]): Promise<
       if (inTransaction) {
         await database.execute('COMMIT');
       }
+      return; // Success, exit retry loop
     } catch (error) {
       if (inTransaction) {
-        await database.execute('ROLLBACK');
+        try {
+          await database.execute('ROLLBACK');
+        } catch (rollbackError) {
+          console.error('Failed to rollback transaction:', rollbackError);
+        }
       }
       throw error;
     }
-  } catch (error) {
-    console.error('saveConversations error details:', error);
-    showError(`Failed to save conversations: ${error instanceof Error ? error.message : String(error)}`);
+    } catch (error) {
+      console.error(`saveConversations attempt ${attempt} failed:`, error);
+      
+      // Check if it's a database lock error and we have retries left
+      if (error instanceof Error && 
+          error.message.includes('database is locked') && 
+          attempt < maxRetries) {
+        console.log(`Database locked, retrying in ${retryDelay}ms... (attempt ${attempt}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        continue; // Retry
+      }
+      
+      // If not a lock error or out of retries, throw the error
+      showError(`Failed to save conversations: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
   }
 }
 
