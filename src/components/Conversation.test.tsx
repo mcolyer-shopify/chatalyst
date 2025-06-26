@@ -8,7 +8,7 @@ interface MessageProps {
 }
 
 interface MessageInputProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, images?: any[]) => void;
   disabled?: boolean;
 }
 
@@ -130,7 +130,7 @@ describe('Conversation', () => {
     const sendButton = screen.getByText('Send Test');
     sendButton.click();
     
-    expect(mockOnSendMessage).toHaveBeenCalledWith('test message');
+    expect(mockOnSendMessage).toHaveBeenCalledWith('test message', undefined);
   });
 
   it('renders messages in correct order', () => {

@@ -1,6 +1,7 @@
 import type { Message as MessageType } from '../types';
 import { marked } from 'marked';
 import { useEffect, useState } from 'preact/hooks';
+import { MessageImage } from './MessageImage';
 
 interface MessageProps {
   message: MessageType;
@@ -41,14 +42,12 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
   };
 
   const handleDelete = () => {
-    console.log('Delete button clicked', { messageId: message.id, onDelete: !!onDelete });
     if (onDelete) {
       setShowDeleteConfirm(true);
     }
   };
 
   const confirmDelete = () => {
-    console.log('User confirmed deletion, calling onDelete');
     setShowDeleteConfirm(false);
     if (onDelete) {
       onDelete();
@@ -56,8 +55,21 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
   };
 
   const cancelDelete = () => {
-    console.log('User cancelled deletion');
     setShowDeleteConfirm(false);
+  };
+
+  const renderImages = () => {
+    if (!message.imageIds || message.imageIds.length === 0) {
+      return null;
+    }
+
+    return (
+      <div class="message-images">
+        {message.imageIds.map((imageId) => (
+          <MessageImage key={imageId} imageId={imageId} />
+        ))}
+      </div>
+    );
   };
 
   const renderContent = () => {
@@ -107,10 +119,12 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
       });
       
       return (
-        <div 
-          class="message-content"
-          dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
-        />
+        <div class="message-content">
+          {renderImages()}
+          <div 
+            dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
+          />
+        </div>
       );
     }
     
@@ -124,10 +138,14 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
       });
       
       return (
-        <div 
-          class="message-content"
-          dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
-        />
+        <div class="message-content">
+          {renderImages()}
+          {message.content && (
+            <div 
+              dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
+            />
+          )}
+        </div>
       );
     }
     

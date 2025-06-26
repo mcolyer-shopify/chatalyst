@@ -18,6 +18,7 @@ export interface Message {
       arguments: string;
     };
   }>;
+  imageIds?: number[]; // References to stored images
 }
 
 export interface Conversation {
@@ -99,4 +100,35 @@ export interface Settings {
   apiKey: string;
   defaultModel: string;
   mcpConfiguration?: string; // JSON string of MCPConfiguration
+}
+
+// Image-related types
+export interface StoredImage {
+  id: number;
+  hash: string;
+  data: number[]; // Vec<u8> from Rust becomes number[] in TypeScript
+  mime_type: string;
+  size: number;
+  created_at: string;
+}
+
+export interface ImageMetadata {
+  id: number;
+  hash: string;
+  mime_type: string;
+  size: number;
+  created_at: string;
+}
+
+export interface ImageReference {
+  id: number;
+  image_id: number;
+  conversation_id: string;
+  created_at: string;
+}
+
+export interface PendingImage {
+  id: string; // Temporary ID for UI
+  file: File;
+  preview: string; // Data URL for preview
 }

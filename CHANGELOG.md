@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Refactored MessageInput component for better maintainability by extracting into focused sub-components
+- Enhanced image validation with magic number (file signature) checking for improved security
+- Removed production console statements for cleaner release builds while preserving console.error statements
+- Replaced querySelector with ref-based approach in ImagePreview component for better performance and React patterns
+- Consolidated useState calls in MessageInput with useReducer for better state management and reduced component complexity
+- Moved attachment button inline with message input for improved UX and cleaner layout
+- Fixed attachment button functionality and platform-specific keyboard shortcuts (Cmd+V on macOS, Ctrl+V elsewhere)
+- Improved image preview container layout with proper padding and full-width border
+- Cleaned up Rust backend by removing placeholder Tauri commands for image operations
+- Added debug logging for AI SDK stream processing to investigate external image URL handling issues
+
+### Fixed
+- Fixed linting errors: missing import for getImageFromClipboard, unused useState import, and TypeScript any type usage
+- Fixed Rust code formatting issues with trailing whitespace
+- Fixed TypeScript compilation errors with null safety and type assertions
+- Fixed test failures by properly disabling attachment button during image processing
+
 ### Added
+- Image attachment support in conversations
+  - File picker button (📎) in message input toolbar for selecting images
+  - Paste images directly from clipboard using Ctrl+V
+  - Image preview above input field with remove buttons
+  - Support for JPEG, PNG, GIF, and WebP formats up to 10MB per image
+  - Images displayed inline within messages
+  - Content-addressable storage using SHA-256 hashing to prevent duplicates
+  - SQLite database storage for efficient image management
+  - Automatic garbage collection removes orphaned images
+  - Images are automatically cleaned up when conversations are deleted
 - Keyboard shortcuts for conversation management
   - E: Archive the current conversation (when no input is focused)
   - T: Generate title for the current conversation (when no input is focused)

@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { streamText, generateText } from 'ai';
 import type { CoreMessage } from 'ai';
-import type { Message, Conversation } from '../types';
+import type { Message, Conversation, PendingImage } from '../types';
 import { 
   conversations,
   selectedConversation,
@@ -10,6 +10,7 @@ import {
   addMessage,
   updateMessage,
   clearError,
+  showError,
   updateConversationSDKMessages,
   updateConversationTitle,
   generatingTitleFor,
@@ -20,20 +21,37 @@ import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
 import { DEFAULT_MODEL, MAX_TOOL_STEPS } from '../constants/ai';
+import { storeImage, getImage, createDataURL } from '../utils/images';
 
 export function useMessageHandling() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, images?: PendingImage[]) => {
     const conversation = selectedConversation.value;
-    if (!conversation || !content.trim()) return;
+    if (!conversation || (!content.trim() && (!images || images.length === 0))) return;
+
+    // Upload images first if any
+    let imageIds: number[] = [];
+    if (images && images.length > 0) {
+      try {
+        const uploadPromises = images.map(image => storeImage(image.file, conversation.id));
+        const uploadedImages = await Promise.all(uploadPromises);
+        imageIds = uploadedImages.map(img => img.id);
+      } catch (error) {
+        console.error('Failed to upload images:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+        showError(`Failed to upload images: ${errorMsg}`);
+        return;
+      }
+    }
 
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      imageIds: imageIds.length > 0 ? imageIds : undefined
     };
 
     addMessage(conversation.id, userMessage);
@@ -69,10 +87,42 @@ export function useMessageHandling() {
       const toolsObject = createToolsObject(activeTools);
       
       // Use SDK messages if available, otherwise create from scratch
-      const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];      
+      const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];
+      
+      // Create user message content with images if any
+      let messageContent: string | Array<any> = content;
+      
+      if (imageIds.length > 0) {
+        // Get the stored images and convert to data URLs
+        const imageDataUrls: string[] = [];
+        for (const imageId of imageIds) {
+          try {
+            const imageData = await getImage(imageId);
+            const dataUrl = createDataURL(imageData.data, imageData.mime_type);
+            imageDataUrls.push(dataUrl);
+          } catch (error) {
+            console.error('Failed to get image for AI:', error);
+          }
+        }
+        
+        // Create message content with images
+        const contentParts = [];
+        if (content.trim()) {
+          contentParts.push({ type: 'text', text: content });
+        }
+        imageDataUrls.forEach(dataUrl => {
+          contentParts.push({
+            type: 'image',
+            image: dataUrl
+          });
+        });
+        
+        messageContent = contentParts;
+      }
+      
       conversationMessages.push({
         role: 'user',
-        content
+        content: messageContent
       });
       
       // Track tool messages by ID to update them when results come in
@@ -123,6 +173,10 @@ export function useMessageHandling() {
       // Stream the response
       
       for await (const part of result.fullStream) {
+        // Debug: Log all stream parts to identify image processing
+        if (part.type !== 'text-delta') {
+          console.log('[DEBUG] Stream part:', part.type, JSON.stringify(part, null, 2));
+        }
         console.log('[useMessageHandling] Stream part:', part);
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
@@ -351,6 +405,10 @@ Title:`,
       
       // Stream the response
       for await (const part of result.fullStream) {
+        // Debug: Log all stream parts to identify image processing
+        if (part.type !== 'text-delta') {
+          console.log('[DEBUG] Stream part:', part.type, JSON.stringify(part, null, 2));
+        }
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
           

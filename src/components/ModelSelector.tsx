@@ -137,14 +137,12 @@ export function ModelSelector({
     // Check if we recently failed to fetch from this URL
     const recentError = getFailedFetchError(effectiveBaseURL);
     if (recentError) {
-      console.log('[ModelSelector] Recent failed fetch, showing cached error:', recentError);
       setError(recentError);
       return;
     }
 
     // Check if we're already loading to prevent duplicate requests
     if (isLoading) {
-      console.log('[ModelSelector] Already loading models, skipping duplicate request');
       return;
     }
 
@@ -160,10 +158,6 @@ export function ModelSelector({
     setIsLoading(true);
     setError(null);
     
-    console.log('[ModelSelector] Provider:', provider);
-    console.log('[ModelSelector] Fetching models from:', `${effectiveBaseURL}/models`);
-    console.log('[ModelSelector] Using API key:', effectiveApiKey ? 'present' : 'missing');
-    
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
@@ -177,8 +171,6 @@ export function ModelSelector({
       const response = await fetch(`${effectiveBaseURL}/models`, {
         headers
       });
-
-      console.log('[ModelSelector] Response status:', response.status);
       
       if (!response.ok) {
         let errorText = '';
@@ -187,7 +179,7 @@ export function ModelSelector({
         } catch {
           errorText = 'Unable to read error response';
         }
-        console.error('[ModelSelector] Error response:', errorText);
+        console.error('Error response:', errorText);
         
         if (response.status >= 500) {
           throw new Error(`Server error (${response.status}): The API server is experiencing issues. Please try again later.`);
@@ -201,7 +193,6 @@ export function ModelSelector({
       }
 
       const data = await response.json();
-      console.log('[ModelSelector] Raw response data:', data);
       
       // Handle different response formats based on provider
       let fetchedModels: Model[] = [];
@@ -224,8 +215,6 @@ export function ModelSelector({
           };
         }) || [];
       }
-
-      console.log('[ModelSelector] Parsed models count:', fetchedModels.length);
       
       // Sort models alphabetically for better UX
       fetchedModels.sort((a, b) => a.name.localeCompare(b.name));
@@ -243,7 +232,7 @@ export function ModelSelector({
         }
       }
     } catch (err) {
-      console.error('[ModelSelector] Failed to fetch models:', err);
+      console.error('Failed to fetch models:', err);
       let errorMessage: string;
       if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
         errorMessage = 'Network error: Unable to connect to API. Check your Base URL and internet connection.';
