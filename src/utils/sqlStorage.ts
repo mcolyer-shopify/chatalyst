@@ -378,8 +378,15 @@ export async function saveConversations(conversations: Conversation[]): Promise<
     await sqlStorage.init();
     const database = await getDatabase();
     
-    // Use transaction for consistency
-    await database.execute('BEGIN TRANSACTION');
+    // Check if we're already in a transaction to avoid nested transactions
+    let inTransaction = false;
+    try {
+      await database.execute('BEGIN TRANSACTION');
+      inTransaction = true;
+    } catch (error) {
+      // If BEGIN fails, we might already be in a transaction
+      console.log('Transaction already active, proceeding without new transaction');
+    }
     
     try {
       for (const conv of conversations) {
@@ -427,9 +434,13 @@ export async function saveConversations(conversations: Conversation[]): Promise<
         }
       }
       
-      await database.execute('COMMIT');
+      if (inTransaction) {
+        await database.execute('COMMIT');
+      }
     } catch (error) {
-      await database.execute('ROLLBACK');
+      if (inTransaction) {
+        await database.execute('ROLLBACK');
+      }
       throw error;
     }
   } catch (error) {
