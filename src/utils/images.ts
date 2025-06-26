@@ -37,7 +37,7 @@ let db: Database | null = null;
 
 async function getDatabase(): Promise<Database> {
   if (!db) {
-    db = await Database.load('sqlite:images.db');
+    db = await Database.load('sqlite:chatalyst.db');
   }
   return db;
 }

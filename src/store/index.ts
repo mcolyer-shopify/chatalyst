@@ -18,7 +18,7 @@ import {
   saveModelsCache,
   loadFavoriteModels,
   saveFavoriteModels
-} from '../utils/enhancedStorage';
+} from '../utils/sqlStorage';
 import { deleteConversationImages, cleanupOrphanedImages } from '../utils/images';
 
 // Default settings
