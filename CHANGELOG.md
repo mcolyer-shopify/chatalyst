@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **BREAKING**: Migrated from tauri-store to SQL database for all application data storage
+  - Renamed database from `images.db` to `chatalyst.db` for unified data storage
+  - All conversations, settings, models cache, and favorites now stored in SQL tables
+  - Automatic data migration preserves existing user data during upgrade
+  - Improved performance and data integrity with proper database constraints
 - Refactored MessageInput component for better maintainability by extracting into focused sub-components
 - Enhanced image validation with magic number (file signature) checking for improved security
 - Removed production console statements for cleaner release builds while preserving console.error statements
