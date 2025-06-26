@@ -33,7 +33,22 @@ async function getDatabase(): Promise<Database> {
     return await dbInitPromise;
   }
   
-  dbInitPromise = Database.load('sqlite:chatalyst.db');
+  dbInitPromise = (async () => {
+    const database = await Database.load('sqlite:chatalyst.db');
+    
+    // Enable WAL mode for better concurrency
+    try {
+      await database.execute('PRAGMA journal_mode=WAL;');
+      await database.execute('PRAGMA synchronous=NORMAL;');
+      await database.execute('PRAGMA cache_size=1000;');
+      await database.execute('PRAGMA temp_store=memory;');
+    } catch (pragmaError) {
+      console.warn('Could not set database pragmas:', pragmaError);
+    }
+    
+    return database;
+  })();
+  
   try {
     db = await dbInitPromise;
     return db;
@@ -46,6 +61,7 @@ async function getDatabase(): Promise<Database> {
 class SqlStorage {
   private isInitialized = false;
   private initPromise: Promise<void> | null = null;
+  private migrationInProgress = false;
 
   // Initialize the storage
   async init(): Promise<void> {
@@ -71,6 +87,7 @@ class SqlStorage {
 
   // Migration logic to move data from tauri-store to SQL
   private async runMigration(): Promise<void> {
+    this.migrationInProgress = true;
     try {
       const database = await getDatabase();
       
@@ -120,6 +137,8 @@ class SqlStorage {
     } catch (error) {
       console.error('Migration failed:', error);
       showError(`Storage migration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      this.migrationInProgress = false;
     }
   }
 
@@ -410,9 +429,15 @@ export async function saveConversations(conversations: Conversation[]): Promise<
 }
 
 async function saveConversationsInternal(conversations: Conversation[]): Promise<void> {
+  // Wait for migration to complete
+  while ((sqlStorage as any).migrationInProgress) {
+    console.log('Waiting for migration to complete before saving...');
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
   // Retry logic for database lock errors
-  const maxRetries = 3;
-  const retryDelay = 100; // ms
+  const maxRetries = 5; // Increased retries
+  const retryDelay = 200; // Increased delay
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -422,7 +447,11 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
       // Check if we're already in a transaction to avoid nested transactions
       let inTransaction = false;
       try {
-        await database.execute('BEGIN IMMEDIATE TRANSACTION');
+        // Add timeout for transaction start
+        await Promise.race([
+          database.execute('BEGIN IMMEDIATE TRANSACTION'),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Transaction start timeout')), 5000))
+        ]);
         inTransaction = true;
       } catch (transactionError) {
         // If BEGIN fails, check if it's because we're already in a transaction
