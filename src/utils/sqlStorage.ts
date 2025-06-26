@@ -1,7 +1,6 @@
 import Database from '@tauri-apps/plugin-sql';
 import type { Conversation, Settings, Model } from '../types';
 import { showError } from '../store';
-import { load, type Store } from '@tauri-apps/plugin-store';
 
 // Storage keys for migration
 const STORAGE_KEYS = {
@@ -66,7 +65,7 @@ class SqlStorage {
           'SELECT value FROM migration_metadata WHERE key = ?',
           ['migration_version']
         );
-      } catch (error) {
+      } catch {
         console.log('migration_metadata table does not exist yet, this is expected for first run');
         versionResult = [];
       }
@@ -81,32 +80,18 @@ class SqlStorage {
 
       console.log('Running storage migration from tauri-store to SQL...');
 
-      // Check if localStorage migration has already been completed
-      const localStorageMigrated = localStorage.getItem('chatalyst_localStorage_migrated');
-      
       // Check if there's data in localStorage that needs direct migration to SQL
       const hasLocalStorage = Object.values(STORAGE_KEYS).some(key => 
         localStorage.getItem(key) !== null
       );
       
-      if (hasLocalStorage && !localStorageMigrated) {
+      if (hasLocalStorage && currentVersion === 0) {
         console.log('Found localStorage data, migrating directly to SQL');
         await this.migrateFromLocalStorageToSQL();
-        // Mark localStorage migration as completed
-        localStorage.setItem('chatalyst_localStorage_migrated', 'true');
-        console.log('Set localStorage migration flag');
-      } else if (localStorageMigrated) {
-        console.log('localStorage migration already completed, skipping');
+      } else if (hasLocalStorage) {
+        console.log('localStorage data found but migration already completed');
       } else {
-        // Try to load data from tauri-store if it exists
-        let store: Store | null = null;
-        try {
-          store = await load('chatalyst-store.json', { autoSave: false });
-          console.log('Found existing tauri-store, will migrate data');
-          await this.migrateFromTauriStore(store);
-        } catch (error) {
-          console.log('No existing data found, continuing with fresh installation');
-        }
+        console.log('No localStorage data found, skipping migration');
       }
 
       // Set migration version
@@ -164,7 +149,7 @@ class SqlStorage {
                   message.role,
                   message.content,
                   message.timestamp,
-                  (message as any).model || null,
+                  (message as unknown as { model?: string }).model || null,
                   message.imageIds ? JSON.stringify(message.imageIds) : null
                 ]
               );
@@ -241,147 +226,6 @@ class SqlStorage {
     }
   }
 
-  // v1 migration: localStorage to tauri-store (preserve existing logic)
-  private async migrateFromLocalStorage(store: Store): Promise<void> {
-    console.log('Running v1 migration: localStorage to tauri-store...');
-    
-    for (const [key, storageKey] of Object.entries(STORAGE_KEYS)) {
-      if (key === 'migrationVersion') continue;
-
-      try {
-        const localData = localStorage.getItem(storageKey);
-        if (localData !== null) {
-          const storeData = await store.get(storageKey);
-          if (storeData === null) {
-            let parsedData;
-            try {
-              parsedData = JSON.parse(localData);
-            } catch {
-              parsedData = localData;
-            }
-            await store.set(storageKey, parsedData);
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to migrate ${storageKey} from localStorage:`, error);
-      }
-    }
-  }
-
-  // v2 migration: tauri-store to SQL
-  private async migrateFromTauriStore(store: Store): Promise<void> {
-    console.log('Running v2 migration: tauri-store to SQL...');
-    const database = await getDatabase();
-
-    try {
-      // Migrate conversations
-      const conversations = await store.get(STORAGE_KEYS.conversations) as Conversation[] | null;
-      console.log('Found conversations in store:', conversations ? conversations.length : 0);
-      if (conversations) {
-        console.log('Sample conversation:', conversations[0]);
-        for (const conv of conversations) {
-          await database.execute(
-            `INSERT OR REPLACE INTO conversations 
-             (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
-            [
-              conv.id,
-              conv.title,
-              conv.model,
-              conv.enabledTools ? JSON.stringify(conv.enabledTools) : null,
-              conv.archived ? 1 : 0,
-              conv.archivedAt ? new Date(conv.archivedAt).toISOString() : null,
-              (conv.createdAt / 1000).toString(),
-              (conv.updatedAt / 1000).toString()
-            ]
-          );
-
-          // Migrate messages for this conversation
-          if (conv.messages) {
-            for (const message of conv.messages) {
-              await database.execute(
-                `INSERT OR REPLACE INTO conversation_messages 
-                 (id, conversation_id, role, content, timestamp, model, image_ids) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  message.id,
-                  conv.id,
-                  message.role,
-                  message.content,
-                  message.timestamp,
-                  (message as any).model || null,
-                  message.imageIds ? JSON.stringify(message.imageIds) : null
-                ]
-              );
-            }
-          }
-        }
-      }
-
-      // Migrate selected conversation
-      const selectedConversation = await store.get(STORAGE_KEYS.selectedConversation) as string | null;
-      if (selectedConversation) {
-        await database.execute(
-          'INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, datetime("now"))',
-          ['selected_conversation', selectedConversation]
-        );
-      }
-
-      // Migrate settings
-      const settings = await store.get(STORAGE_KEYS.settings) as Settings | null;
-      if (settings) {
-        await database.execute(
-          'INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, datetime("now"))',
-          ['app_settings', JSON.stringify(settings)]
-        );
-      }
-
-      // Migrate models cache
-      const modelsCache = await store.get(STORAGE_KEYS.modelsCache) as Record<string, { models: Model[]; timestamp: number }> | null;
-      if (modelsCache) {
-        for (const [providerKey, cacheData] of Object.entries(modelsCache)) {
-          await database.execute(
-            'INSERT OR REPLACE INTO models_cache (provider_key, models_data, timestamp, updated_at) VALUES (?, ?, ?, datetime("now"))',
-            [providerKey, JSON.stringify(cacheData.models), cacheData.timestamp]
-          );
-        }
-      }
-
-      // Migrate favorite models
-      const favoriteModels = await store.get(STORAGE_KEYS.favoriteModels) as Record<string, string[]> | null;
-      if (favoriteModels) {
-        for (const [providerKey, models] of Object.entries(favoriteModels)) {
-          // Clear existing favorites for this provider
-          await database.execute(
-            'DELETE FROM favorite_models WHERE provider_key = ?',
-            [providerKey]
-          );
-          
-          // Insert new favorites
-          for (const modelId of models) {
-            await database.execute(
-              'INSERT OR IGNORE INTO favorite_models (provider_key, model_id) VALUES (?, ?)',
-              [providerKey, modelId]
-            );
-          }
-        }
-      }
-
-      // Migrate window geometry
-      const windowGeometry = await store.get(STORAGE_KEYS.windowGeometry) as { width: number; height: number; x: number; y: number } | null;
-      if (windowGeometry) {
-        await database.execute(
-          'INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, datetime("now"))',
-          ['window_geometry', JSON.stringify(windowGeometry)]
-        );
-      }
-
-      console.log('Successfully migrated data from tauri-store to SQL');
-    } catch (error) {
-      console.error('Failed to migrate from tauri-store:', error);
-      throw error;
-    }
-  }
 
   // Get setting by key
   async getSetting(key: string): Promise<string | null> {
@@ -441,10 +285,6 @@ export async function debugMigration(): Promise<void> {
     await database.execute('DELETE FROM migration_metadata WHERE key = ?', ['migration_version']);
     console.log('Reset migration version, will re-run on next init');
     
-    // Reset localStorage migration flag
-    localStorage.removeItem('chatalyst_localStorage_migrated');
-    console.log('Reset localStorage migration flag');
-    
     // Re-run migration
     await sqlStorage.init();
   } catch (error) {
@@ -471,7 +311,16 @@ export async function loadConversations(): Promise<Conversation[]> {
     const database = await getDatabase();
     
     // Load conversations first
-    const conversations = await database.select<any[]>(
+    const conversations = await database.select<{
+      id: string;
+      title: string;
+      model: string;
+      enabled_tools: string | null;
+      archived: number;
+      archived_at: string | null;
+      created_at: string;
+      updated_at: string;
+    }[]>(
       'SELECT * FROM conversations ORDER BY updated_at DESC'
     );
     
@@ -480,7 +329,15 @@ export async function loadConversations(): Promise<Conversation[]> {
     // Load messages for each conversation separately to avoid complex GROUP_CONCAT
     const result: Conversation[] = [];
     for (const conv of conversations) {
-      const messages = await database.select<any[]>(
+      const messages = await database.select<{
+        id: string;
+        conversation_id: string;
+        role: string;
+        content: string;
+        timestamp: number;
+        model: string | null;
+        image_ids: string | null;
+      }[]>(
         'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY timestamp ASC',
         [conv.id]
       );
@@ -562,7 +419,7 @@ export async function saveConversations(conversations: Conversation[]): Promise<
                 message.role,
                 message.content,
                 message.timestamp,
-                (message as any).model || null,
+                (message as unknown as { model?: string }).model || null,
                 message.imageIds ? JSON.stringify(message.imageIds) : null
               ]
             );
@@ -624,7 +481,11 @@ export async function loadModelsCache(): Promise<Record<string, { models: Model[
     await sqlStorage.init();
     const database = await getDatabase();
     
-    const cacheEntries = await database.select<{ provider_key: string; models_data: string; timestamp: number }[]>(
+    const cacheEntries = await database.select<{
+      provider_key: string;
+      models_data: string;
+      timestamp: number;
+    }[]>(
       'SELECT provider_key, models_data, timestamp FROM models_cache'
     );
     
