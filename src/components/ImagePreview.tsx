@@ -31,7 +31,7 @@ export function ImagePreview({ images, onRemove }: ImagePreviewProps): JSX.Eleme
       // Focus next button if available, otherwise previous
       const nextIndex = index < buttons.length - 1 ? index : index - 1;
       if (nextIndex >= 0 && buttons[nextIndex]) {
-        setTimeout(() => buttons[nextIndex].focus(), 0);
+        setTimeout(() => buttons[nextIndex]?.focus(), 0);
       }
       break;
     }
@@ -39,14 +39,14 @@ export function ImagePreview({ images, onRemove }: ImagePreviewProps): JSX.Eleme
     case 'ArrowLeft':
       e.preventDefault();
       if (index > 0 && buttons[index - 1]) {
-        buttons[index - 1].focus();
+        buttons[index - 1]?.focus();
       }
       break;
       
     case 'ArrowRight':
       e.preventDefault();
       if (index < buttons.length - 1 && buttons[index + 1]) {
-        buttons[index + 1].focus();
+        buttons[index + 1]?.focus();
       }
       break;
       
@@ -60,7 +60,7 @@ export function ImagePreview({ images, onRemove }: ImagePreviewProps): JSX.Eleme
     case 'End':
       e.preventDefault();
       if (buttons[buttons.length - 1]) {
-        buttons[buttons.length - 1].focus();
+        buttons[buttons.length - 1]?.focus();
       }
       break;
     }

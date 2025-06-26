@@ -225,7 +225,7 @@ export async function storeImage(
       'INSERT INTO images (hash, data, mime_type, size) VALUES (?, ?, ?, ?)',
       [hash, dataArray, file.type, file.size]
     );
-    imageId = result.lastInsertId;
+    imageId = result.lastInsertId ?? 0;
   }
   
   // Add reference to conversation (ignore if already exists)
@@ -274,13 +274,13 @@ export async function getImage(imageId: number): Promise<StoredImage> {
       }
     } catch (error) {
       console.error('Failed to parse JSON array:', error);
-      console.error('First 100 chars of invalid JSON:', image.data.substring(0, 100));
+      console.error('First 100 chars of invalid JSON:', String(image.data).substring(0, 100));
       throw new Error('Failed to parse image data');
     }
   } else if (Array.isArray(image.data)) {
     processedData = image.data;
   } else {
-    console.error('Unexpected data format:', typeof image.data, image.data?.constructor?.name);
+    console.error('Unexpected data format:', typeof image.data, (image.data as any)?.constructor?.name);
     throw new Error(`Unsupported image data format: ${typeof image.data}`);
   }
   

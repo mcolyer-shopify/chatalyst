@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed linting errors: missing import for getImageFromClipboard, unused useState import, and TypeScript any type usage
 - Fixed Rust code formatting issues with trailing whitespace
+- Fixed TypeScript compilation errors with null safety and type assertions
 
 ### Added
 - Image attachment support in conversations
