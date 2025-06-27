@@ -12,7 +12,11 @@ interface MessageProps {
 
 export function Message({ message, collapsed = true, onRetry, onDelete }: MessageProps) {
   const [animationFrame, setAnimationFrame] = useState(0);
-  const [isCollapsed, setIsCollapsed] = useState(message.role === 'tool' ? true : collapsed);
+  // Tool messages should be expanded when they have results, collapsed when just calling
+  const initiallyCollapsed = message.role === 'tool' 
+    ? !message.toolResult || message.content === 'Calling tool...'
+    : collapsed;
+  const [isCollapsed, setIsCollapsed] = useState(initiallyCollapsed);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -27,6 +31,13 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
   useEffect(() => {
     setIsCollapsed(collapsed);
   }, [collapsed]);
+
+  // Auto-expand tool messages when they get results
+  useEffect(() => {
+    if (message.role === 'tool' && message.toolResult && message.content !== 'Calling tool...') {
+      setIsCollapsed(false);
+    }
+  }, [message.toolResult, message.content, message.role]);
 
   const getLoadingAnimation = () => {
     const frames = ['⠋', '⠙', '⠹', '⠸'];
