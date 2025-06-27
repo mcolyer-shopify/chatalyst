@@ -120,15 +120,6 @@ async function initializeFromStorage() {
   isInitialized = true;
 }
 
-// Auto-save to enhanced storage (only after initialization)
-// DISABLED: This causes full DB sync on every change which is inefficient
-// effect(() => {
-//   // Always access .value to ensure subscription
-//   const conversationsData = conversations.value;
-//   if (isInitialized) {
-//     saveConversations(conversationsData);
-//   }
-// });
 
 effect(() => {
   // Always access .value to ensure subscription
