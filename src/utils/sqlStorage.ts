@@ -16,8 +16,12 @@ const STORAGE_KEYS = {
 // Current migration version
 const CURRENT_MIGRATION_VERSION = 2;
 
-// Debug logging helper
+// Debug logging helper (disabled in production)
+const DEBUG_LOGGING = false; // Set to true to enable debug logging
+
 function debugLog(operation: string, details?: any) {
+  if (!DEBUG_LOGGING) return;
+  
   const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
   if (details !== undefined) {
     console.log(`[${timestamp}] SQL_DEBUG: ${operation}`, details);
@@ -61,7 +65,7 @@ async function getDatabase(): Promise<Database> {
       debugLog('DATABASE: SQLite pragmas configured successfully');
     } catch (pragmaError) {
       debugLog('DATABASE: Failed to set pragmas', pragmaError);
-      console.warn('Could not set database pragmas:', pragmaError);
+      // Pragmas are optional optimizations, no need to warn
     }
     
     debugLog('DATABASE: Database initialization complete');
@@ -134,22 +138,19 @@ class SqlStorage {
         debugLog('MIGRATION: Found migration_metadata table');
       } catch {
         debugLog('MIGRATION: migration_metadata table does not exist yet (first run)');
-        console.log('migration_metadata table does not exist yet, this is expected for first run');
+        // This is expected for first run, no need to log
         versionResult = [];
       }
       
       const currentVersion = versionResult.length > 0 ? parseInt(versionResult[0].value) : 0;
       debugLog('MIGRATION: Current version', { currentVersion, targetVersion: CURRENT_MIGRATION_VERSION });
-      console.log('Current migration version:', currentVersion);
       
       if (currentVersion >= CURRENT_MIGRATION_VERSION) {
         debugLog('MIGRATION: Already up to date, skipping');
-        console.log('Already migrated to latest version, skipping migration');
         return; // Already migrated
       }
 
       debugLog('MIGRATION: Migration needed, starting process');
-      console.log('Running storage migration from tauri-store to SQL...');
 
       // Check if there's data in localStorage that needs direct migration to SQL
       debugLog('MIGRATION: Checking for localStorage data');
@@ -160,15 +161,13 @@ class SqlStorage {
       
       if (hasLocalStorage && currentVersion === 0) {
         debugLog('MIGRATION: Found localStorage data, starting direct migration to SQL');
-        console.log('Found localStorage data, migrating directly to SQL');
+        console.log('Migrating data to SQL storage...');
         await this.migrateFromLocalStorageToSQL();
         debugLog('MIGRATION: localStorage to SQL migration completed');
       } else if (hasLocalStorage) {
         debugLog('MIGRATION: localStorage data found but migration already completed');
-        console.log('localStorage data found but migration already completed');
       } else {
         debugLog('MIGRATION: No localStorage data found');
-        console.log('No localStorage data found, skipping migration');
       }
 
       // Set migration version
@@ -179,7 +178,6 @@ class SqlStorage {
       );
 
       debugLog('MIGRATION: Migration completed successfully');
-      console.log(`Successfully migrated to version ${CURRENT_MIGRATION_VERSION}`);
     } catch (error) {
       debugLog('MIGRATION: Migration failed', error);
       console.error('Migration failed:', error);
@@ -192,7 +190,6 @@ class SqlStorage {
 
   // Direct migration: localStorage to SQL (skipping tauri-store)
   async migrateFromLocalStorageToSQL(): Promise<void> {
-    console.log('Running direct migration: localStorage to SQL...');
     const database = await getDatabase();
 
     try {
@@ -200,7 +197,6 @@ class SqlStorage {
       const conversationsData = localStorage.getItem(STORAGE_KEYS.conversations);
       if (conversationsData) {
         const conversations = JSON.parse(conversationsData) as Conversation[];
-        console.log('Found conversations in localStorage:', conversations.length);
         
         for (const conv of conversations) {
           await database.execute(
@@ -239,7 +235,6 @@ class SqlStorage {
             }
           }
         }
-        console.log(`Migrated ${conversations.length} conversations from localStorage`);
       }
 
       // Migrate selected conversation
@@ -301,8 +296,6 @@ class SqlStorage {
           ['window_geometry', windowGeometryData]
         );
       }
-
-      console.log('Successfully migrated data from localStorage to SQL');
     } catch (error) {
       console.error('Failed to migrate from localStorage to SQL:', error);
       throw error;
@@ -366,7 +359,6 @@ export async function debugMigration(): Promise<void> {
     
     // Reset migration version to force re-run
     await database.execute('DELETE FROM migration_metadata WHERE key = ?', ['migration_version']);
-    console.log('Reset migration version, will re-run on next init');
     
     // Re-run migration
     await sqlStorage.init();
@@ -378,10 +370,8 @@ export async function debugMigration(): Promise<void> {
 // Force localStorage migration right now
 export async function forceLocalStorageMigration(): Promise<void> {
   try {
-    console.log('Forcing localStorage migration...');
     await sqlStorage.migrateFromLocalStorageToSQL();
     localStorage.setItem('chatalyst_localStorage_migrated', 'true');
-    console.log('localStorage migration completed');
   } catch (error) {
     console.error('Force migration failed:', error);
   }
@@ -501,7 +491,6 @@ export async function loadConversations(): Promise<Conversation[]> {
     );
     
     debugLog('LOAD_CONVERSATIONS: Query complete', { conversationCount: conversations.length });
-    console.log(`Found ${conversations.length} conversations in database`);
     
     // Load messages for each conversation separately to avoid complex GROUP_CONCAT
     const result: Conversation[] = [];
@@ -545,7 +534,6 @@ export async function loadConversations(): Promise<Conversation[]> {
     }
     
     debugLog('LOAD_CONVERSATIONS: All conversations loaded successfully', { totalCount: result.length });
-    console.log(`Loaded ${result.length} conversations with messages`);
     return result;
   } catch (error) {
     debugLog('LOAD_CONVERSATIONS: Failed to load conversations', error);
@@ -623,7 +611,6 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
   // Wait for migration to complete
   while ((sqlStorage as any).migrationInProgress) {
     debugLog('SAVE_INTERNAL: Migration in progress, waiting...');
-    console.log('Waiting for migration to complete before saving...');
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   debugLog('SAVE_INTERNAL: Migration check passed, proceeding');
@@ -657,7 +644,6 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
         debugLog('SAVE_INTERNAL: Transaction start failed', { errorMsg });
         if (errorMsg.includes('cannot start a transaction within a transaction')) {
           debugLog('SAVE_INTERNAL: Already in transaction, proceeding without new transaction');
-          console.log('Transaction already active, proceeding without new transaction');
         } else {
           // If it's a different error (like database locked), let it propagate
           debugLog('SAVE_INTERNAL: Transaction error, propagating', transactionError);
@@ -767,14 +753,12 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
       
     } catch (error) {
       debugLog('SAVE_INTERNAL: Attempt failed', { attempt, error });
-      console.error(`saveConversations attempt ${attempt} failed:`, error);
       
       // Check if it's a database lock error and we have retries left
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('database is locked') && attempt < maxRetries) {
         const waitTime = retryDelay * attempt;
         debugLog('SAVE_INTERNAL: Database locked, scheduling retry', { attempt, maxRetries, waitTime });
-        console.log(`Database locked, retrying in ${waitTime}ms... (attempt ${attempt}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         continue; // Retry
       }
