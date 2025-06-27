@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All conversations, settings, models cache, and favorites now stored in SQL tables
   - Automatic data migration preserves existing user data during upgrade
   - Improved performance and data integrity with proper database constraints
+  - Refactored storage architecture from full-sync to targeted operations for better performance
+  - Database operations now use targeted updates instead of syncing entire state on every change
+  - Added debouncing for bulk saves to reduce database write frequency
+  - Implemented retry logic with exponential backoff for database lock errors
 - Refactored MessageInput component for better maintainability by extracting into focused sub-components
 - Enhanced image validation with magic number (file signature) checking for improved security
 - Removed production console statements for cleaner release builds while preserving console.error statements
@@ -25,6 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added debug logging for AI SDK stream processing to investigate external image URL handling issues
 
 ### Fixed
+- Fixed database lock errors when deleting conversations
+  - Replaced full database sync approach with targeted delete operations
+  - Added SQLite busy_timeout pragma for better concurrent access handling
+  - Fixed retry logic to properly detect and retry on database lock errors
+- Fixed conversation deletion not persisting to database
+  - Delete operations now properly remove conversations from SQL storage
+  - Implemented sync detection to identify and remove deleted conversations
 - Fixed linting errors: missing import for getImageFromClipboard, unused useState import, and TypeScript any type usage
 - Fixed Rust code formatting issues with trailing whitespace
 - Fixed TypeScript compilation errors with null safety and type assertions

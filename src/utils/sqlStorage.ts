@@ -19,7 +19,11 @@ const CURRENT_MIGRATION_VERSION = 2;
 // Debug logging helper
 function debugLog(operation: string, details?: any) {
   const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  console.log(`[${timestamp}] SQL_DEBUG: ${operation}`, details || '');
+  if (details !== undefined) {
+    console.log(`[${timestamp}] SQL_DEBUG: ${operation}`, details);
+  } else {
+    console.log(`[${timestamp}] SQL_DEBUG: ${operation}`);
+  }
 }
 
 // Database instance (cached)
@@ -53,6 +57,7 @@ async function getDatabase(): Promise<Database> {
       await database.execute('PRAGMA synchronous=NORMAL;');
       await database.execute('PRAGMA cache_size=1000;');
       await database.execute('PRAGMA temp_store=memory;');
+      await database.execute('PRAGMA busy_timeout=5000;'); // 5 second timeout for locks
       debugLog('DATABASE: SQLite pragmas configured successfully');
     } catch (pragmaError) {
       debugLog('DATABASE: Failed to set pragmas', pragmaError);
@@ -382,6 +387,95 @@ export async function forceLocalStorageMigration(): Promise<void> {
   }
 }
 
+// Targeted operation: Delete a specific conversation
+export async function deleteConversationFromDB(conversationId: string): Promise<void> {
+  debugLog('DELETE_CONVERSATION: Starting targeted delete', { conversationId });
+  
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    // Single delete operation - messages cascade delete automatically
+    await database.execute(
+      'DELETE FROM conversations WHERE id = ?',
+      [conversationId]
+    );
+    
+    debugLog('DELETE_CONVERSATION: Successfully deleted conversation', { conversationId });
+  } catch (error) {
+    debugLog('DELETE_CONVERSATION: Failed to delete', { conversationId, error });
+    throw error;
+  }
+}
+
+// Targeted operation: Save a single conversation (update or insert)
+export async function saveSingleConversation(conversation: Conversation): Promise<void> {
+  debugLog('SAVE_SINGLE_CONVERSATION: Starting targeted save', { conversationId: conversation.id });
+  
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    // Use a transaction for consistency
+    await database.execute('BEGIN TRANSACTION');
+    
+    try {
+      // Update or insert the conversation
+      await database.execute(
+        `INSERT OR REPLACE INTO conversations 
+         (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+        [
+          conversation.id,
+          conversation.title,
+          conversation.model,
+          conversation.enabledTools ? JSON.stringify(conversation.enabledTools) : null,
+          conversation.archived ? 1 : 0,
+          conversation.archivedAt ? new Date(conversation.archivedAt).toISOString() : null,
+          (conversation.createdAt / 1000).toString(),
+          (conversation.updatedAt / 1000).toString()
+        ]
+      );
+      
+      // Only update messages if they're provided
+      if (conversation.messages) {
+        // Delete existing messages
+        await database.execute(
+          'DELETE FROM conversation_messages WHERE conversation_id = ?',
+          [conversation.id]
+        );
+        
+        // Insert new messages
+        for (const message of conversation.messages) {
+          await database.execute(
+            `INSERT INTO conversation_messages 
+             (id, conversation_id, role, content, timestamp, model, image_ids) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              message.id,
+              conversation.id,
+              message.role,
+              message.content,
+              message.timestamp,
+              (message as unknown as { model?: string }).model || null,
+              message.imageIds ? JSON.stringify(message.imageIds) : null
+            ]
+          );
+        }
+      }
+      
+      await database.execute('COMMIT');
+      debugLog('SAVE_SINGLE_CONVERSATION: Successfully saved', { conversationId: conversation.id });
+    } catch (error) {
+      await database.execute('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    debugLog('SAVE_SINGLE_CONVERSATION: Failed to save', { conversationId: conversation.id, error });
+    throw error;
+  }
+}
+
 // Convenience methods for specific data types
 export async function loadConversations(): Promise<Conversation[]> {
   debugLog('LOAD_CONVERSATIONS: Starting load operation');
@@ -461,8 +555,35 @@ export async function loadConversations(): Promise<Conversation[]> {
   }
 }
 
+// Add a debounce mechanism for bulk saves
+let saveTimer: number | null = null;
+let pendingConversations: Conversation[] | null = null;
+
 export async function saveConversations(conversations: Conversation[]): Promise<void> {
   debugLog('SAVE_CONVERSATIONS: Request received', { 
+    conversationCount: conversations.length
+  });
+  
+  // Store the latest state
+  pendingConversations = conversations;
+  
+  // Clear existing timer
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+  }
+  
+  // Debounce saves to avoid rapid successive writes
+  saveTimer = setTimeout(async () => {
+    saveTimer = null;
+    if (pendingConversations) {
+      await saveConversationsDebounced(pendingConversations);
+      pendingConversations = null;
+    }
+  }, 500) as unknown as number; // 500ms debounce
+}
+
+async function saveConversationsDebounced(conversations: Conversation[]): Promise<void> {
+  debugLog('SAVE_CONVERSATIONS_DEBOUNCED: Starting debounced save', { 
     conversationCount: conversations.length, 
     saveInProgress, 
     queueLength: saveQueue.length 
@@ -470,28 +591,28 @@ export async function saveConversations(conversations: Conversation[]): Promise<
   
   // Wait for any ongoing save operations to complete
   if (saveInProgress) {
-    debugLog('SAVE_CONVERSATIONS: Another save in progress, queuing request');
+    debugLog('SAVE_CONVERSATIONS_DEBOUNCED: Another save in progress, queuing request');
     await new Promise<void>((resolve) => {
       saveQueue.push(resolve);
     });
-    debugLog('SAVE_CONVERSATIONS: Queue resolved, proceeding');
+    debugLog('SAVE_CONVERSATIONS_DEBOUNCED: Queue resolved, proceeding');
   }
   
   saveInProgress = true;
-  debugLog('SAVE_CONVERSATIONS: Starting save operation');
+  debugLog('SAVE_CONVERSATIONS_DEBOUNCED: Starting save operation');
   
   try {
     await saveConversationsInternal(conversations);
-    debugLog('SAVE_CONVERSATIONS: Save operation completed successfully');
+    debugLog('SAVE_CONVERSATIONS_DEBOUNCED: Save operation completed successfully');
   } finally {
     saveInProgress = false;
     // Process queue
     const next = saveQueue.shift();
     if (next) {
-      debugLog('SAVE_CONVERSATIONS: Processing next queued request');
+      debugLog('SAVE_CONVERSATIONS_DEBOUNCED: Processing next queued request');
       next();
     } else {
-      debugLog('SAVE_CONVERSATIONS: No queued requests, save mutex released');
+      debugLog('SAVE_CONVERSATIONS_DEBOUNCED: No queued requests, save mutex released');
     }
   }
 }
@@ -508,8 +629,8 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
   debugLog('SAVE_INTERNAL: Migration check passed, proceeding');
   
   // Retry logic for database lock errors
-  const maxRetries = 5; // Increased retries
-  const retryDelay = 200; // Increased delay
+  const maxRetries = 5;
+  const retryDelay = 500; // 500ms base delay, will increase with each attempt
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     debugLog('SAVE_INTERNAL: Starting attempt', { attempt, maxRetries });
@@ -560,12 +681,14 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
         debugLog('SAVE_INTERNAL: Conversations to delete', { count: toDelete.length, ids: toDelete });
         
         // Delete conversations that are no longer in the array
-        for (const idToDelete of toDelete) {
-          debugLog('SAVE_INTERNAL: Deleting conversation', { convId: idToDelete });
+        if (toDelete.length > 0) {
+          // Use a single DELETE statement with IN clause for better performance
+          const placeholders = toDelete.map(() => '?').join(',');
+          debugLog('SAVE_INTERNAL: Deleting conversations in batch');
           // Messages will be deleted automatically due to CASCADE
           await database.execute(
-            'DELETE FROM conversations WHERE id = ?',
-            [idToDelete]
+            `DELETE FROM conversations WHERE id IN (${placeholders})`,
+            toDelete
           );
         }
         
@@ -647,9 +770,8 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
       console.error(`saveConversations attempt ${attempt} failed:`, error);
       
       // Check if it's a database lock error and we have retries left
-      if (error instanceof Error && 
-          error.message.includes('database is locked') && 
-          attempt < maxRetries) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('database is locked') && attempt < maxRetries) {
         const waitTime = retryDelay * attempt;
         debugLog('SAVE_INTERNAL: Database locked, scheduling retry', { attempt, maxRetries, waitTime });
         console.log(`Database locked, retrying in ${waitTime}ms... (attempt ${attempt}/${maxRetries})`);
@@ -658,8 +780,8 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
       }
       
       // If not a lock error or out of retries, show error and throw
-      debugLog('SAVE_INTERNAL: No more retries or non-retryable error', { attempt, maxRetries, error });
-      showError(`Failed to save conversations: ${error instanceof Error ? error.message : String(error)}`);
+      debugLog('SAVE_INTERNAL: No more retries or non-retryable error', { attempt, maxRetries, error: errorMessage });
+      showError(`Failed to save conversations: ${errorMessage}`);
       throw error;
     }
   }

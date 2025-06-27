@@ -9,7 +9,6 @@ import type {
 } from '../types';
 import {
   loadConversations,
-  saveConversations,
   loadSelectedConversationId,
   saveSelectedConversationId,
   loadSettings,
@@ -17,7 +16,9 @@ import {
   loadModelsCache,
   saveModelsCache,
   loadFavoriteModels,
-  saveFavoriteModels
+  saveFavoriteModels,
+  deleteConversationFromDB,
+  saveSingleConversation
 } from '../utils/sqlStorage';
 import { deleteConversationImages, cleanupOrphanedImages } from '../utils/images';
 
@@ -120,13 +121,14 @@ async function initializeFromStorage() {
 }
 
 // Auto-save to enhanced storage (only after initialization)
-effect(() => {
-  // Always access .value to ensure subscription
-  const conversationsData = conversations.value;
-  if (isInitialized) {
-    saveConversations(conversationsData);
-  }
-});
+// DISABLED: This causes full DB sync on every change which is inefficient
+// effect(() => {
+//   // Always access .value to ensure subscription
+//   const conversationsData = conversations.value;
+//   if (isInitialized) {
+//     saveConversations(conversationsData);
+//   }
+// });
 
 effect(() => {
   // Always access .value to ensure subscription
@@ -162,10 +164,10 @@ effect(() => {
 });
 
 // Actions
-export function createConversation(
+export async function createConversation(
   title: string,
   model?: string
-): ConversationType {
+): Promise<ConversationType> {
   const newConversation: ConversationType = {
     id: Date.now().toString(),
     title,
@@ -175,10 +177,20 @@ export function createConversation(
     updatedAt: Date.now()
   };
 
-  batch(() => {
-    conversations.value = [...conversations.value, newConversation];
-    selectedConversationId.value = newConversation.id;
-  });
+  try {
+    // Save to database first
+    await saveSingleConversation(newConversation);
+    
+    // Update memory state
+    batch(() => {
+      conversations.value = [...conversations.value, newConversation];
+      selectedConversationId.value = newConversation.id;
+    });
+  } catch (error) {
+    console.error('Failed to create conversation:', error);
+    showError(`Failed to create conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
+  }
 
   return newConversation;
 }
@@ -212,9 +224,13 @@ export function startFreshConversation(
 
 export async function deleteConversation(id: string) {
   try {
-    // Delete associated images first
+    // Delete from database first
+    await deleteConversationFromDB(id);
+    
+    // Delete associated images
     await deleteConversationImages(id);
     
+    // Update memory state
     batch(() => {
       conversations.value = conversations.value.filter((c) => c.id !== id);
       if (selectedConversationId.value === id) {
@@ -226,32 +242,42 @@ export async function deleteConversation(id: string) {
       }
     });
   } catch (error) {
-    console.error('Failed to delete conversation images:', error);
-    // Still delete the conversation even if image cleanup fails
-    batch(() => {
-      conversations.value = conversations.value.filter((c) => c.id !== id);
-      if (selectedConversationId.value === id) {
-        const activeConversations = conversations.value.filter(c => !c.archived);
-        selectedConversationId.value =
-          activeConversations.length > 0 ? activeConversations[0].id :
-            conversations.value.length > 0 ? conversations.value[0].id : null;
-      }
-    });
+    console.error('Failed to delete conversation:', error);
+    showError(`Failed to delete conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
-export function archiveConversation(id: string) {
-  batch(() => {
-    conversations.value = conversations.value.map((c) =>
-      c.id === id ? { ...c, archived: true, archivedAt: Date.now(), updatedAt: Date.now() } : c
-    );
+export async function archiveConversation(id: string) {
+  const conversation = conversations.value.find(c => c.id === id);
+  if (!conversation) return;
+  
+  const updatedConversation = {
+    ...conversation,
+    archived: true,
+    archivedAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  
+  try {
+    // Save to database first
+    await saveSingleConversation(updatedConversation);
     
-    // If archiving the selected conversation, select another active one
-    if (selectedConversationId.value === id) {
-      const activeConversations = conversations.value.filter(c => !c.archived && c.id !== id);
-      selectedConversationId.value = activeConversations.length > 0 ? activeConversations[0].id : null;
-    }
-  });
+    // Update memory state
+    batch(() => {
+      conversations.value = conversations.value.map((c) =>
+        c.id === id ? updatedConversation : c
+      );
+      
+      // If archiving the selected conversation, select another active one
+      if (selectedConversationId.value === id) {
+        const activeConversations = conversations.value.filter(c => !c.archived && c.id !== id);
+        selectedConversationId.value = activeConversations.length > 0 ? activeConversations[0].id : null;
+      }
+    });
+  } catch (error) {
+    console.error('Failed to archive conversation:', error);
+    showError(`Failed to archive conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 export function unarchiveConversation(id: string) {
@@ -260,16 +286,44 @@ export function unarchiveConversation(id: string) {
   );
 }
 
-export function updateConversationTitle(id: string, title: string) {
-  conversations.value = conversations.value.map((c) =>
-    c.id === id ? { ...c, title, updatedAt: Date.now() } : c
-  );
+export async function updateConversationTitle(id: string, title: string) {
+  const conversation = conversations.value.find(c => c.id === id);
+  if (!conversation) return;
+  
+  const updatedConversation = { ...conversation, title, updatedAt: Date.now() };
+  
+  try {
+    // Save to database first
+    await saveSingleConversation(updatedConversation);
+    
+    // Update memory state
+    conversations.value = conversations.value.map((c) =>
+      c.id === id ? updatedConversation : c
+    );
+  } catch (error) {
+    console.error('Failed to update conversation title:', error);
+    showError(`Failed to update title: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
-export function updateConversationModel(id: string, model: string) {
-  conversations.value = conversations.value.map((c) =>
-    c.id === id ? { ...c, model, updatedAt: Date.now() } : c
-  );
+export async function updateConversationModel(id: string, model: string) {
+  const conversation = conversations.value.find(c => c.id === id);
+  if (!conversation) return;
+  
+  const updatedConversation = { ...conversation, model, updatedAt: Date.now() };
+  
+  try {
+    // Save to database first
+    await saveSingleConversation(updatedConversation);
+    
+    // Update memory state
+    conversations.value = conversations.value.map((c) =>
+      c.id === id ? updatedConversation : c
+    );
+  } catch (error) {
+    console.error('Failed to update conversation model:', error);
+    showError(`Failed to update model: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 export function updateConversationSDKMessages(id: string, sdkMessages: CoreMessage[]) {
@@ -278,12 +332,26 @@ export function updateConversationSDKMessages(id: string, sdkMessages: CoreMessa
   );
 }
 
-export function addMessage(conversationId: string, message: Message) {
+export async function addMessage(conversationId: string, message: Message) {
+  const conversation = conversations.value.find(c => c.id === conversationId);
+  if (!conversation) return;
+  
+  const updatedConversation = {
+    ...conversation,
+    messages: [...conversation.messages, message],
+    updatedAt: Date.now()
+  };
+  
+  // Update memory state immediately for UI responsiveness
   conversations.value = conversations.value.map((c) =>
-    c.id === conversationId
-      ? { ...c, messages: [...c.messages, message], updatedAt: Date.now() }
-      : c
+    c.id === conversationId ? updatedConversation : c
   );
+  
+  // Save to database asynchronously (don't block UI)
+  saveSingleConversation(updatedConversation).catch(error => {
+    console.error('Failed to save message:', error);
+    // Don't show error for every message, just log it
+  });
 }
 
 export function updateMessage(
