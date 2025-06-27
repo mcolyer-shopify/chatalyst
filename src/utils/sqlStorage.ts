@@ -422,86 +422,86 @@ export async function saveSingleConversation(conversation: Conversation): Promis
       await sqlStorage.init();
       const database = await getDatabase();
     
-    // Check if we're already in a transaction to avoid nested transactions
-    debugLog('SAVE_SINGLE_CONVERSATION: Attempting to start transaction');
-    let inTransaction = false;
-    try {
-      await database.execute('BEGIN IMMEDIATE TRANSACTION');
-      inTransaction = true;
-      debugLog('SAVE_SINGLE_CONVERSATION: Transaction started successfully');
-    } catch (transactionError) {
+      // Check if we're already in a transaction to avoid nested transactions
+      debugLog('SAVE_SINGLE_CONVERSATION: Attempting to start transaction');
+      let inTransaction = false;
+      try {
+        await database.execute('BEGIN IMMEDIATE TRANSACTION');
+        inTransaction = true;
+        debugLog('SAVE_SINGLE_CONVERSATION: Transaction started successfully');
+      } catch (transactionError) {
       // If BEGIN fails, check if it's because we're already in a transaction
-      const errorMsg = transactionError instanceof Error ? transactionError.message : String(transactionError);
-      debugLog('SAVE_SINGLE_CONVERSATION: Transaction start failed', { errorMsg });
-      if (errorMsg.includes('cannot start a transaction within a transaction')) {
-        debugLog('SAVE_SINGLE_CONVERSATION: Already in transaction, proceeding without new transaction');
-      } else {
+        const errorMsg = transactionError instanceof Error ? transactionError.message : String(transactionError);
+        debugLog('SAVE_SINGLE_CONVERSATION: Transaction start failed', { errorMsg });
+        if (errorMsg.includes('cannot start a transaction within a transaction')) {
+          debugLog('SAVE_SINGLE_CONVERSATION: Already in transaction, proceeding without new transaction');
+        } else {
         // If it's a different error (like database locked), let it propagate
-        debugLog('SAVE_SINGLE_CONVERSATION: Transaction error, propagating', transactionError);
-        throw transactionError;
-      }
-    }
-    
-    try {
-      // Update or insert the conversation
-      await database.execute(
-        `INSERT OR REPLACE INTO conversations 
-         (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
-        [
-          conversation.id,
-          conversation.title,
-          conversation.model,
-          conversation.enabledTools ? JSON.stringify(conversation.enabledTools) : null,
-          conversation.archived ? 1 : 0,
-          conversation.archivedAt ? new Date(conversation.archivedAt).toISOString() : null,
-          (conversation.createdAt / 1000).toString(),
-          (conversation.updatedAt / 1000).toString()
-        ]
-      );
-      
-      // Only update messages if they're provided
-      if (conversation.messages) {
-        // Delete existing messages
-        await database.execute(
-          'DELETE FROM conversation_messages WHERE conversation_id = ?',
-          [conversation.id]
-        );
-        
-        // Insert new messages
-        for (const message of conversation.messages) {
-          await database.execute(
-            `INSERT INTO conversation_messages 
-             (id, conversation_id, role, content, timestamp, model, image_ids, tool_name, tool_call, tool_result) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              message.id,
-              conversation.id,
-              message.role,
-              message.content,
-              message.timestamp,
-              (message as unknown as { model?: string }).model || null,
-              message.imageIds ? JSON.stringify(message.imageIds) : null,
-              (message as unknown as { toolName?: string }).toolName || null,
-              (message as unknown as { toolCall?: any }).toolCall ? JSON.stringify((message as unknown as { toolCall: any }).toolCall) : null,
-              (message as unknown as { toolResult?: any }).toolResult ? JSON.stringify((message as unknown as { toolResult: any }).toolResult) : null
-            ]
-          );
+          debugLog('SAVE_SINGLE_CONVERSATION: Transaction error, propagating', transactionError);
+          throw transactionError;
         }
       }
+    
+      try {
+      // Update or insert the conversation
+        await database.execute(
+          `INSERT OR REPLACE INTO conversations 
+         (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+          [
+            conversation.id,
+            conversation.title,
+            conversation.model,
+            conversation.enabledTools ? JSON.stringify(conversation.enabledTools) : null,
+            conversation.archived ? 1 : 0,
+            conversation.archivedAt ? new Date(conversation.archivedAt).toISOString() : null,
+            (conversation.createdAt / 1000).toString(),
+            (conversation.updatedAt / 1000).toString()
+          ]
+        );
       
-      if (inTransaction) {
-        await database.execute('COMMIT');
-        debugLog('SAVE_SINGLE_CONVERSATION: Transaction committed');
+        // Only update messages if they're provided
+        if (conversation.messages) {
+        // Delete existing messages
+          await database.execute(
+            'DELETE FROM conversation_messages WHERE conversation_id = ?',
+            [conversation.id]
+          );
+        
+          // Insert new messages
+          for (const message of conversation.messages) {
+            await database.execute(
+              `INSERT INTO conversation_messages 
+             (id, conversation_id, role, content, timestamp, model, image_ids, tool_name, tool_call, tool_result) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                message.id,
+                conversation.id,
+                message.role,
+                message.content,
+                message.timestamp,
+                (message as unknown as { model?: string }).model || null,
+                message.imageIds ? JSON.stringify(message.imageIds) : null,
+                (message as unknown as { toolName?: string }).toolName || null,
+                (message as unknown as { toolCall?: any }).toolCall ? JSON.stringify((message as unknown as { toolCall: any }).toolCall) : null,
+                (message as unknown as { toolResult?: any }).toolResult ? JSON.stringify((message as unknown as { toolResult: any }).toolResult) : null
+              ]
+            );
+          }
+        }
+      
+        if (inTransaction) {
+          await database.execute('COMMIT');
+          debugLog('SAVE_SINGLE_CONVERSATION: Transaction committed');
+        }
+        debugLog('SAVE_SINGLE_CONVERSATION: Successfully saved', { conversationId: conversation.id });
+      } catch (error) {
+        if (inTransaction) {
+          await database.execute('ROLLBACK');
+          debugLog('SAVE_SINGLE_CONVERSATION: Transaction rolled back');
+        }
+        throw error;
       }
-      debugLog('SAVE_SINGLE_CONVERSATION: Successfully saved', { conversationId: conversation.id });
-    } catch (error) {
-      if (inTransaction) {
-        await database.execute('ROLLBACK');
-        debugLog('SAVE_SINGLE_CONVERSATION: Transaction rolled back');
-      }
-      throw error;
-    }
       
       // If we get here, the save was successful
       debugLog('SAVE_SINGLE_CONVERSATION: Save successful on attempt', { attempt, conversationId: conversation.id });

@@ -23,7 +23,7 @@ import {
 import { deleteConversationImages, cleanupOrphanedImages } from '../utils/images';
 
 // Debounce map for conversation saves
-const conversationSaveTimeouts = new Map<string, NodeJS.Timeout>();
+const conversationSaveTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
