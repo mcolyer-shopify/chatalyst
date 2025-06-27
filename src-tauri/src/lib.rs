@@ -1,6 +1,6 @@
-mod images;
+mod migrations;
 
-use images::get_migrations;
+use migrations::get_migrations;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -21,7 +21,7 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![
             greet,
-            images::calculate_image_hash
+            migrations::calculate_image_hash
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

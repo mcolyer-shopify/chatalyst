@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Prompt Library modal for managing reusable prompts with search, categorization, and tagging
+  - Create, edit, and delete custom prompts with title, content, category, and tags
+  - Search functionality to quickly find prompts by title, content, category, or tags
+  - Category filtering to organize prompts by type or use case
+  - Easy prompt insertion into message input with one-click selection
+  - Persistent storage in SQL database with dedicated prompts table
+
 ### Changed
 - **BREAKING**: Migrated from tauri-store to SQL database for all application data storage
   - Renamed database from `images.db` to `chatalyst.db` for unified data storage

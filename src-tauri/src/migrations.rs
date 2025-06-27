@@ -168,6 +168,34 @@ pub fn get_migrations() -> Vec<Migration> {
                   ALTER TABLE conversation_messages ADD COLUMN tool_result TEXT; -- JSON for tool result",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 13,
+            description: "create_prompts_table",
+            sql: "CREATE TABLE prompts (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            );",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 14,
+            description: "remove_category_and_tags_from_prompts",
+            sql: "CREATE TABLE prompts_new (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            );
+            INSERT INTO prompts_new (id, title, content, created_at, updated_at)
+            SELECT id, title, content, created_at, updated_at FROM prompts;
+            DROP TABLE prompts;
+            ALTER TABLE prompts_new RENAME TO prompts;",
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

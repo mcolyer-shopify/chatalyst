@@ -5,7 +5,8 @@ import type {
   Message,
   Settings,
   Model,
-  MCPServerStatus
+  MCPServerStatus,
+  Prompt
 } from '../types';
 import {
   loadConversations,
@@ -18,7 +19,10 @@ import {
   loadFavoriteModels,
   saveFavoriteModels,
   deleteConversationFromDB,
-  saveSingleConversation
+  saveSingleConversation,
+  loadPrompts,
+  savePrompt,
+  deletePrompt
 } from '../utils/sqlStorage';
 import { deleteConversationImages, cleanupOrphanedImages } from '../utils/images';
 
@@ -61,6 +65,9 @@ export const failedModelFetchCache = signal<
 
 // MCP-related signals
 export const mcpServers = signal<MCPServerStatus[]>([]);
+
+// Prompt-related signals
+export const prompts = signal<Prompt[]>([]);
 
 // Computed values
 export const selectedConversation = computed(() =>
@@ -115,6 +122,10 @@ async function initializeFromStorage() {
       const savedFavoriteModels = await loadFavoriteModels(currentProvider, currentBaseURL);
       favoriteModels.value = savedFavoriteModels;
     }
+
+    // Load prompts using enhanced storage
+    const savedPrompts = await loadPrompts();
+    prompts.value = savedPrompts;
   } catch (error) {
     console.error('Failed to initialize from storage:', error);
   }
@@ -653,6 +664,73 @@ export function stopImageCleanup() {
     clearInterval(cleanupInterval);
   }
 }
+
+// Prompt management functions
+export async function createPrompt(title: string, content: string): Promise<Prompt> {
+  const newPrompt: Prompt = {
+    id: Date.now().toString(),
+    title,
+    content,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+
+  try {
+    await savePrompt(newPrompt);
+    prompts.value = [...prompts.value, newPrompt];
+    return newPrompt;
+  } catch (error) {
+    console.error('Failed to create prompt:', error);
+    showError(`Failed to create prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
+  }
+}
+
+export async function updatePrompt(promptId: string, updates: Partial<Pick<Prompt, 'title' | 'content'>>): Promise<void> {
+  const existingPrompt = prompts.value.find(p => p.id === promptId);
+  if (!existingPrompt) {
+    throw new Error('Prompt not found');
+  }
+
+  const updatedPrompt: Prompt = {
+    ...existingPrompt,
+    ...updates,
+    updatedAt: Date.now()
+  };
+
+  try {
+    await savePrompt(updatedPrompt);
+    prompts.value = prompts.value.map(p => p.id === promptId ? updatedPrompt : p);
+  } catch (error) {
+    console.error('Failed to update prompt:', error);
+    showError(`Failed to update prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
+  }
+}
+
+export async function deletePromptById(promptId: string): Promise<void> {
+  try {
+    await deletePrompt(promptId);
+    prompts.value = prompts.value.filter(p => p.id !== promptId);
+  } catch (error) {
+    console.error('Failed to delete prompt:', error);
+    showError(`Failed to delete prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
+  }
+}
+
+export function searchPrompts(query: string): Prompt[] {
+  if (!query.trim()) {
+    return prompts.value;
+  }
+
+  const lowercaseQuery = query.toLowerCase();
+  return prompts.value.filter(prompt => 
+    prompt.title.toLowerCase().includes(lowercaseQuery) ||
+    prompt.content.toLowerCase().includes(lowercaseQuery)
+  );
+}
+
 
 // Initialize when DOM is ready to avoid import timing issues
 if (typeof window !== 'undefined') {

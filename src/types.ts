@@ -132,3 +132,11 @@ export interface PendingImage {
   file: File;
   preview: string; // Data URL for preview
 }
+
+export interface Prompt {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
