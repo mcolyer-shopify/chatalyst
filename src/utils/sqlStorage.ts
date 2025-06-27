@@ -86,6 +86,10 @@ class SqlStorage {
   private initPromise: Promise<void> | null = null;
   private migrationInProgress = false;
 
+  get isMigrationInProgress(): boolean {
+    return this.migrationInProgress;
+  }
+
   // Initialize the storage
   async init(): Promise<void> {
     if (this.isInitialized) {
@@ -609,7 +613,7 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
   debugLog('SAVE_INTERNAL: Starting internal save operation');
   
   // Wait for migration to complete
-  while ((sqlStorage as any).migrationInProgress) {
+  while (sqlStorage.isMigrationInProgress) {
     debugLog('SAVE_INTERNAL: Migration in progress, waiting...');
     await new Promise(resolve => setTimeout(resolve, 100));
   }
