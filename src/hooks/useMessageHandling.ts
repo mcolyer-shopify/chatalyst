@@ -136,7 +136,9 @@ export function useMessageHandling() {
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal,
         onChunk: async ({ chunk }) => {
+          console.log('[onChunk] Received chunk:', chunk.type, chunk);
           if (chunk.type === 'tool-call') {
+            console.log('[onChunk] Processing tool-call:', chunk.toolCallId, chunk.toolName);
             // Create initial tool message when tool is called
             const toolMessage: Message = {
               id: `${Date.now()}-tool-${chunk.toolCallId}`,
@@ -147,17 +149,26 @@ export function useMessageHandling() {
               toolCall: chunk.args,
               toolResult: undefined
             };
+            console.log('[onChunk] Created tool message:', toolMessage);
             toolMessagesMap.set(chunk.toolCallId, toolMessage);
+            console.log('[onChunk] Adding tool message to conversation');
             addMessage(conversation.id, toolMessage);
           } else if (chunk.type === 'tool-result') {
+            console.log('[onChunk] Processing tool-result:', chunk.toolCallId);
             // Update the tool message with the result
             const existingMessage = toolMessagesMap.get(chunk.toolCallId);
+            console.log('[onChunk] Found existing message:', existingMessage?.id);
             if (existingMessage) {
+              console.log('[onChunk] Updating tool message with result:', chunk.result);
               updateMessage(conversation.id, existingMessage.id, {
                 content: JSON.stringify(chunk.result),
                 toolResult: chunk.result
               });
+            } else {
+              console.log('[onChunk] ERROR: No existing message found for tool result');
             }
+          } else {
+            console.log('[onChunk] Ignoring chunk type:', chunk.type);
           }
         },
         onStepFinish: () => {
@@ -369,7 +380,9 @@ Title:`,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal,
         onChunk: async ({ chunk }) => {
+          console.log('[onChunk] Received chunk:', chunk.type, chunk);
           if (chunk.type === 'tool-call') {
+            console.log('[onChunk] Processing tool-call:', chunk.toolCallId, chunk.toolName);
             // Create initial tool message when tool is called
             const toolMessage: Message = {
               id: `${Date.now()}-tool-${chunk.toolCallId}`,
@@ -380,17 +393,26 @@ Title:`,
               toolCall: chunk.args,
               toolResult: undefined
             };
+            console.log('[onChunk] Created tool message:', toolMessage);
             toolMessagesMap.set(chunk.toolCallId, toolMessage);
+            console.log('[onChunk] Adding tool message to conversation');
             addMessage(conversation.id, toolMessage);
           } else if (chunk.type === 'tool-result') {
+            console.log('[onChunk] Processing tool-result:', chunk.toolCallId);
             // Update the tool message with the result
             const existingMessage = toolMessagesMap.get(chunk.toolCallId);
+            console.log('[onChunk] Found existing message:', existingMessage?.id);
             if (existingMessage) {
+              console.log('[onChunk] Updating tool message with result:', chunk.result);
               updateMessage(conversation.id, existingMessage.id, {
                 content: JSON.stringify(chunk.result),
                 toolResult: chunk.result
               });
+            } else {
+              console.log('[onChunk] ERROR: No existing message found for tool result');
             }
+          } else {
+            console.log('[onChunk] Ignoring chunk type:', chunk.type);
           }
         },
         onStepFinish: () => {

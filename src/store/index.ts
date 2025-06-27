@@ -327,8 +327,12 @@ export function updateConversationSDKMessages(id: string, sdkMessages: CoreMessa
 }
 
 export async function addMessage(conversationId: string, message: Message) {
+  console.log('[addMessage] Called with:', { conversationId, message });
   const conversation = conversations.value.find(c => c.id === conversationId);
-  if (!conversation) return;
+  if (!conversation) {
+    console.log('[addMessage] ERROR: Conversation not found:', conversationId);
+    return;
+  }
   
   const updatedConversation = {
     ...conversation,
@@ -364,8 +368,12 @@ export function updateMessage(
   messageId: string,
   updates: Partial<Message>
 ) {
+  console.log('[updateMessage] Called with:', { conversationId, messageId, updates });
   const conversation = conversations.value.find(c => c.id === conversationId);
-  if (!conversation) return;
+  if (!conversation) {
+    console.log('[updateMessage] ERROR: Conversation not found:', conversationId);
+    return;
+  }
   
   const updatedConversation = {
     ...conversation,
