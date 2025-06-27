@@ -406,12 +406,41 @@ export async function deleteConversationFromDB(conversationId: string): Promise<
 export async function saveSingleConversation(conversation: Conversation): Promise<void> {
   debugLog('SAVE_SINGLE_CONVERSATION: Starting targeted save', { conversationId: conversation.id });
   
-  try {
-    await sqlStorage.init();
-    const database = await getDatabase();
+  // Wait for migration to complete
+  while (sqlStorage.isMigrationInProgress) {
+    debugLog('SAVE_SINGLE_CONVERSATION: Migration in progress, waiting...');
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  // Retry logic for database lock errors
+  const maxRetries = 3;
+  const retryDelay = 200; // 200ms base delay
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    debugLog('SAVE_SINGLE_CONVERSATION: Starting attempt', { attempt, maxRetries, conversationId: conversation.id });
+    try {
+      await sqlStorage.init();
+      const database = await getDatabase();
     
-    // Use a transaction for consistency
-    await database.execute('BEGIN TRANSACTION');
+    // Check if we're already in a transaction to avoid nested transactions
+    debugLog('SAVE_SINGLE_CONVERSATION: Attempting to start transaction');
+    let inTransaction = false;
+    try {
+      await database.execute('BEGIN IMMEDIATE TRANSACTION');
+      inTransaction = true;
+      debugLog('SAVE_SINGLE_CONVERSATION: Transaction started successfully');
+    } catch (transactionError) {
+      // If BEGIN fails, check if it's because we're already in a transaction
+      const errorMsg = transactionError instanceof Error ? transactionError.message : String(transactionError);
+      debugLog('SAVE_SINGLE_CONVERSATION: Transaction start failed', { errorMsg });
+      if (errorMsg.includes('cannot start a transaction within a transaction')) {
+        debugLog('SAVE_SINGLE_CONVERSATION: Already in transaction, proceeding without new transaction');
+      } else {
+        // If it's a different error (like database locked), let it propagate
+        debugLog('SAVE_SINGLE_CONVERSATION: Transaction error, propagating', transactionError);
+        throw transactionError;
+      }
+    }
     
     try {
       // Update or insert the conversation
@@ -458,15 +487,56 @@ export async function saveSingleConversation(conversation: Conversation): Promis
         }
       }
       
-      await database.execute('COMMIT');
+      if (inTransaction) {
+        await database.execute('COMMIT');
+        debugLog('SAVE_SINGLE_CONVERSATION: Transaction committed');
+      }
       debugLog('SAVE_SINGLE_CONVERSATION: Successfully saved', { conversationId: conversation.id });
     } catch (error) {
-      await database.execute('ROLLBACK');
+      if (inTransaction) {
+        await database.execute('ROLLBACK');
+        debugLog('SAVE_SINGLE_CONVERSATION: Transaction rolled back');
+      }
       throw error;
     }
-  } catch (error) {
-    debugLog('SAVE_SINGLE_CONVERSATION: Failed to save', { conversationId: conversation.id, error });
-    throw error;
+      
+      // If we get here, the save was successful
+      debugLog('SAVE_SINGLE_CONVERSATION: Save successful on attempt', { attempt, conversationId: conversation.id });
+      return;
+      
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      debugLog('SAVE_SINGLE_CONVERSATION: Attempt failed', { 
+        attempt, 
+        maxRetries, 
+        conversationId: conversation.id, 
+        error: errorMsg 
+      });
+      
+      // Check if it's a database lock error that we should retry
+      if (attempt < maxRetries && (
+        errorMsg.includes('database is locked') || 
+        errorMsg.includes('SQLITE_BUSY') ||
+        errorMsg.includes('database is locked')
+      )) {
+        const delay = retryDelay * attempt; // Exponential backoff
+        debugLog('SAVE_SINGLE_CONVERSATION: Database lock detected, retrying', { 
+          attempt, 
+          delay, 
+          conversationId: conversation.id 
+        });
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue; // Retry
+      }
+      
+      // If it's the last attempt or not a retryable error, throw
+      debugLog('SAVE_SINGLE_CONVERSATION: Failed to save after all attempts', { 
+        conversationId: conversation.id, 
+        finalAttempt: attempt, 
+        error: errorMsg 
+      });
+      throw error;
+    }
   }
 }
 
