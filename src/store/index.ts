@@ -22,6 +22,9 @@ import {
 } from '../utils/sqlStorage';
 import { deleteConversationImages, cleanupOrphanedImages } from '../utils/images';
 
+// Debounce map for conversation saves
+const conversationSaveTimeouts = new Map<string, NodeJS.Timeout>();
+
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
   provider: 'openrouter',
@@ -338,11 +341,22 @@ export async function addMessage(conversationId: string, message: Message) {
     c.id === conversationId ? updatedConversation : c
   );
   
-  // Save to database asynchronously (don't block UI)
-  saveSingleConversation(updatedConversation).catch(error => {
-    console.error('Failed to save message:', message.content?.substring(0, 100) + (message.content && message.content.length > 100 ? '...' : ''), error);
-    // Don't show error for every message, just log it
-  });
+  // Debounce database saves to prevent rapid concurrent writes
+  const existingTimeout = conversationSaveTimeouts.get(conversationId);
+  if (existingTimeout) {
+    clearTimeout(existingTimeout);
+  }
+  
+  const timeout = setTimeout(() => {
+    saveSingleConversation(updatedConversation).catch(error => {
+      console.error('Failed to save message:', message.content?.substring(0, 100) + (message.content && message.content.length > 100 ? '...' : ''), error);
+      // Don't show error for every message, just log it
+    }).finally(() => {
+      conversationSaveTimeouts.delete(conversationId);
+    });
+  }, 100); // 100ms debounce
+  
+  conversationSaveTimeouts.set(conversationId, timeout);
 }
 
 export function updateMessage(
@@ -350,17 +364,38 @@ export function updateMessage(
   messageId: string,
   updates: Partial<Message>
 ) {
+  const conversation = conversations.value.find(c => c.id === conversationId);
+  if (!conversation) return;
+  
+  const updatedConversation = {
+    ...conversation,
+    messages: conversation.messages.map((m) =>
+      m.id === messageId ? { ...m, ...updates } : m
+    ),
+    updatedAt: Date.now()
+  };
+  
+  // Update memory state immediately for UI responsiveness
   conversations.value = conversations.value.map((c) =>
-    c.id === conversationId
-      ? {
-        ...c,
-        messages: c.messages.map((m) =>
-          m.id === messageId ? { ...m, ...updates } : m
-        ),
-        updatedAt: Date.now()
-      }
-      : c
+    c.id === conversationId ? updatedConversation : c
   );
+  
+  // Debounce database saves to prevent rapid concurrent writes
+  const existingTimeout = conversationSaveTimeouts.get(conversationId);
+  if (existingTimeout) {
+    clearTimeout(existingTimeout);
+  }
+  
+  const timeout = setTimeout(() => {
+    saveSingleConversation(updatedConversation).catch(error => {
+      console.error('Failed to save message update:', updates, error);
+      // Don't show error for every message update, just log it
+    }).finally(() => {
+      conversationSaveTimeouts.delete(conversationId);
+    });
+  }, 100); // 100ms debounce
+  
+  conversationSaveTimeouts.set(conversationId, timeout);
 }
 
 export function removeMessagesAfter(conversationId: string, timestamp: number) {
