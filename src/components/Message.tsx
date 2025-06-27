@@ -34,7 +34,14 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
 
   // Auto-expand tool messages when they get results
   useEffect(() => {
+    console.log('[Message] Auto-expand check:', {
+      role: message.role,
+      hasToolResult: !!message.toolResult,
+      content: message.content,
+      shouldExpand: message.role === 'tool' && message.toolResult && message.content !== 'Calling tool...'
+    });
     if (message.role === 'tool' && message.toolResult && message.content !== 'Calling tool...') {
+      console.log('[Message] Auto-expanding tool message');
       setIsCollapsed(false);
     }
   }, [message.toolResult, message.content, message.role]);
@@ -85,6 +92,16 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
 
   const renderContent = () => {
     if (message.role === 'tool') {
+      console.log('[Message] Rendering tool message:', {
+        id: message.id,
+        toolName: message.toolName,
+        hasToolCall: !!message.toolCall,
+        hasToolResult: !!message.toolResult,
+        content: message.content,
+        isCollapsed,
+        toolCall: message.toolCall,
+        toolResult: message.toolResult
+      });
       return (
         <div class={`message-content tool-message ${isCollapsed ? 'collapsed' : ''}`}>
           <div class="tool-header" onClick={() => setIsCollapsed(!isCollapsed)}>
