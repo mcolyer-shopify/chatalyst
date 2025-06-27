@@ -63,7 +63,7 @@ export class TauriStdioTransport implements Transport {
       });
 
       command.on('error', (error) => {
-        console.error('[TauriStdioTransport] Process error:', error);
+        console.log('[TauriStdioTransport] Process error:', error);
         if (this.onerror) {
           this.onerror(new Error(error));
         }
@@ -80,7 +80,7 @@ export class TauriStdioTransport implements Transport {
       // Set up stderr handler for debugging
       command.stderr.on('data', (data: string | Uint8Array) => {
         const text = typeof data === 'string' ? data : new (globalThis.TextDecoder)().decode(data);
-        console.error('[TauriStdioTransport] stderr:', text);
+        console.log('[TauriStdioTransport] stderr:', text);
       });
 
       // Spawn the process
@@ -88,7 +88,7 @@ export class TauriStdioTransport implements Transport {
       console.log(`[TauriStdioTransport] Process spawned with PID: ${this._process.pid}`);
 
     } catch (error) {
-      console.error('[TauriStdioTransport] Failed to start:', error);
+      console.log('[TauriStdioTransport] Failed to start:', error);
       if (this.onerror) {
         this.onerror(error instanceof Error ? error : new Error(String(error)));
       }
@@ -113,7 +113,7 @@ export class TauriStdioTransport implements Transport {
           this.onmessage(message);
         }
       } catch (error) {
-        console.error('[TauriStdioTransport] Failed to parse message:', line, error);
+        console.log('[TauriStdioTransport] Failed to parse message:', line, error);
       }
     }
   }
@@ -132,7 +132,7 @@ export class TauriStdioTransport implements Transport {
       const data = encoder.encode(messageStr);
       await this._process.write(data);
     } catch (error) {
-      console.error('[TauriStdioTransport] Failed to send message:', error);
+      console.log('[TauriStdioTransport] Failed to send message:', error);
       throw error;
     }
   }
@@ -144,7 +144,7 @@ export class TauriStdioTransport implements Transport {
       try {
         await this._process.kill();
       } catch (error) {
-        console.error('[TauriStdioTransport] Failed to kill process:', error);
+        console.log('[TauriStdioTransport] Failed to kill process:', error);
       }
       this._process = undefined;
     }
