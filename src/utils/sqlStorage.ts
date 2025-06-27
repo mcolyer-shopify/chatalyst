@@ -16,6 +16,12 @@ const STORAGE_KEYS = {
 // Current migration version
 const CURRENT_MIGRATION_VERSION = 2;
 
+// Debug logging helper
+function debugLog(operation: string, details?: any) {
+  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+  console.log(`[${timestamp}] SQL_DEBUG: ${operation}`, details || '');
+}
+
 // Database instance (cached)
 let db: Database | null = null;
 let dbInitPromise: Promise<Database> | null = null;
@@ -26,26 +32,34 @@ const saveQueue: Array<() => void> = [];
 
 async function getDatabase(): Promise<Database> {
   if (db) {
+    debugLog('DATABASE: Using cached database instance');
     return db;
   }
   
   if (dbInitPromise) {
+    debugLog('DATABASE: Waiting for existing database initialization');
     return await dbInitPromise;
   }
   
+  debugLog('DATABASE: Starting new database initialization');
   dbInitPromise = (async () => {
+    debugLog('DATABASE: Loading sqlite:chatalyst.db');
     const database = await Database.load('sqlite:chatalyst.db');
     
     // Enable WAL mode for better concurrency
     try {
+      debugLog('DATABASE: Setting SQLite pragmas for concurrency');
       await database.execute('PRAGMA journal_mode=WAL;');
       await database.execute('PRAGMA synchronous=NORMAL;');
       await database.execute('PRAGMA cache_size=1000;');
       await database.execute('PRAGMA temp_store=memory;');
+      debugLog('DATABASE: SQLite pragmas configured successfully');
     } catch (pragmaError) {
+      debugLog('DATABASE: Failed to set pragmas', pragmaError);
       console.warn('Could not set database pragmas:', pragmaError);
     }
     
+    debugLog('DATABASE: Database initialization complete');
     return database;
   })();
   
@@ -65,18 +79,29 @@ class SqlStorage {
 
   // Initialize the storage
   async init(): Promise<void> {
-    if (this.isInitialized) return;
-    if (this.initPromise) return this.initPromise;
+    if (this.isInitialized) {
+      debugLog('SQL_STORAGE: Already initialized, skipping');
+      return;
+    }
+    if (this.initPromise) {
+      debugLog('SQL_STORAGE: Waiting for existing initialization');
+      return this.initPromise;
+    }
 
+    debugLog('SQL_STORAGE: Starting initialization');
     this.initPromise = (async () => {
       try {
         // Ensure database is ready
+        debugLog('SQL_STORAGE: Ensuring database is ready');
         await getDatabase();
         this.isInitialized = true;
+        debugLog('SQL_STORAGE: Database ready, running migration check');
         
         // Run migration if needed
         await this.runMigration();
+        debugLog('SQL_STORAGE: Initialization complete');
       } catch (error) {
+        debugLog('SQL_STORAGE: Initialization failed', error);
         showError(`Failed to initialize SQL storage: ${error instanceof Error ? error.message : 'Unknown error'}`);
         throw error;
       }
@@ -87,57 +112,75 @@ class SqlStorage {
 
   // Migration logic to move data from tauri-store to SQL
   private async runMigration(): Promise<void> {
+    debugLog('MIGRATION: Starting migration check');
     this.migrationInProgress = true;
     try {
+      debugLog('MIGRATION: Getting database instance');
       const database = await getDatabase();
       
       // Check current migration version
+      debugLog('MIGRATION: Checking current migration version');
       let versionResult: { value: string }[] = [];
       try {
         versionResult = await database.select<{ value: string }[]>(
           'SELECT value FROM migration_metadata WHERE key = ?',
           ['migration_version']
         );
+        debugLog('MIGRATION: Found migration_metadata table');
       } catch {
+        debugLog('MIGRATION: migration_metadata table does not exist yet (first run)');
         console.log('migration_metadata table does not exist yet, this is expected for first run');
         versionResult = [];
       }
       
       const currentVersion = versionResult.length > 0 ? parseInt(versionResult[0].value) : 0;
+      debugLog('MIGRATION: Current version', { currentVersion, targetVersion: CURRENT_MIGRATION_VERSION });
       console.log('Current migration version:', currentVersion);
       
       if (currentVersion >= CURRENT_MIGRATION_VERSION) {
+        debugLog('MIGRATION: Already up to date, skipping');
         console.log('Already migrated to latest version, skipping migration');
         return; // Already migrated
       }
 
+      debugLog('MIGRATION: Migration needed, starting process');
       console.log('Running storage migration from tauri-store to SQL...');
 
       // Check if there's data in localStorage that needs direct migration to SQL
+      debugLog('MIGRATION: Checking for localStorage data');
       const hasLocalStorage = Object.values(STORAGE_KEYS).some(key => 
         localStorage.getItem(key) !== null
       );
+      debugLog('MIGRATION: localStorage check result', { hasLocalStorage, currentVersion });
       
       if (hasLocalStorage && currentVersion === 0) {
+        debugLog('MIGRATION: Found localStorage data, starting direct migration to SQL');
         console.log('Found localStorage data, migrating directly to SQL');
         await this.migrateFromLocalStorageToSQL();
+        debugLog('MIGRATION: localStorage to SQL migration completed');
       } else if (hasLocalStorage) {
+        debugLog('MIGRATION: localStorage data found but migration already completed');
         console.log('localStorage data found but migration already completed');
       } else {
+        debugLog('MIGRATION: No localStorage data found');
         console.log('No localStorage data found, skipping migration');
       }
 
       // Set migration version
+      debugLog('MIGRATION: Setting migration version', CURRENT_MIGRATION_VERSION);
       await database.execute(
         'INSERT OR REPLACE INTO migration_metadata (key, value, updated_at) VALUES (?, ?, datetime("now"))',
         ['migration_version', CURRENT_MIGRATION_VERSION.toString()]
       );
 
+      debugLog('MIGRATION: Migration completed successfully');
       console.log(`Successfully migrated to version ${CURRENT_MIGRATION_VERSION}`);
     } catch (error) {
+      debugLog('MIGRATION: Migration failed', error);
       console.error('Migration failed:', error);
       showError(`Storage migration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
+      debugLog('MIGRATION: Clearing migration in progress flag');
       this.migrationInProgress = false;
     }
   }
@@ -341,11 +384,15 @@ export async function forceLocalStorageMigration(): Promise<void> {
 
 // Convenience methods for specific data types
 export async function loadConversations(): Promise<Conversation[]> {
+  debugLog('LOAD_CONVERSATIONS: Starting load operation');
   try {
+    debugLog('LOAD_CONVERSATIONS: Initializing SQL storage');
     await sqlStorage.init();
+    debugLog('LOAD_CONVERSATIONS: Getting database instance');
     const database = await getDatabase();
     
     // Load conversations first
+    debugLog('LOAD_CONVERSATIONS: Querying conversations table');
     const conversations = await database.select<{
       id: string;
       title: string;
@@ -359,11 +406,14 @@ export async function loadConversations(): Promise<Conversation[]> {
       'SELECT * FROM conversations ORDER BY updated_at DESC'
     );
     
+    debugLog('LOAD_CONVERSATIONS: Query complete', { conversationCount: conversations.length });
     console.log(`Found ${conversations.length} conversations in database`);
     
     // Load messages for each conversation separately to avoid complex GROUP_CONCAT
     const result: Conversation[] = [];
+    debugLog('LOAD_CONVERSATIONS: Loading messages for each conversation');
     for (const conv of conversations) {
+      debugLog('LOAD_CONVERSATIONS: Loading messages for conversation', { convId: conv.id });
       const messages = await database.select<{
         id: string;
         conversation_id: string;
@@ -376,6 +426,7 @@ export async function loadConversations(): Promise<Conversation[]> {
         'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY timestamp ASC',
         [conv.id]
       );
+      debugLog('LOAD_CONVERSATIONS: Messages loaded', { convId: conv.id, messageCount: messages.length });
       
       const processedMessages: Message[] = messages.map(msg => ({
         id: msg.id,
@@ -399,9 +450,11 @@ export async function loadConversations(): Promise<Conversation[]> {
       });
     }
     
+    debugLog('LOAD_CONVERSATIONS: All conversations loaded successfully', { totalCount: result.length });
     console.log(`Loaded ${result.length} conversations with messages`);
     return result;
   } catch (error) {
+    debugLog('LOAD_CONVERSATIONS: Failed to load conversations', error);
     console.error('Failed to load conversations:', error);
     showError(`Failed to load conversations: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return [];
@@ -409,42 +462,65 @@ export async function loadConversations(): Promise<Conversation[]> {
 }
 
 export async function saveConversations(conversations: Conversation[]): Promise<void> {
+  debugLog('SAVE_CONVERSATIONS: Request received', { 
+    conversationCount: conversations.length, 
+    saveInProgress, 
+    queueLength: saveQueue.length 
+  });
+  
   // Wait for any ongoing save operations to complete
   if (saveInProgress) {
+    debugLog('SAVE_CONVERSATIONS: Another save in progress, queuing request');
     await new Promise<void>((resolve) => {
       saveQueue.push(resolve);
     });
+    debugLog('SAVE_CONVERSATIONS: Queue resolved, proceeding');
   }
   
   saveInProgress = true;
+  debugLog('SAVE_CONVERSATIONS: Starting save operation');
   
   try {
     await saveConversationsInternal(conversations);
+    debugLog('SAVE_CONVERSATIONS: Save operation completed successfully');
   } finally {
     saveInProgress = false;
     // Process queue
     const next = saveQueue.shift();
-    if (next) next();
+    if (next) {
+      debugLog('SAVE_CONVERSATIONS: Processing next queued request');
+      next();
+    } else {
+      debugLog('SAVE_CONVERSATIONS: No queued requests, save mutex released');
+    }
   }
 }
 
 async function saveConversationsInternal(conversations: Conversation[]): Promise<void> {
+  debugLog('SAVE_INTERNAL: Starting internal save operation');
+  
   // Wait for migration to complete
   while ((sqlStorage as any).migrationInProgress) {
+    debugLog('SAVE_INTERNAL: Migration in progress, waiting...');
     console.log('Waiting for migration to complete before saving...');
     await new Promise(resolve => setTimeout(resolve, 100));
   }
+  debugLog('SAVE_INTERNAL: Migration check passed, proceeding');
   
   // Retry logic for database lock errors
   const maxRetries = 5; // Increased retries
   const retryDelay = 200; // Increased delay
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    debugLog('SAVE_INTERNAL: Starting attempt', { attempt, maxRetries });
     try {
+      debugLog('SAVE_INTERNAL: Initializing SQL storage');
       await sqlStorage.init();
+      debugLog('SAVE_INTERNAL: Getting database instance');
       const database = await getDatabase();
       
       // Check if we're already in a transaction to avoid nested transactions
+      debugLog('SAVE_INTERNAL: Attempting to start transaction');
       let inTransaction = false;
       try {
         // Add timeout for transaction start
@@ -453,19 +529,49 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
           new Promise((_, reject) => setTimeout(() => reject(new Error('Transaction start timeout')), 5000))
         ]);
         inTransaction = true;
+        debugLog('SAVE_INTERNAL: Transaction started successfully');
       } catch (transactionError) {
         // If BEGIN fails, check if it's because we're already in a transaction
         const errorMsg = transactionError instanceof Error ? transactionError.message : String(transactionError);
+        debugLog('SAVE_INTERNAL: Transaction start failed', { errorMsg });
         if (errorMsg.includes('cannot start a transaction within a transaction')) {
+          debugLog('SAVE_INTERNAL: Already in transaction, proceeding without new transaction');
           console.log('Transaction already active, proceeding without new transaction');
         } else {
           // If it's a different error (like database locked), let it propagate
+          debugLog('SAVE_INTERNAL: Transaction error, propagating', transactionError);
           throw transactionError;
         }
       }
       
       try {
+        debugLog('SAVE_INTERNAL: Starting database operations', { conversationCount: conversations.length });
+        
+        // First, get all existing conversation IDs from the database
+        debugLog('SAVE_INTERNAL: Getting existing conversation IDs');
+        const existingConvs = await database.select<{ id: string }[]>(
+          'SELECT id FROM conversations'
+        );
+        const existingIds = new Set(existingConvs.map(c => c.id));
+        const currentIds = new Set(conversations.map(c => c.id));
+        
+        // Find conversations to delete (exist in DB but not in current array)
+        const toDelete = [...existingIds].filter(id => !currentIds.has(id));
+        debugLog('SAVE_INTERNAL: Conversations to delete', { count: toDelete.length, ids: toDelete });
+        
+        // Delete conversations that are no longer in the array
+        for (const idToDelete of toDelete) {
+          debugLog('SAVE_INTERNAL: Deleting conversation', { convId: idToDelete });
+          // Messages will be deleted automatically due to CASCADE
+          await database.execute(
+            'DELETE FROM conversations WHERE id = ?',
+            [idToDelete]
+          );
+        }
+        
+        // Now save/update the existing conversations
         for (const conv of conversations) {
+          debugLog('SAVE_INTERNAL: Saving conversation', { convId: conv.id, messageCount: conv.messages?.length || 0 });
           // Save conversation
           await database.execute(
             `INSERT OR REPLACE INTO conversations 
@@ -484,6 +590,7 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
           );
 
           // Clear existing messages
+          debugLog('SAVE_INTERNAL: Clearing existing messages for conversation', conv.id);
           await database.execute(
             'DELETE FROM conversation_messages WHERE conversation_id = ?',
             [conv.id]
@@ -491,6 +598,7 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
 
           // Save messages
           if (conv.messages) {
+            debugLog('SAVE_INTERNAL: Saving messages', { convId: conv.id, messageCount: conv.messages.length });
             for (const message of conv.messages) {
               await database.execute(
                 `INSERT INTO conversation_messages 
@@ -511,15 +619,23 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
         }
         
         if (inTransaction) {
+          debugLog('SAVE_INTERNAL: Committing transaction');
           await database.execute('COMMIT');
+        } else {
+          debugLog('SAVE_INTERNAL: No transaction to commit');
         }
+        debugLog('SAVE_INTERNAL: All database operations completed successfully');
         return; // Success, exit retry loop
         
       } catch (operationError) {
+        debugLog('SAVE_INTERNAL: Database operation failed', operationError);
         if (inTransaction) {
           try {
+            debugLog('SAVE_INTERNAL: Rolling back transaction');
             await database.execute('ROLLBACK');
+            debugLog('SAVE_INTERNAL: Transaction rolled back successfully');
           } catch (rollbackError) {
+            debugLog('SAVE_INTERNAL: Rollback failed', rollbackError);
             console.error('Failed to rollback transaction:', rollbackError);
           }
         }
@@ -527,22 +643,28 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
       }
       
     } catch (error) {
+      debugLog('SAVE_INTERNAL: Attempt failed', { attempt, error });
       console.error(`saveConversations attempt ${attempt} failed:`, error);
       
       // Check if it's a database lock error and we have retries left
       if (error instanceof Error && 
           error.message.includes('database is locked') && 
           attempt < maxRetries) {
-        console.log(`Database locked, retrying in ${retryDelay * attempt}ms... (attempt ${attempt}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        const waitTime = retryDelay * attempt;
+        debugLog('SAVE_INTERNAL: Database locked, scheduling retry', { attempt, maxRetries, waitTime });
+        console.log(`Database locked, retrying in ${waitTime}ms... (attempt ${attempt}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
         continue; // Retry
       }
       
       // If not a lock error or out of retries, show error and throw
+      debugLog('SAVE_INTERNAL: No more retries or non-retryable error', { attempt, maxRetries, error });
       showError(`Failed to save conversations: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
+  
+  debugLog('SAVE_INTERNAL: All retry attempts exhausted');
 }
 
 export async function loadSelectedConversationId(): Promise<string | null> {
