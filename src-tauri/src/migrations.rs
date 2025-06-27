@@ -175,11 +175,25 @@ pub fn get_migrations() -> Vec<Migration> {
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
-                category TEXT,
-                tags TEXT, -- JSON array of tags
                 created_at DATETIME NOT NULL,
                 updated_at DATETIME NOT NULL
             );",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 14,
+            description: "remove_category_and_tags_from_prompts",
+            sql: "CREATE TABLE prompts_new (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            );
+            INSERT INTO prompts_new (id, title, content, created_at, updated_at)
+            SELECT id, title, content, created_at, updated_at FROM prompts;
+            DROP TABLE prompts;
+            ALTER TABLE prompts_new RENAME TO prompts;",
             kind: MigrationKind::Up,
         },
     ]

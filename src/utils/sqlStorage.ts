@@ -1033,20 +1033,16 @@ export async function loadPrompts(): Promise<Prompt[]> {
       id: string;
       title: string;
       content: string;
-      category: string | null;
-      tags: string | null;
       created_at: string;
       updated_at: string;
     }[]>(
-      'SELECT * FROM prompts ORDER BY updated_at DESC'
+      'SELECT id, title, content, created_at, updated_at FROM prompts ORDER BY updated_at DESC'
     );
     
     return prompts.map(p => ({
       id: p.id,
       title: p.title,
       content: p.content,
-      category: p.category || undefined,
-      tags: p.tags ? JSON.parse(p.tags) : undefined,
       createdAt: new Date(p.created_at).getTime(),
       updatedAt: new Date(p.updated_at).getTime()
     }));
@@ -1064,14 +1060,12 @@ export async function savePrompt(prompt: Prompt): Promise<void> {
     
     await database.execute(
       `INSERT OR REPLACE INTO prompts 
-       (id, title, content, category, tags, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+       (id, title, content, created_at, updated_at) 
+       VALUES (?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
       [
         prompt.id,
         prompt.title,
         prompt.content,
-        prompt.category || null,
-        prompt.tags ? JSON.stringify(prompt.tags) : null,
         (prompt.createdAt / 1000).toString(),
         (prompt.updatedAt / 1000).toString()
       ]

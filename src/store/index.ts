@@ -666,13 +666,11 @@ export function stopImageCleanup() {
 }
 
 // Prompt management functions
-export async function createPrompt(title: string, content: string, category?: string, tags?: string[]): Promise<Prompt> {
+export async function createPrompt(title: string, content: string): Promise<Prompt> {
   const newPrompt: Prompt = {
     id: Date.now().toString(),
     title,
     content,
-    category,
-    tags,
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -688,7 +686,7 @@ export async function createPrompt(title: string, content: string, category?: st
   }
 }
 
-export async function updatePrompt(promptId: string, updates: Partial<Pick<Prompt, 'title' | 'content' | 'category' | 'tags'>>): Promise<void> {
+export async function updatePrompt(promptId: string, updates: Partial<Pick<Prompt, 'title' | 'content'>>): Promise<void> {
   const existingPrompt = prompts.value.find(p => p.id === promptId);
   if (!existingPrompt) {
     throw new Error('Prompt not found');
@@ -729,28 +727,10 @@ export function searchPrompts(query: string): Prompt[] {
   const lowercaseQuery = query.toLowerCase();
   return prompts.value.filter(prompt => 
     prompt.title.toLowerCase().includes(lowercaseQuery) ||
-    prompt.content.toLowerCase().includes(lowercaseQuery) ||
-    prompt.category?.toLowerCase().includes(lowercaseQuery) ||
-    prompt.tags?.some(tag => tag.toLowerCase().includes(lowercaseQuery))
+    prompt.content.toLowerCase().includes(lowercaseQuery)
   );
 }
 
-export function getPromptsByCategory(category?: string): Prompt[] {
-  if (!category) {
-    return prompts.value.filter(p => !p.category);
-  }
-  return prompts.value.filter(p => p.category === category);
-}
-
-export function getAllCategories(): string[] {
-  const categories = new Set<string>();
-  prompts.value.forEach(prompt => {
-    if (prompt.category) {
-      categories.add(prompt.category);
-    }
-  });
-  return Array.from(categories).sort();
-}
 
 // Initialize when DOM is ready to avoid import timing issues
 if (typeof window !== 'undefined') {

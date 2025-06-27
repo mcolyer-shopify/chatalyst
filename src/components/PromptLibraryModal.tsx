@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { Prompt } from '../types';
-import { prompts, createPrompt, updatePrompt, deletePromptById, searchPrompts, getAllCategories } from '../store';
+import { prompts, createPrompt, updatePrompt, deletePromptById, searchPrompts } from '../store';
 
 interface PromptLibraryModalProps {
   show: boolean;
@@ -11,19 +11,14 @@ interface PromptLibraryModalProps {
 export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLibraryModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [tempPrompt, setTempPrompt] = useState<{
     title: string;
     content: string;
-    category: string;
-    tags: string;
   }>({
     title: '',
-    content: '',
-    category: '',
-    tags: ''
+    content: ''
   });
 
   // Debounce search query to improve performance with large prompt libraries
@@ -37,20 +32,15 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
 
   const filteredPrompts = debouncedSearchQuery 
     ? searchPrompts(debouncedSearchQuery)
-    : selectedCategory 
-      ? prompts.value.filter(p => p.category === selectedCategory)
-      : prompts.value;
-
-  const categories = getAllCategories();
+    : prompts.value;
 
   useEffect(() => {
     if (!show) {
       setSearchQuery('');
       setDebouncedSearchQuery('');
-      setSelectedCategory('');
       setEditingPrompt(null);
       setIsCreating(false);
-      setTempPrompt({ title: '', content: '', category: '', tags: '' });
+      setTempPrompt({ title: '', content: '' });
     }
   }, [show]);
 
@@ -64,7 +54,7 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
   const handleCreateNew = () => {
     setIsCreating(true);
     setEditingPrompt(null);
-    setTempPrompt({ title: '', content: '', category: '', tags: '' });
+    setTempPrompt({ title: '', content: '' });
   };
 
   const handleEditPrompt = (prompt: Prompt) => {
@@ -72,9 +62,7 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
     setIsCreating(false);
     setTempPrompt({
       title: prompt.title,
-      content: prompt.content,
-      category: prompt.category || '',
-      tags: prompt.tags?.join(', ') || ''
+      content: prompt.content
     });
   };
 
@@ -83,27 +71,21 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
       return;
     }
 
-    const tags = tempPrompt.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-
     try {
       if (editingPrompt) {
         await updatePrompt(editingPrompt.id, {
           title: tempPrompt.title,
-          content: tempPrompt.content,
-          category: tempPrompt.category || undefined,
-          tags: tags.length > 0 ? tags : undefined
+          content: tempPrompt.content
         });
       } else {
         await createPrompt(
           tempPrompt.title,
-          tempPrompt.content,
-          tempPrompt.category || undefined,
-          tags.length > 0 ? tags : undefined
+          tempPrompt.content
         );
       }
       setIsCreating(false);
       setEditingPrompt(null);
-      setTempPrompt({ title: '', content: '', category: '', tags: '' });
+      setTempPrompt({ title: '', content: '' });
     } catch (error) {
       console.error('Failed to save prompt:', error);
     }
@@ -126,14 +108,14 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
   const handleCancel = () => {
     setIsCreating(false);
     setEditingPrompt(null);
-    setTempPrompt({ title: '', content: '', category: '', tags: '' });
+    setTempPrompt({ title: '', content: '' });
     onCancel();
   };
 
   const handleCancelEdit = () => {
     setIsCreating(false);
     setEditingPrompt(null);
-    setTempPrompt({ title: '', content: '', category: '', tags: '' });
+    setTempPrompt({ title: '', content: '' });
   };
 
   return (
@@ -152,19 +134,6 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
               onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
               class="search-input"
             />
-          </div>
-          
-          <div class="form-group">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.currentTarget.value)}
-              class="category-select"
-            >
-              <option value="">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
           </div>
 
           <button onClick={handleCreateNew} class="button-primary">
@@ -205,35 +174,6 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
               />
             </div>
 
-            <div class="form-group">
-              <label>Category:</label>
-              <input
-                type="text"
-                value={tempPrompt.category}
-                onInput={(e) =>
-                  setTempPrompt({
-                    ...tempPrompt,
-                    category: (e.target as HTMLInputElement).value
-                  })
-                }
-                placeholder="Optional category..."
-              />
-            </div>
-
-            <div class="form-group">
-              <label>Tags (comma-separated):</label>
-              <input
-                type="text"
-                value={tempPrompt.tags}
-                onInput={(e) =>
-                  setTempPrompt({
-                    ...tempPrompt,
-                    tags: (e.target as HTMLInputElement).value
-                  })
-                }
-                placeholder="tag1, tag2, tag3..."
-              />
-            </div>
 
             <div class="form-actions">
               <button onClick={handleCancelEdit} class="button-secondary">
@@ -286,19 +226,6 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
                 </div>
                 
                 <div class="prompt-content">{prompt.content}</div>
-                
-                <div class="prompt-meta">
-                  {prompt.category && (
-                    <span class="prompt-category">📁 {prompt.category}</span>
-                  )}
-                  {prompt.tags && prompt.tags.length > 0 && (
-                    <div class="prompt-tags">
-                      {prompt.tags.map(tag => (
-                        <span key={tag} class="prompt-tag">#{tag}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             ))
           )}
