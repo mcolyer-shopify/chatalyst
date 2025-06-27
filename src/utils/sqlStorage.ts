@@ -472,8 +472,8 @@ export async function saveSingleConversation(conversation: Conversation): Promis
         for (const message of conversation.messages) {
           await database.execute(
             `INSERT INTO conversation_messages 
-             (id, conversation_id, role, content, timestamp, model, image_ids) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+             (id, conversation_id, role, content, timestamp, model, image_ids, tool_name, tool_call, tool_result) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               message.id,
               conversation.id,
@@ -481,7 +481,10 @@ export async function saveSingleConversation(conversation: Conversation): Promis
               message.content,
               message.timestamp,
               (message as unknown as { model?: string }).model || null,
-              message.imageIds ? JSON.stringify(message.imageIds) : null
+              message.imageIds ? JSON.stringify(message.imageIds) : null,
+              (message as unknown as { toolName?: string }).toolName || null,
+              (message as unknown as { toolCall?: any }).toolCall ? JSON.stringify((message as unknown as { toolCall: any }).toolCall) : null,
+              (message as unknown as { toolResult?: any }).toolResult ? JSON.stringify((message as unknown as { toolResult: any }).toolResult) : null
             ]
           );
         }
@@ -579,20 +582,46 @@ export async function loadConversations(): Promise<Conversation[]> {
         timestamp: number;
         model: string | null;
         image_ids: string | null;
+        tool_name: string | null;
+        tool_call: string | null;
+        tool_result: string | null;
       }[]>(
         'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY timestamp ASC',
         [conv.id]
       );
       debugLog('LOAD_CONVERSATIONS: Messages loaded', { convId: conv.id, messageCount: messages.length });
       
-      const processedMessages: Message[] = messages.map(msg => ({
-        id: msg.id,
-        role: msg.role as 'user' | 'assistant' | 'tool' | 'system',
-        content: msg.content,
-        timestamp: msg.timestamp,
-        model: msg.model || undefined,
-        imageIds: msg.image_ids ? JSON.parse(msg.image_ids) : undefined
-      }));
+      const processedMessages: Message[] = messages.map(msg => {
+        const message: any = {
+          id: msg.id,
+          role: msg.role as 'user' | 'assistant' | 'tool' | 'system',
+          content: msg.content,
+          timestamp: msg.timestamp,
+          model: msg.model || undefined,
+          imageIds: msg.image_ids ? JSON.parse(msg.image_ids) : undefined
+        };
+        
+        // Add tool-specific fields for tool messages
+        if (msg.role === 'tool') {
+          if (msg.tool_name) message.toolName = msg.tool_name;
+          if (msg.tool_call) {
+            try {
+              message.toolCall = JSON.parse(msg.tool_call);
+            } catch (e) {
+              debugLog('LOAD_CONVERSATIONS: Failed to parse tool_call JSON', { error: e, toolCall: msg.tool_call });
+            }
+          }
+          if (msg.tool_result) {
+            try {
+              message.toolResult = JSON.parse(msg.tool_result);
+            } catch (e) {
+              debugLog('LOAD_CONVERSATIONS: Failed to parse tool_result JSON', { error: e, toolResult: msg.tool_result });
+            }
+          }
+        }
+        
+        return message;
+      });
       
       result.push({
         id: conv.id,
@@ -785,8 +814,8 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
             for (const message of conv.messages) {
               await database.execute(
                 `INSERT INTO conversation_messages 
-                 (id, conversation_id, role, content, timestamp, model, image_ids) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                 (id, conversation_id, role, content, timestamp, model, image_ids, tool_name, tool_call, tool_result) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                   message.id,
                   conv.id,
@@ -794,7 +823,10 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
                   message.content,
                   message.timestamp,
                   (message as unknown as { model?: string }).model || null,
-                  message.imageIds ? JSON.stringify(message.imageIds) : null
+                  message.imageIds ? JSON.stringify(message.imageIds) : null,
+                  (message as unknown as { toolName?: string }).toolName || null,
+                  (message as unknown as { toolCall?: any }).toolCall ? JSON.stringify((message as unknown as { toolCall: any }).toolCall) : null,
+                  (message as unknown as { toolResult?: any }).toolResult ? JSON.stringify((message as unknown as { toolResult: any }).toolResult) : null
                 ]
               );
             }

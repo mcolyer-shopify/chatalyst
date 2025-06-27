@@ -160,6 +160,14 @@ pub fn get_migrations() -> Vec<Migration> {
                   CREATE INDEX idx_favorite_models_provider_key ON favorite_models(provider_key);",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 12,
+            description: "add_tool_fields_to_conversation_messages",
+            sql: "ALTER TABLE conversation_messages ADD COLUMN tool_name TEXT;
+                  ALTER TABLE conversation_messages ADD COLUMN tool_call TEXT; -- JSON for tool call arguments
+                  ALTER TABLE conversation_messages ADD COLUMN tool_result TEXT; -- JSON for tool result",
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
