@@ -4,6 +4,7 @@ import { Conversation } from './components/Conversation';
 import { MCPSidebar } from './components/MCPSidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { MCPSettingsModal } from './components/MCPSettingsModal';
+import { PromptLibraryModal } from './components/PromptLibraryModal';
 import { 
   conversations, 
   selectedConversationId, 
@@ -31,6 +32,8 @@ import './App.css';
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMcpSettings, setShowMcpSettings] = useState(false);
+  const [showPromptLibrary, setShowPromptLibrary] = useState(false);
+  const [selectedPromptContent, setSelectedPromptContent] = useState<string>('');
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const appRef = useRef<HTMLDivElement>(null);
@@ -174,6 +177,18 @@ function App() {
     updateConversationModel(conversation.id, modelId);
   };
 
+  // Prompt library management
+  const handleOpenPromptLibrary = () => {
+    setShowPromptLibrary(true);
+  };
+
+  const handleSelectPrompt = (content: string) => {
+    setSelectedPromptContent(content);
+    setShowPromptLibrary(false);
+    // Reset the selected prompt content after a brief delay to allow the component to consume it
+    setTimeout(() => setSelectedPromptContent(''), 100);
+  };
+
   return (
     <div class="app" ref={appRef}>
       <SettingsModal
@@ -191,6 +206,12 @@ function App() {
           setShowMcpSettings(false);
           clearError();
         }}
+      />
+
+      <PromptLibraryModal
+        show={showPromptLibrary}
+        onSelectPrompt={handleSelectPrompt}
+        onCancel={() => setShowPromptLibrary(false)}
       />
 
       <div class="app-content">
@@ -247,6 +268,8 @@ function App() {
             onDeleteMessage={handleDeleteMessage}
             onModelChange={handleConversationModelChange}
             onStopGeneration={stopGeneration}
+            onOpenPromptLibrary={handleOpenPromptLibrary}
+            selectedPromptContent={selectedPromptContent}
           />
           
           {showRightSidebar && (

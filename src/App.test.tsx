@@ -45,6 +45,7 @@ vi.mock('./store', () => {
     errorMessage: signal(null),
     errorTimestamp: signal(null),
     mcpServers: signal([]),
+    prompts: signal([]),
     createConversation: vi.fn(),
     deleteConversation: vi.fn(),
     archiveConversation: vi.fn(),
@@ -54,7 +55,12 @@ vi.mock('./store', () => {
     updateMessage: vi.fn(),
     updateSettings: vi.fn(),
     showError: vi.fn(),
-    clearError: vi.fn()
+    clearError: vi.fn(),
+    createPrompt: vi.fn(),
+    updatePrompt: vi.fn(),
+    deletePromptById: vi.fn(),
+    searchPrompts: vi.fn(),
+    getAllCategories: vi.fn()
   };
 });
 

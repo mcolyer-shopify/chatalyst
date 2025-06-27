@@ -18,6 +18,7 @@ interface MessageFormProps {
   inputRef: { current: HTMLTextAreaElement | null };
   isProcessingImages: boolean;
   onImageSelect: (files: File[]) => Promise<void>;
+  onOpenPromptLibrary: () => void;
 }
 
 export function MessageForm({
@@ -35,7 +36,8 @@ export function MessageForm({
   onPaste,
   inputRef,
   isProcessingImages,
-  onImageSelect
+  onImageSelect,
+  onOpenPromptLibrary
 }: MessageFormProps) {
   const [isStopping, setIsStopping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,6 +111,16 @@ export function MessageForm({
           <span aria-hidden="true">
             {isProcessingImages ? '⏳' : '📎'}
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={onOpenPromptLibrary}
+          disabled={disabled && !isGenerating}
+          class="message-input-prompt-button"
+          title="Open prompt library"
+          aria-label="Open prompt library"
+        >
+          <span aria-hidden="true">💬</span>
         </button>
         <textarea
           ref={inputRef}

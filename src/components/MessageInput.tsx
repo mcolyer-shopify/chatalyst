@@ -13,6 +13,8 @@ interface MessageInputProps {
   isGenerating?: boolean;
   userMessages?: string[]; // Array of previous user messages
   conversationId?: string; // Track conversation changes for auto-focus
+  onOpenPromptLibrary: () => void;
+  selectedPromptContent?: string;
 }
 
 interface MessageInputState {
@@ -75,7 +77,9 @@ export function MessageInput({
   disabled = false, 
   isGenerating = false, 
   userMessages = [], 
-  conversationId 
+  conversationId,
+  onOpenPromptLibrary,
+  selectedPromptContent
 }: MessageInputProps) {
   const [state, dispatch] = useReducer(messageInputReducer, initialState);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -105,6 +109,19 @@ export function MessageInput({
       dispatch({ type: 'UPDATE_TEMP_MESSAGE_FROM_MESSAGE', payload: state.message });
     }
   }, [state.message, state.historyIndex]);
+
+  // Handle selected prompt content
+  useEffect(() => {
+    if (selectedPromptContent) {
+      dispatch({ type: 'SET_MESSAGE', payload: selectedPromptContent });
+      // Focus the input after setting the prompt
+      if (inputRef.current) {
+        inputRef.current.focus();
+        // Move cursor to the end
+        inputRef.current.setSelectionRange(selectedPromptContent.length, selectedPromptContent.length);
+      }
+    }
+  }, [selectedPromptContent]);
 
   // Clear images and errors when conversation changes
   useEffect(() => {
@@ -200,6 +217,7 @@ export function MessageInput({
             dispatch({ type: 'SET_IS_PROCESSING_IMAGES', payload: false });
           }
         }}
+        onOpenPromptLibrary={onOpenPromptLibrary}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import Database from '@tauri-apps/plugin-sql';
-import type { Conversation, Settings, Model, Message } from '../types';
+import type { Conversation, Settings, Model, Message, Prompt } from '../types';
 import { showError } from '../store';
 
 // Storage keys for migration
@@ -1020,5 +1020,78 @@ export async function saveFavoriteModels(provider: string, baseURL: string, favo
     }
   } catch (error) {
     console.warn('Failed to save favorite models:', error);
+  }
+}
+
+// Prompt storage functions
+export async function loadPrompts(): Promise<Prompt[]> {
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    const prompts = await database.select<{
+      id: string;
+      title: string;
+      content: string;
+      category: string | null;
+      tags: string | null;
+      created_at: string;
+      updated_at: string;
+    }[]>(
+      'SELECT * FROM prompts ORDER BY updated_at DESC'
+    );
+    
+    return prompts.map(p => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      category: p.category || undefined,
+      tags: p.tags ? JSON.parse(p.tags) : undefined,
+      createdAt: new Date(p.created_at).getTime(),
+      updatedAt: new Date(p.updated_at).getTime()
+    }));
+  } catch (error) {
+    console.error('Failed to load prompts:', error);
+    showError(`Failed to load prompts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return [];
+  }
+}
+
+export async function savePrompt(prompt: Prompt): Promise<void> {
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    await database.execute(
+      `INSERT OR REPLACE INTO prompts 
+       (id, title, content, category, tags, created_at, updated_at) 
+       VALUES (?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+      [
+        prompt.id,
+        prompt.title,
+        prompt.content,
+        prompt.category || null,
+        prompt.tags ? JSON.stringify(prompt.tags) : null,
+        (prompt.createdAt / 1000).toString(),
+        (prompt.updatedAt / 1000).toString()
+      ]
+    );
+  } catch (error) {
+    console.error('Failed to save prompt:', error);
+    showError(`Failed to save prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
+  }
+}
+
+export async function deletePrompt(promptId: string): Promise<void> {
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    await database.execute('DELETE FROM prompts WHERE id = ?', [promptId]);
+  } catch (error) {
+    console.error('Failed to delete prompt:', error);
+    showError(`Failed to delete prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
   }
 }

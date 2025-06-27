@@ -12,9 +12,11 @@ interface ConversationProps {
   onDeleteMessage: (messageId: string) => void;
   onModelChange: (modelId: string) => void;
   onStopGeneration?: () => void;
+  onOpenPromptLibrary: () => void;
+  selectedPromptContent?: string;
 }
 
-export function Conversation({ conversation, onSendMessage, onRetryMessage, onDeleteMessage, onModelChange, onStopGeneration }: ConversationProps) {
+export function Conversation({ conversation, onSendMessage, onRetryMessage, onDeleteMessage, onModelChange, onStopGeneration, onOpenPromptLibrary, selectedPromptContent }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -230,6 +232,8 @@ export function Conversation({ conversation, onSendMessage, onRetryMessage, onDe
           .filter(m => m.role === 'user')
           .map(m => m.content)}
         conversationId={conversation.id}
+        onOpenPromptLibrary={onOpenPromptLibrary}
+        selectedPromptContent={selectedPromptContent}
       />
     </div>
   );
