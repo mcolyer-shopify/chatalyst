@@ -340,7 +340,7 @@ export async function addMessage(conversationId: string, message: Message) {
   
   // Save to database asynchronously (don't block UI)
   saveSingleConversation(updatedConversation).catch(error => {
-    console.error('Failed to save message:', error);
+    console.error('Failed to save message:', message.content?.substring(0, 100) + (message.content && message.content.length > 100 ? '...' : ''), error);
     // Don't show error for every message, just log it
   });
 }
