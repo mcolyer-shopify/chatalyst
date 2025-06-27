@@ -39,9 +39,13 @@ function App() {
   const { sendMessage, retryMessage, stopGeneration, generateConversationTitle } = useMessageHandling();
   
   // Conversation management
-  const createNewConversation = () => {
+  const createNewConversation = async () => {
     const title = `New Conversation ${conversations.value.length + 1}`;
-    createConversation(title, settings.value.defaultModel);
+    try {
+      await createConversation(title, settings.value.defaultModel);
+    } catch {
+      // Error is already handled in createConversation
+    }
   };
 
   // Keyboard shortcut handlers

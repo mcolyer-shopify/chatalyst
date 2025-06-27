@@ -165,19 +165,12 @@ export function useMessageHandling() {
         },
         onFinish: async ({ response }) => {
           conversationMessages.push(...response.messages);
-          console.log('[useMessageHandling] Full response messages:', conversationMessages);
           updateConversationSDKMessages(conversation.id, conversationMessages);
         }
       });
       
       // Stream the response
-      
       for await (const part of result.fullStream) {
-        // Debug: Log all stream parts to identify image processing
-        if (part.type !== 'text-delta') {
-          console.log('[DEBUG] Stream part:', part.type, JSON.stringify(part, null, 2));
-        }
-        console.log('[useMessageHandling] Stream part:', part);
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
           
@@ -206,7 +199,6 @@ export function useMessageHandling() {
         }
       }
     } catch (err) {
-      console.log('[useMessageHandling] Caught error:', err, 'Name:', (err as Error).name);
       if ((err as Error).name === 'AbortError') {
         // User stopped the generation
         const currentContent = fullContent.trim();
@@ -228,7 +220,6 @@ export function useMessageHandling() {
         }
       }
     } finally {
-      console.log('[useMessageHandling] Finally block - clearing streaming state');
       isStreaming.value = false;
       setAbortController(null);
     }
@@ -398,17 +389,12 @@ Title:`,
         },
         onFinish: async ({ response }) => {
           conversationMessages.push(...response.messages);
-          console.log('[useMessageHandling] Full response messages:', conversationMessages);
           updateConversationSDKMessages(conversation.id, conversationMessages);
         }
       });
       
       // Stream the response
       for await (const part of result.fullStream) {
-        // Debug: Log all stream parts to identify image processing
-        if (part.type !== 'text-delta') {
-          console.log('[DEBUG] Stream part:', part.type, JSON.stringify(part, null, 2));
-        }
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
           
@@ -437,7 +423,6 @@ Title:`,
         }
       }
     } catch (err) {
-      console.log('[useMessageHandling] Caught error:', err, 'Name:', (err as Error).name);
       if ((err as Error).name === 'AbortError') {
         // User stopped the generation
         const currentContent = fullContent.trim();
@@ -459,7 +444,6 @@ Title:`,
         }
       }
     } finally {
-      console.log('[useMessageHandling] Finally block - clearing streaming state');
       isStreaming.value = false;
       setAbortController(null);
     }
