@@ -10,6 +10,7 @@ interface PromptLibraryModalProps {
 
 export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLibraryModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -25,8 +26,17 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
     tags: ''
   });
 
-  const filteredPrompts = searchQuery 
-    ? searchPrompts(searchQuery)
+  // Debounce search query to improve performance with large prompt libraries
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const filteredPrompts = debouncedSearchQuery 
+    ? searchPrompts(debouncedSearchQuery)
     : selectedCategory 
       ? prompts.value.filter(p => p.category === selectedCategory)
       : prompts.value;
@@ -36,6 +46,7 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
   useEffect(() => {
     if (!show) {
       setSearchQuery('');
+      setDebouncedSearchQuery('');
       setSelectedCategory('');
       setEditingPrompt(null);
       setIsCreating(false);
