@@ -16,9 +16,9 @@ import {
   generatingTitleFor,
   removeMessagesAfter
 } from '../store';
-import { createAIProvider, createModelFunction } from '../utils/ai';
+import { createAIProvider, createModelFunction, modelSupportsBuiltinTools } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
-import { createToolsObject } from '../utils/tools';
+import { createToolsObject, getBuiltinToolsForModel, createBuiltinToolsArray } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
 import { DEFAULT_MODEL, MAX_TOOL_STEPS } from '../constants/ai';
 import { storeImage, getImage, createDataURL } from '../utils/images';
@@ -86,6 +86,14 @@ export function useMessageHandling() {
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
       
+      // Get built-in tools if supported by the model
+      const providerType = aiProvider._providerType;
+      const supportsBuiltinTools = modelSupportsBuiltinTools(providerType, modelToUse);
+      const builtinTools = supportsBuiltinTools 
+        ? getBuiltinToolsForModel(modelToUse, conversation.enabledBuiltinTools)
+        : [];
+      const builtinToolsArray = createBuiltinToolsArray(builtinTools);
+      
       // Use SDK messages if available, otherwise create from scratch
       const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];
       
@@ -128,10 +136,15 @@ export function useMessageHandling() {
       // Track tool messages by ID to update them when results come in
       const toolMessagesMap = new Map<string, Message>();
       
+      // Combine MCP tools with built-in tools for responses API
+      const combinedTools = supportsBuiltinTools && builtinToolsArray.length > 0
+        ? { ...toolsObject, ...builtinToolsArray.reduce((acc, tool) => ({ ...acc, [tool.type]: tool }), {}) }
+        : toolsObject;
+
       const result = await streamText({
         model: createModelFunction(aiProvider, modelToUse),
         messages: conversationMessages,
-        tools: toolsObject,
+        tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal,

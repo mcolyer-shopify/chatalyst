@@ -57,6 +57,11 @@ export function createModelFunction(provider: AIProviderWithMetadata, model: str
   return provider(model);
 }
 
+// Check if a model supports built-in tools
+export function modelSupportsBuiltinTools(provider: string, model: string): boolean {
+  return provider === AI_PROVIDERS.OPENAI && shouldUseResponsesAPI(provider, model);
+}
+
 export function createAIProvider(settings: Settings): AIProviderWithMetadata {
   let baseURL = settings.baseURL;
   let apiKey = settings.apiKey;

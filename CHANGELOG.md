@@ -46,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - When no existing models match the search term, a "Use as custom model" option appears
   - Full keyboard navigation support (arrow keys, Enter) for custom model selection
   - Preserves existing model search and favorites functionality
+- Added OpenAI built-in tools support for responses API models
+  - Initial support for built-in tools like Web Search preview
+  - Automatic detection of built-in tool compatibility based on model and provider
+  - Extended conversation storage to track enabled built-in tools
+  - Foundation for integrating built-in tools with responses API
 
 ### Fixed
 - Fixed database lock errors when deleting conversations
