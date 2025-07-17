@@ -282,23 +282,34 @@ export function ModelSelector({
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!isOpen) return;
 
+    // Calculate total available options (models + custom option if applicable)
+    const hasCustomOption = searchTerm.trim() && filteredModels.length === 0;
+    const totalOptions = filteredModels.length + (hasCustomOption ? 1 : 0);
+
     switch (e.key) {
     case 'ArrowDown':
       e.preventDefault();
       setHighlightedIndex(prev => 
-        prev < filteredModels.length - 1 ? prev + 1 : 0
+        prev < totalOptions - 1 ? prev + 1 : 0
       );
       break;
     case 'ArrowUp':
       e.preventDefault();
       setHighlightedIndex(prev => 
-        prev > 0 ? prev - 1 : filteredModels.length - 1
+        prev > 0 ? prev - 1 : totalOptions - 1
       );
       break;
     case 'Enter':
       e.preventDefault();
-      if (highlightedIndex >= 0 && filteredModels[highlightedIndex]) {
+      if (highlightedIndex >= 0 && highlightedIndex < filteredModels.length) {
+        // Select from filtered models
         handleModelSelect(filteredModels[highlightedIndex].id);
+      } else if (hasCustomOption && highlightedIndex === filteredModels.length) {
+        // Select custom model option
+        handleModelSelect(searchTerm.trim());
+      } else if (searchTerm.trim() && filteredModels.length === 0) {
+        // If no models match and there's a search term, use it as a custom model
+        handleModelSelect(searchTerm.trim());
       }
       break;
     case 'Escape':
@@ -367,7 +378,7 @@ export function ModelSelector({
                   value={searchTerm}
                   onInput={(e) => setSearchTerm(e.currentTarget.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Search models..."
+                  placeholder="Search models or enter custom model name..."
                   className="model-selector-search-input"
                   autoCorrect="off"
                 />
@@ -403,9 +414,22 @@ export function ModelSelector({
                       </div>
                     </button>
                   ))
+                ) : searchTerm.trim() ? (
+                  <div className="model-selector-no-results">
+                    <div>No models found matching "{searchTerm}"</div>
+                    <button
+                      className={`model-selector-custom-option ${
+                        highlightedIndex === filteredModels.length ? 'highlighted' : ''
+                      }`}
+                      onClick={() => handleModelSelect(searchTerm.trim())}
+                      onMouseEnter={() => setHighlightedIndex(filteredModels.length)}
+                    >
+                      Use "{searchTerm.trim()}" as custom model
+                    </button>
+                  </div>
                 ) : (
                   <div className="model-selector-no-results">
-                    No models found matching "{searchTerm}"
+                    No models available
                   </div>
                 )}
               </div>

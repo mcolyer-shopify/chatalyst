@@ -35,6 +35,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved image preview container layout with proper padding and full-width border
 - Cleaned up Rust backend by removing placeholder Tauri commands for image operations
 - Added debug logging for AI SDK stream processing to investigate external image URL handling issues
+- Upgraded OpenAI API integration to use OpenAI responses API for improved performance and capabilities
+  - Automatically uses responses API for OpenAI models (gpt-4o, gpt-4o-mini, o1-preview, o1-mini, etc.)
+  - Maintains backward compatibility with other providers (OpenRouter, Ollama, Anthropic, etc.)
+  - Enhanced provider detection system to determine appropriate API usage
+  - Improved type safety with dedicated provider metadata tracking
+  - Better conversation understanding and context handling for OpenAI models
+- Added custom model name input to conversation model picker
+  - Users can now type any custom model name in the search field
+  - When no existing models match the search term, a "Use as custom model" option appears
+  - Full keyboard navigation support (arrow keys, Enter) for custom model selection
+  - Preserves existing model search and favorites functionality
 
 ### Fixed
 - Fixed database lock errors when deleting conversations
@@ -48,6 +59,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Rust code formatting issues with trailing whitespace
 - Fixed TypeScript compilation errors with null safety and type assertions
 - Fixed test failures by properly disabling attachment button during image processing
+- Fixed OpenAI responses API detection for custom model names
+  - Custom models like "o3-deep-research" now properly use the responses API instead of chat completions
+  - Enhanced model detection logic to match against the predefined OPENAI_MODELS list using both exact and partial matching
+  - Models are now correctly identified as responses API compatible when they contain any of the supported OpenAI model names
 
 ### Added
 - Image attachment support in conversations

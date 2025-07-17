@@ -16,7 +16,7 @@ import {
   generatingTitleFor,
   removeMessagesAfter
 } from '../store';
-import { createAIProvider } from '../utils/ai';
+import { createAIProvider, createModelFunction } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
@@ -90,7 +90,7 @@ export function useMessageHandling() {
       const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];
       
       // Create user message content with images if any
-      let messageContent: string | Array<any> = content;
+      let messageContent: string | Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = content;
       
       if (imageIds.length > 0) {
         // Get the stored images and convert to data URLs
@@ -106,7 +106,7 @@ export function useMessageHandling() {
         }
         
         // Create message content with images
-        const contentParts = [];
+        const contentParts: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [];
         if (content.trim()) {
           contentParts.push({ type: 'text', text: content });
         }
@@ -129,7 +129,7 @@ export function useMessageHandling() {
       const toolMessagesMap = new Map<string, Message>();
       
       const result = await streamText({
-        model: aiProvider(modelToUse),
+        model: createModelFunction(aiProvider, modelToUse),
         messages: conversationMessages,
         tools: toolsObject,
         maxSteps: MAX_TOOL_STEPS,
@@ -260,7 +260,7 @@ export function useMessageHandling() {
       const modelToUse = settings.value.defaultModel || DEFAULT_MODEL;
       
       const result = await generateText({
-        model: aiProvider(modelToUse),
+        model: createModelFunction(aiProvider, modelToUse),
         prompt: `Based on the following conversation, generate a brief 3-5 word title that captures the main topic. Respond with only the title, no additional text, quotes, or punctuation.
 
 Conversation:
@@ -353,7 +353,7 @@ Title:`,
       
       
       const result = await streamText({
-        model: aiProvider(modelToUse),
+        model: createModelFunction(aiProvider, modelToUse),
         messages: conversationMessages,
         tools: toolsObject,
         maxSteps: MAX_TOOL_STEPS,
