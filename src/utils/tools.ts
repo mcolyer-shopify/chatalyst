@@ -1,5 +1,6 @@
 import { executeMCPTool } from './mcp';
 import { OPENAI_BUILTIN_TOOLS, OpenAIBuiltinTool, WebSearchConfig } from '../types';
+import { shouldUseResponsesAPI } from './ai';
 
 export interface ActiveTool {
   name: string;
@@ -34,7 +35,12 @@ export function createToolsObject(activeTools: ActiveTool[]) {
   }>);
 }
 
-export function getBuiltinToolsForModel(enabledBuiltinTools: string[] = []): OpenAIBuiltinTool[] {
+export function getBuiltinToolsForModel(provider: string, model: string, enabledBuiltinTools: string[] = []): OpenAIBuiltinTool[] {
+  // Only return tools if the model supports the responses API
+  if (!shouldUseResponsesAPI(provider, model)) {
+    return [];
+  }
+  
   return OPENAI_BUILTIN_TOOLS.filter(tool => {
     // Check if tool is enabled for this conversation
     return enabledBuiltinTools.includes(tool.id);

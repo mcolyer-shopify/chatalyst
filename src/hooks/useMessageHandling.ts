@@ -90,7 +90,7 @@ export function useMessageHandling() {
       const providerType = aiProvider._providerType;
       const supportsBuiltinTools = providerType === 'openai';
       const builtinTools = supportsBuiltinTools 
-        ? getBuiltinToolsForModel(conversation.enabledBuiltinTools)
+        ? getBuiltinToolsForModel(providerType, modelToUse, conversation.enabledBuiltinTools)
         : [];
       const builtinToolsObject = supportsBuiltinTools && builtinTools.length > 0
         ? createBuiltinToolsObject(builtinTools, aiProvider)
@@ -352,7 +352,7 @@ Title:`,
       const providerType = aiProvider._providerType;
       const supportsBuiltinTools = providerType === 'openai';
       const builtinTools = supportsBuiltinTools 
-        ? getBuiltinToolsForModel(conversation.enabledBuiltinTools)
+        ? getBuiltinToolsForModel(providerType, modelToUse, conversation.enabledBuiltinTools)
         : [];
       const builtinToolsObject = supportsBuiltinTools && builtinTools.length > 0
         ? createBuiltinToolsObject(builtinTools, aiProvider)

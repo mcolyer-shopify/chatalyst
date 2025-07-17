@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { mcpServers, selectedConversation, toggleConversationTool, enableAllServerTools, disableAllServerTools, enableAllToolsOnAllServers, settings, enableBuiltinTool, disableBuiltinTool } from '../store';
 import type { MCPServerStatus } from '../types';
 import { OPENAI_BUILTIN_TOOLS } from '../types';
+import { shouldUseResponsesAPI } from '../utils/ai';
 import './MCPSidebar.css';
 
 interface MCPSidebarProps {
@@ -195,7 +196,7 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
       </div>
       
       {/* Built-in Tools Section */}
-      {conversation && settings.value.provider === 'openai' && (
+      {conversation && settings.value.provider === 'openai' && shouldUseResponsesAPI(settings.value.provider, conversation.model || settings.value.defaultModel || '') && (
         <div class="mcp-builtin-tools">
           <div class="mcp-builtin-tools-header">
             <h4>Built-in Tools</h4>
