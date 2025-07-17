@@ -34,21 +34,10 @@ export function createToolsObject(activeTools: ActiveTool[]) {
   }>);
 }
 
-export function getBuiltinToolsForModel(model: string, enabledBuiltinTools: string[] = []): OpenAIBuiltinTool[] {
+export function getBuiltinToolsForModel(enabledBuiltinTools: string[] = []): OpenAIBuiltinTool[] {
   return OPENAI_BUILTIN_TOOLS.filter(tool => {
     // Check if tool is enabled for this conversation
-    if (!enabledBuiltinTools.includes(tool.id)) {
-      return false;
-    }
-    
-    // Check if tool supports this model (if model restrictions exist)
-    if (tool.supportedModels && !tool.supportedModels.some(supportedModel => 
-      model.toLowerCase().includes(supportedModel.toLowerCase())
-    )) {
-      return false;
-    }
-    
-    return true;
+    return enabledBuiltinTools.includes(tool.id);
   });
 }
 

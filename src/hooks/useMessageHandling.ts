@@ -16,7 +16,7 @@ import {
   generatingTitleFor,
   removeMessagesAfter
 } from '../store';
-import { createAIProvider, createModelFunction, modelSupportsBuiltinTools } from '../utils/ai';
+import { createAIProvider, createModelFunction } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject, getBuiltinToolsForModel, createBuiltinToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
@@ -86,11 +86,11 @@ export function useMessageHandling() {
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
       
-      // Get built-in tools if supported by the model
+      // Get built-in tools if using OpenAI provider
       const providerType = aiProvider._providerType;
-      const supportsBuiltinTools = modelSupportsBuiltinTools(providerType, modelToUse);
+      const supportsBuiltinTools = providerType === 'openai';
       const builtinTools = supportsBuiltinTools 
-        ? getBuiltinToolsForModel(modelToUse, conversation.enabledBuiltinTools)
+        ? getBuiltinToolsForModel(conversation.enabledBuiltinTools)
         : [];
       const builtinToolsObject = supportsBuiltinTools && builtinTools.length > 0
         ? createBuiltinToolsObject(builtinTools, aiProvider)
@@ -348,6 +348,16 @@ Title:`,
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
       
+      // Get built-in tools if using OpenAI provider
+      const providerType = aiProvider._providerType;
+      const supportsBuiltinTools = providerType === 'openai';
+      const builtinTools = supportsBuiltinTools 
+        ? getBuiltinToolsForModel(conversation.enabledBuiltinTools)
+        : [];
+      const builtinToolsObject = supportsBuiltinTools && builtinTools.length > 0
+        ? createBuiltinToolsObject(builtinTools, aiProvider)
+        : {};
+      
       // For retry, always reconstruct conversation messages from scratch to ensure clean state
       const conversationMessages: CoreMessage[] = [];
       
@@ -366,11 +376,15 @@ Title:`,
       // Track tool messages by ID to update them when results come in
       const toolMessagesMap = new Map<string, Message>();
       
-      
+      // Combine MCP tools with built-in tools for responses API
+      const combinedTools = supportsBuiltinTools && Object.keys(builtinToolsObject).length > 0
+        ? { ...toolsObject, ...builtinToolsObject }
+        : toolsObject;
+
       const result = await streamText({
         model: createModelFunction(aiProvider, modelToUse),
         messages: conversationMessages,
-        tools: toolsObject,
+        tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal,
