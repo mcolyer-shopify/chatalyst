@@ -213,11 +213,11 @@ describe('ModelSelector', () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search models...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search models or enter custom model name...')).toBeInTheDocument();
     });
 
     // Type in search
-    const searchInput = screen.getByPlaceholderText('Search models...');
+    const searchInput = screen.getByPlaceholderText('Search models or enter custom model name...');
     fireEvent.input(searchInput, { target: { value: 'gpt' } });
 
     await waitFor(() => {
@@ -241,11 +241,11 @@ describe('ModelSelector', () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search models...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search models or enter custom model name...')).toBeInTheDocument();
     });
 
     // Type in search with no matches
-    const searchInput = screen.getByPlaceholderText('Search models...');
+    const searchInput = screen.getByPlaceholderText('Search models or enter custom model name...');
     fireEvent.input(searchInput, { target: { value: 'nonexistent' } });
 
     await waitFor(() => {
@@ -284,10 +284,10 @@ describe('ModelSelector', () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search models...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search models or enter custom model name...')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByPlaceholderText('Search models...');
+    const searchInput = screen.getByPlaceholderText('Search models or enter custom model name...');
 
     // Wait for models to be loaded first
     await waitFor(() => {
@@ -300,15 +300,15 @@ describe('ModelSelector', () => {
     });
     
     // Verify dropdown was closed by Escape
-    expect(screen.queryByPlaceholderText('Search models...')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Search models or enter custom model name...')).not.toBeInTheDocument();
     
     // Reopen dropdown for arrow key test
     fireEvent.click(button);
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search models...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search models or enter custom model name...')).toBeInTheDocument();
     });
     
-    const reopenedSearchInput = screen.getByPlaceholderText('Search models...');
+    const reopenedSearchInput = screen.getByPlaceholderText('Search models or enter custom model name...');
     
     // Test that arrow keys don't crash the component
     await act(async () => {
@@ -318,7 +318,7 @@ describe('ModelSelector', () => {
     });
     
     // Component should still be functional - dropdown should still be open
-    expect(screen.getByPlaceholderText('Search models...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search models or enter custom model name...')).toBeInTheDocument();
     expect(screen.getByText('model-1')).toBeInTheDocument();
     expect(screen.getByText('model-2')).toBeInTheDocument();
     
@@ -466,7 +466,7 @@ describe('ModelSelector', () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText('Search models...');
+      const searchInput = screen.getByPlaceholderText('Search models or enter custom model name...');
       fireEvent.input(searchInput, { target: { value: 'test' } });
     });
 

@@ -11,10 +11,18 @@ vi.mock('./MCPSidebar.css', () => ({}));
 vi.mock('../store', () => {
   const mockMcpServers = signal<MCPServerStatus[]>([]);
   const mockSelectedConversation = signal<Conversation | null>(null);
+  const mockSettings = signal({
+    provider: 'openai',
+    model: 'gpt-4',
+    temperature: 0.7,
+    baseURL: 'https://api.openai.com/v1',
+    apiKey: 'test-key'
+  });
   
   return {
     mcpServers: mockMcpServers,
     selectedConversation: mockSelectedConversation,
+    settings: mockSettings,
     toggleConversationTool: vi.fn(),
     enableAllServerTools: vi.fn(),
     disableAllServerTools: vi.fn(),
