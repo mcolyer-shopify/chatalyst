@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Category filtering to organize prompts by type or use case
   - Easy prompt insertion into message input with one-click selection
   - Persistent storage in SQL database with dedicated prompts table
+- System URL opener for links in messages using Tauri opener plugin
+  - Links in assistant and user messages now open in the system default browser
+  - Enhanced security by sanitizing JavaScript URLs and validating external links
+  - Proper event handling for link clicks with fallback support
 
 ### Changed
 - **BREAKING**: Migrated from tauri-store to SQL database for all application data storage

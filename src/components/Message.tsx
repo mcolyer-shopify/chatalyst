@@ -15,7 +15,7 @@ function configureMarked() {
   // Custom renderer to enhance security
   const renderer = new marked.Renderer();
   const originalLink = renderer.link;
-  renderer.link = function(token: any) {
+  renderer.link = function(token: { href?: string }) {
     // Sanitize href to prevent javascript: links
     if (token.href) {
       token.href = token.href.replace(/javascript:/gi, '');
