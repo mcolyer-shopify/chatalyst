@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Links in assistant and user messages now open in the system default browser
   - Enhanced security by sanitizing JavaScript URLs and validating external links
   - Proper event handling for link clicks with fallback support
+  - Comprehensive test coverage for URL validation and click handling
+
+### Fixed
+- Test infrastructure improvements for better reliability
+  - Fixed Tauri opener plugin mocking for proper test isolation
+  - Fixed Preact signals mocking with missing batch export
+  - Fixed SQL plugin mocking for database operations in tests
+  - Fixed TypeScript compilation errors with marked library token types
+  - Updated MCPSidebar test mocks to include all required store exports
+  - Fixed ModelSelector test placeholder text to match actual component
 
 ### Changed
 - **BREAKING**: Migrated from tauri-store to SQL database for all application data storage
