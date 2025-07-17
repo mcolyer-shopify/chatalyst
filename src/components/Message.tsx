@@ -1,5 +1,6 @@
 import type { Message as MessageType } from '../types';
 import { marked } from 'marked';
+import type { Tokens } from 'marked';
 import { useEffect, useState } from 'preact/hooks';
 import { MessageImage } from './MessageImage';
 import { handleLinkClick } from '../utils/linkHandler';
@@ -15,7 +16,7 @@ function configureMarked() {
   // Custom renderer to enhance security
   const renderer = new marked.Renderer();
   const originalLink = renderer.link;
-  renderer.link = function(token: { href?: string }) {
+  renderer.link = function(token: Tokens.Link) {
     // Sanitize href to prevent javascript: links
     if (token.href) {
       token.href = token.href.replace(/javascript:/gi, '');
