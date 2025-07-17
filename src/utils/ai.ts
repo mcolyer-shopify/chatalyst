@@ -68,7 +68,7 @@ export function createAIProvider(settings: Settings): AIProviderWithMetadata {
     baseURL = baseURL || PROVIDER_DEFAULTS.openai.baseURL;
     const openaiProvider = createOpenAI({
       apiKey: apiKey || '',
-      baseURL: baseURL !== PROVIDER_DEFAULTS.openai.baseURL ? baseURL : undefined
+      baseURL: baseURL
     });
     
     // Add provider metadata for responses API detection
