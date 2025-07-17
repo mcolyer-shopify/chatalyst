@@ -1,5 +1,5 @@
 import { executeMCPTool } from './mcp';
-import { OPENAI_BUILTIN_TOOLS, OpenAIBuiltinTool } from '../types';
+import { OPENAI_BUILTIN_TOOLS, OpenAIBuiltinTool, WebSearchConfig } from '../types';
 
 export interface ActiveTool {
   name: string;
@@ -52,6 +52,25 @@ export function getBuiltinToolsForModel(model: string, enabledBuiltinTools: stri
   });
 }
 
-export function createBuiltinToolsArray(builtinTools: OpenAIBuiltinTool[]): Array<{ type: string }> {
-  return builtinTools.map(tool => ({ type: tool.type }));
+export function createBuiltinToolsObject(
+  builtinTools: OpenAIBuiltinTool[], 
+  openaiProvider: any, // OpenAI provider instance
+  config?: WebSearchConfig
+): Record<string, any> {
+  const toolsObject: Record<string, any> = {};
+  
+  builtinTools.forEach(tool => {
+    switch (tool.type) {
+    case 'web_search_preview':
+      toolsObject[tool.type] = openaiProvider.tools.webSearchPreview({
+        searchContextSize: config?.searchContextSize || 'medium',
+        userLocation: config?.userLocation
+      });
+      break;
+    default:
+      console.warn(`Unknown built-in tool type: ${tool.type}`);
+    }
+  });
+
+  return toolsObject;
 }

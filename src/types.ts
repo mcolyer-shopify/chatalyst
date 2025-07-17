@@ -62,6 +62,16 @@ export const OPENAI_BUILTIN_TOOLS: OpenAIBuiltinTool[] = [
   }
 ];
 
+// Configuration for OpenAI built-in tools
+export interface WebSearchConfig {
+  searchContextSize?: 'low' | 'medium' | 'high';
+  userLocation?: {
+    type: 'approximate';
+    city: string;
+    region: string;
+  };
+}
+
 // Base configuration shared by all MCP servers
 interface BaseMCPServerConfig {
   enabled?: boolean;

@@ -18,7 +18,7 @@ import {
 } from '../store';
 import { createAIProvider, createModelFunction, modelSupportsBuiltinTools } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
-import { createToolsObject, getBuiltinToolsForModel, createBuiltinToolsArray } from '../utils/tools';
+import { createToolsObject, getBuiltinToolsForModel, createBuiltinToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
 import { DEFAULT_MODEL, MAX_TOOL_STEPS } from '../constants/ai';
 import { storeImage, getImage, createDataURL } from '../utils/images';
@@ -92,7 +92,9 @@ export function useMessageHandling() {
       const builtinTools = supportsBuiltinTools 
         ? getBuiltinToolsForModel(modelToUse, conversation.enabledBuiltinTools)
         : [];
-      const builtinToolsArray = createBuiltinToolsArray(builtinTools);
+      const builtinToolsObject = supportsBuiltinTools && builtinTools.length > 0
+        ? createBuiltinToolsObject(builtinTools, aiProvider)
+        : {};
       
       // Use SDK messages if available, otherwise create from scratch
       const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];
@@ -137,8 +139,8 @@ export function useMessageHandling() {
       const toolMessagesMap = new Map<string, Message>();
       
       // Combine MCP tools with built-in tools for responses API
-      const combinedTools = supportsBuiltinTools && builtinToolsArray.length > 0
-        ? { ...toolsObject, ...builtinToolsArray.reduce((acc, tool) => ({ ...acc, [tool.type]: tool }), {}) }
+      const combinedTools = supportsBuiltinTools && Object.keys(builtinToolsObject).length > 0
+        ? { ...toolsObject, ...builtinToolsObject }
         : toolsObject;
 
       const result = await streamText({
