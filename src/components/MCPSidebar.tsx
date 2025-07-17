@@ -1,6 +1,8 @@
 import { useState } from 'preact/hooks';
-import { mcpServers, selectedConversation, toggleConversationTool, enableAllServerTools, disableAllServerTools, enableAllToolsOnAllServers } from '../store';
+import { mcpServers, selectedConversation, toggleConversationTool, enableAllServerTools, disableAllServerTools, enableAllToolsOnAllServers, settings, enableBuiltinTool, disableBuiltinTool } from '../store';
 import type { MCPServerStatus } from '../types';
+import { OPENAI_BUILTIN_TOOLS } from '../types';
+import { shouldUseResponsesAPI } from '../utils/ai';
 import './MCPSidebar.css';
 
 interface MCPSidebarProps {
@@ -192,6 +194,42 @@ export function MCPSidebar({ onSettingsClick }: MCPSidebarProps) {
           )}
         </div>
       </div>
+      
+      {/* Built-in Tools Section */}
+      {conversation && settings.value.provider === 'openai' && shouldUseResponsesAPI(settings.value.provider, conversation.model || settings.value.defaultModel || '') && (
+        <div class="mcp-builtin-tools">
+          <div class="mcp-builtin-tools-header">
+            <h4>Built-in Tools</h4>
+          </div>
+          <div class="mcp-builtin-tools-list">
+            {OPENAI_BUILTIN_TOOLS.map(tool => {
+              const isEnabled = conversation.enabledBuiltinTools?.includes(tool.id) || false;
+              return (
+                <div key={tool.id} class="mcp-builtin-tool">
+                  <div class="mcp-builtin-tool-info">
+                    <div class="mcp-builtin-tool-name">{tool.name}</div>
+                    <div class="mcp-builtin-tool-description">{tool.description}</div>
+                  </div>
+                  <label class="mcp-builtin-tool-toggle">
+                    <input
+                      type="checkbox"
+                      checked={isEnabled}
+                      onChange={(e) => {
+                        if (e.currentTarget.checked) {
+                          enableBuiltinTool(conversation.id, tool.id);
+                        } else {
+                          disableBuiltinTool(conversation.id, tool.id);
+                        }
+                      }}
+                    />
+                    <span class="mcp-builtin-tool-toggle-slider"></span>
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       
       <div class="mcp-servers-list">
         {!conversation ? (

@@ -1,7 +1,32 @@
 import type { Message as MessageType } from '../types';
 import { marked } from 'marked';
+import type { Tokens } from 'marked';
 import { useEffect, useState } from 'preact/hooks';
 import { MessageImage } from './MessageImage';
+import { handleLinkClick } from '../utils/linkHandler';
+
+// Configure marked for safety and security
+function configureMarked() {
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+    async: false
+  });
+  
+  // Custom renderer to enhance security
+  const renderer = new marked.Renderer();
+  const originalLink = renderer.link;
+  renderer.link = function(token: Tokens.Link) {
+    // Sanitize href to prevent javascript: links
+    if (token.href) {
+      token.href = token.href.replace(/javascript:/gi, '');
+    }
+    // Call original link renderer with cleaned token
+    return originalLink.call(this, token);
+  };
+  
+  marked.setOptions({ renderer });
+}
 
 interface MessageProps {
   message: MessageType;
@@ -123,17 +148,14 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
       }
 
       // Configure marked for safety
-      marked.setOptions({
-        breaks: true,
-        gfm: true,
-        async: false
-      });
+      configureMarked();
       
       return (
         <div class="message-content">
           {renderImages()}
           <div 
             dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
+            onClick={handleLinkClick}
           />
         </div>
       );
@@ -142,11 +164,7 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
     // For user messages, also use markdown to preserve newlines
     if (message.role === 'user') {
       // Configure marked for safety
-      marked.setOptions({
-        breaks: true,
-        gfm: true,
-        async: false
-      });
+      configureMarked();
       
       return (
         <div class="message-content">
@@ -154,6 +172,7 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
           {message.content && (
             <div 
               dangerouslySetInnerHTML={{ __html: marked.parse(message.content) as string }}
+              onClick={handleLinkClick}
             />
           )}
         </div>

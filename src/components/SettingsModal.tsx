@@ -27,9 +27,10 @@ const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
   },
   openai: {
     name: 'OpenAI',
-    showBaseURL: false,
+    showBaseURL: true,
     showApiKey: true,
     defaultBaseURL: 'https://api.openai.com/v1',
+    baseURLPlaceholder: 'https://api.openai.com/v1',
     apiKeyPlaceholder: 'sk-...'
   },
   anthropic: {

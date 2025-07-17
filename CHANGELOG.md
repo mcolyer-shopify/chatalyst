@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Category filtering to organize prompts by type or use case
   - Easy prompt insertion into message input with one-click selection
   - Persistent storage in SQL database with dedicated prompts table
+- System URL opener for links in messages using Tauri opener plugin
+  - Links in assistant and user messages now open in the system default browser
+  - Enhanced security by sanitizing JavaScript URLs and validating external links
+  - Proper event handling for link clicks with fallback support
+  - Comprehensive test coverage for URL validation and click handling
+
+### Fixed
+- Test infrastructure improvements for better reliability
+  - Fixed Tauri opener plugin mocking for proper test isolation
+  - Fixed Preact signals mocking with missing batch export
+  - Fixed SQL plugin mocking for database operations in tests
+  - Fixed TypeScript compilation errors with marked library token types
+  - Updated MCPSidebar test mocks to include all required store exports
+  - Fixed ModelSelector test placeholder text to match actual component
 
 ### Changed
 - **BREAKING**: Migrated from tauri-store to SQL database for all application data storage
@@ -35,6 +49,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved image preview container layout with proper padding and full-width border
 - Cleaned up Rust backend by removing placeholder Tauri commands for image operations
 - Added debug logging for AI SDK stream processing to investigate external image URL handling issues
+- Upgraded OpenAI API integration to use OpenAI responses API for improved performance and capabilities
+  - Automatically uses responses API for OpenAI models (gpt-4o, gpt-4o-mini, o1-preview, o1-mini, etc.)
+  - Maintains backward compatibility with other providers (OpenRouter, Ollama, Anthropic, etc.)
+  - Enhanced provider detection system to determine appropriate API usage
+  - Improved type safety with dedicated provider metadata tracking
+  - Better conversation understanding and context handling for OpenAI models
+- Added custom model name input to conversation model picker
+  - Users can now type any custom model name in the search field
+  - When no existing models match the search term, a "Use as custom model" option appears
+  - Full keyboard navigation support (arrow keys, Enter) for custom model selection
+  - Preserves existing model search and favorites functionality
+- Added OpenAI built-in tools support for responses API models
+  - Initial support for built-in tools like Web Search preview
+  - Automatic detection of built-in tool compatibility based on model and provider
+  - Extended conversation storage to track enabled built-in tools
+  - Foundation for integrating built-in tools with responses API
 
 ### Fixed
 - Fixed database lock errors when deleting conversations
@@ -48,6 +78,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Rust code formatting issues with trailing whitespace
 - Fixed TypeScript compilation errors with null safety and type assertions
 - Fixed test failures by properly disabling attachment button during image processing
+- Fixed OpenAI responses API detection for custom model names
+  - Custom models like "o3-deep-research" now properly use the responses API instead of chat completions
+  - Enhanced model detection logic to match against the predefined OPENAI_MODELS list using both exact and partial matching
+  - Models are now correctly identified as responses API compatible when they contain any of the supported OpenAI model names
 
 ### Added
 - Image attachment support in conversations

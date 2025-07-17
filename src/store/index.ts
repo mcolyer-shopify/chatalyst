@@ -451,6 +451,56 @@ export function deleteMessage(conversationId: string, messageId: string) {
   });
 }
 
+// Built-in tools management
+export function enableBuiltinTool(conversationId: string, toolId: string) {
+  const conversation = conversations.value.find(c => c.id === conversationId);
+  if (!conversation) {
+    console.error('Conversation not found:', conversationId);
+    return;
+  }
+
+  const currentTools = conversation.enabledBuiltinTools || [];
+  if (!currentTools.includes(toolId)) {
+    const updatedTools = [...currentTools, toolId];
+    updateConversationBuiltinTools(conversationId, updatedTools);
+  }
+}
+
+export function disableBuiltinTool(conversationId: string, toolId: string) {
+  const conversation = conversations.value.find(c => c.id === conversationId);
+  if (!conversation) {
+    console.error('Conversation not found:', conversationId);
+    return;
+  }
+
+  const currentTools = conversation.enabledBuiltinTools || [];
+  const updatedTools = currentTools.filter(id => id !== toolId);
+  updateConversationBuiltinTools(conversationId, updatedTools);
+}
+
+export async function updateConversationBuiltinTools(conversationId: string, enabledBuiltinTools: string[]) {
+  const conversation = conversations.value.find(c => c.id === conversationId);
+  if (!conversation) {
+    console.error('Conversation not found:', conversationId);
+    return;
+  }
+
+  const updatedConversation = { ...conversation, enabledBuiltinTools, updatedAt: Date.now() };
+  
+  try {
+    // Save to database first
+    await saveSingleConversation(updatedConversation);
+    
+    // Update memory state
+    conversations.value = conversations.value.map((c) =>
+      c.id === conversationId ? updatedConversation : c
+    );
+  } catch (error) {
+    console.error('Failed to update conversation built-in tools:', error);
+    showError(`Failed to update built-in tools: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 export function updateSettings(updates: Partial<Settings>) {
   const oldSettings = settings.value;
   const newSettings = { ...oldSettings, ...updates };

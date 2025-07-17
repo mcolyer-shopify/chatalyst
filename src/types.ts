@@ -29,6 +29,7 @@ export interface Conversation {
   updatedAt: number;
   model?: string;
   enabledTools?: { [serverId: string]: string[] }; // serverId -> array of enabled tool names
+  enabledBuiltinTools?: string[]; // Array of enabled OpenAI built-in tool names
   sdkMessages?: CoreMessage[];
   archived?: boolean;
   archivedAt?: number;
@@ -38,6 +39,37 @@ export interface Model {
   id: string;
   name: string;
   description?: string;
+}
+
+// OpenAI built-in tools
+export interface OpenAIBuiltinTool {
+  id: string;
+  name: string;
+  description: string;
+  type: string; // e.g., 'web_search_preview'
+  requiresResponsesAPI: boolean;
+  supportedModels?: string[]; // Optional: limit to specific models
+}
+
+export const OPENAI_BUILTIN_TOOLS: OpenAIBuiltinTool[] = [
+  {
+    id: 'web_search_preview',
+    name: 'Web Search',
+    description: 'Search the web for current information',
+    type: 'web_search_preview',
+    requiresResponsesAPI: true,
+    supportedModels: ['gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini', 'o3-deep-research', 'o4-mini-deep-research']
+  }
+];
+
+// Configuration for OpenAI built-in tools
+export interface WebSearchConfig {
+  searchContextSize?: 'low' | 'medium' | 'high';
+  userLocation?: {
+    type: 'approximate';
+    city: string;
+    region: string;
+  };
 }
 
 // Base configuration shared by all MCP servers

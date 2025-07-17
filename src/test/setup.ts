@@ -68,6 +68,47 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
   }
 }));
 
+vi.mock('@tauri-apps/plugin-opener', () => ({
+  openUrl: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('@tauri-apps/plugin-sql', () => {
+  const mockDatabase = class {
+    static async load() {
+      return new this();
+    }
+    async execute() {
+      return { rows: [] };
+    }
+    async select() {
+      return [];
+    }
+    async close() {}
+  };
+  return {
+    Database: mockDatabase,
+    default: mockDatabase
+  };
+});
+
+// Mock preact/signals with missing exports
+vi.mock('@preact/signals', () => {
+  const createMockSignal = (initialValue: any = undefined) => ({
+    value: initialValue,
+    peek: () => initialValue,
+    subscribe: vi.fn(),
+    valueOf: () => initialValue,
+    toString: () => String(initialValue)
+  });
+  
+  return {
+    signal: vi.fn(createMockSignal),
+    computed: vi.fn(createMockSignal),
+    effect: vi.fn(),
+    batch: vi.fn((fn) => fn())
+  };
+});
+
 // Note: __TAURI_INTERNALS__ is not defined by default in tests,
 // so isTauri() will return false, which is correct for test environment
 
