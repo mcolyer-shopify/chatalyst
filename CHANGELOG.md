@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Claude Code linting hook that automatically runs ESLint on TypeScript/JavaScript files after edits
 - Prompt Library modal for managing reusable prompts with search, categorization, and tagging
   - Create, edit, and delete custom prompts with title, content, category, and tags
   - Search functionality to quickly find prompts by title, content, category, or tags
