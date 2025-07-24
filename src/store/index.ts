@@ -68,6 +68,7 @@ export const mcpServers = signal<MCPServerStatus[]>([]);
 
 // Prompt-related signals
 export const prompts = signal<Prompt[]>([]);
+export const recentPrompts = signal<Prompt[]>([]);
 
 // Computed values
 export const selectedConversation = computed(() =>
@@ -779,6 +780,18 @@ export function searchPrompts(query: string): Prompt[] {
     prompt.title.toLowerCase().includes(lowercaseQuery) ||
     prompt.content.toLowerCase().includes(lowercaseQuery)
   );
+}
+
+// Recent prompts management
+export function markPromptAsUsed(promptId: string): void {
+  const prompt = prompts.value.find(p => p.id === promptId);
+  if (!prompt) return;
+
+  // Remove from current position if exists
+  const filtered = recentPrompts.value.filter(p => p.id !== promptId);
+  
+  // Add to front of list
+  recentPrompts.value = [prompt, ...filtered].slice(0, 10); // Keep only last 10
 }
 
 

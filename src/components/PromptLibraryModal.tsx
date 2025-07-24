@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { Prompt } from '../types';
-import { prompts, createPrompt, updatePrompt, deletePromptById, searchPrompts } from '../store';
+import { prompts, createPrompt, updatePrompt, deletePromptById, searchPrompts, markPromptAsUsed } from '../store';
 
 interface PromptLibraryModalProps {
   show: boolean;
@@ -47,6 +47,7 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
   if (!show) return null;
 
   const handleSelectPrompt = (prompt: Prompt) => {
+    markPromptAsUsed(prompt.id);
     onSelectPrompt(prompt.content);
     onCancel();
   };
@@ -121,8 +122,13 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
   return (
     <>
       <div class="modal-backdrop" onClick={handleCancel} />
-      <div class="modal prompt-library-modal">
-        <h2>Prompt Library</h2>
+      <div class="modal prompt-library-modal compact">
+        <div class="modal-header">
+          <h2>Prompt Library</h2>
+          <button onClick={handleCancel} class="modal-close-button" title="Close">
+            ×
+          </button>
+        </div>
 
         {/* Search and Filter Controls */}
         <div class="prompt-library-controls">
@@ -136,8 +142,8 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
             />
           </div>
 
-          <button onClick={handleCreateNew} class="button-primary">
-            + New Prompt
+          <button onClick={handleCreateNew} class="button-primary compact">
+            + New
           </button>
         </div>
 
@@ -176,10 +182,10 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
 
 
             <div class="form-actions">
-              <button onClick={handleCancelEdit} class="button-secondary">
+              <button onClick={handleCancelEdit} class="button-secondary compact">
                 Cancel
               </button>
-              <button onClick={handleSavePrompt} class="button-primary">
+              <button onClick={handleSavePrompt} class="button-primary compact">
                 {editingPrompt ? 'Update' : 'Create'}
               </button>
             </div>
@@ -203,21 +209,21 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
                   <div class="prompt-actions">
                     <button
                       onClick={() => handleSelectPrompt(prompt)}
-                      class="button-secondary use-prompt-btn"
+                      class="button-secondary compact use-prompt-btn"
                       title="Use this prompt"
                     >
                       Use
                     </button>
                     <button
                       onClick={() => handleEditPrompt(prompt)}
-                      class="button-secondary edit-prompt-btn"
+                      class="button-secondary compact edit-prompt-btn"
                       title="Edit prompt"
                     >
                       ✏️
                     </button>
                     <button
                       onClick={() => handleDeletePrompt(prompt.id)}
-                      class="button-secondary delete-prompt-btn"
+                      class="button-secondary compact delete-prompt-btn"
                       title="Delete prompt"
                     >
                       🗑️
@@ -231,11 +237,6 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
           )}
         </div>
 
-        <div class="modal-actions">
-          <button onClick={handleCancel} class="button-secondary">
-            Close
-          </button>
-        </div>
       </div>
     </>
   );

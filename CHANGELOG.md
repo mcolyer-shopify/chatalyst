@@ -9,12 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Claude Code linting hook that automatically runs ESLint on TypeScript/JavaScript files after edits
+- Streamlined prompt picker with recent prompts access
+  - Quick dropdown showing last 3 used prompts for easy reuse
+  - One-click access to full prompt library from dropdown
+  - Recent prompts automatically tracked and sorted by usage
 - Prompt Library modal for managing reusable prompts with search, categorization, and tagging
   - Create, edit, and delete custom prompts with title, content, category, and tags
   - Search functionality to quickly find prompts by title, content, category, or tags
   - Category filtering to organize prompts by type or use case
   - Easy prompt insertion into message input with one-click selection
   - Persistent storage in SQL database with dedicated prompts table
+
+### Changed
+- Improved prompt library modal layout with more compact design and smaller buttons
+- Enhanced prompt library interface for better visibility of more prompts at once
 - System URL opener for links in messages using Tauri opener plugin
   - Links in assistant and user messages now open in the system default browser
   - Enhanced security by sanitizing JavaScript URLs and validating external links
