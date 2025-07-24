@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Claude Code linting hook that automatically runs ESLint on TypeScript/JavaScript files after edits
 - Streamlined prompt picker with recent prompts access
-  - Quick dropdown showing last 3 used prompts for easy reuse
+  - Quick dropdown showing last 5 used prompts for easy reuse
   - One-click access to full prompt library from dropdown
   - Recent prompts automatically tracked and sorted by usage
 - Prompt Library modal for managing reusable prompts with search, categorization, and tagging

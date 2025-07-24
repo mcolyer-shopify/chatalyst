@@ -2462,7 +2462,7 @@ body {
   position: absolute;
   bottom: 100%;
   left: 0;
-  min-width: 280px;
+  min-width: 320px;
   background: white;
   border: 1px solid #e9ecef;
   border-radius: 0.5rem;

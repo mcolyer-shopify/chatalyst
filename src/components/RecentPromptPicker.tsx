@@ -53,7 +53,7 @@ export function RecentPromptPicker({ onSelectPrompt, onOpenFullLibrary, disabled
     setIsOpen(false);
   };
 
-  const recent = recentPrompts.value.slice(0, 3);
+  const recent = recentPrompts.value.slice(0, 5);
 
   return (
     <div class="recent-prompt-picker">
