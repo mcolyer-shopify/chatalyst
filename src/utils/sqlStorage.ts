@@ -1035,8 +1035,9 @@ export async function loadPrompts(): Promise<Prompt[]> {
       content: string;
       created_at: string;
       updated_at: string;
+      last_used_at: string | null;
     }[]>(
-      'SELECT id, title, content, created_at, updated_at FROM prompts ORDER BY updated_at DESC'
+      'SELECT id, title, content, created_at, updated_at, last_used_at FROM prompts ORDER BY COALESCE(last_used_at, updated_at) DESC'
     );
     
     return prompts.map(p => ({
@@ -1044,7 +1045,8 @@ export async function loadPrompts(): Promise<Prompt[]> {
       title: p.title,
       content: p.content,
       createdAt: new Date(p.created_at).getTime(),
-      updatedAt: new Date(p.updated_at).getTime()
+      updatedAt: new Date(p.updated_at).getTime(),
+      lastUsedAt: p.last_used_at ? new Date(p.last_used_at).getTime() : undefined
     }));
   } catch (error) {
     console.error('Failed to load prompts:', error);
@@ -1060,14 +1062,15 @@ export async function savePrompt(prompt: Prompt): Promise<void> {
     
     await database.execute(
       `INSERT OR REPLACE INTO prompts 
-       (id, title, content, created_at, updated_at) 
-       VALUES (?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+       (id, title, content, created_at, updated_at, last_used_at) 
+       VALUES (?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'), ?)`,
       [
         prompt.id,
         prompt.title,
         prompt.content,
         (prompt.createdAt / 1000).toString(),
-        (prompt.updatedAt / 1000).toString()
+        (prompt.updatedAt / 1000).toString(),
+        prompt.lastUsedAt ? `datetime(${prompt.lastUsedAt / 1000}, 'unixepoch', 'localtime')` : null
       ]
     );
   } catch (error) {
@@ -1087,5 +1090,53 @@ export async function deletePrompt(promptId: string): Promise<void> {
     console.error('Failed to delete prompt:', error);
     showError(`Failed to delete prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
     throw error;
+  }
+}
+
+export async function updatePromptLastUsed(promptId: string): Promise<void> {
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    await database.execute(
+      'UPDATE prompts SET last_used_at = datetime("now") WHERE id = ?',
+      [promptId]
+    );
+  } catch (error) {
+    console.error('Failed to update prompt last used:', error);
+    showError(`Failed to update prompt usage: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
+  }
+}
+
+export async function loadRecentPrompts(limit: number = 10): Promise<Prompt[]> {
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    const prompts = await database.select<{
+      id: string;
+      title: string;
+      content: string;
+      created_at: string;
+      updated_at: string;
+      last_used_at: string | null;
+    }[]>(
+      'SELECT id, title, content, created_at, updated_at, last_used_at FROM prompts WHERE last_used_at IS NOT NULL ORDER BY last_used_at DESC LIMIT ?',
+      [limit]
+    );
+    
+    return prompts.map(p => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      createdAt: new Date(p.created_at).getTime(),
+      updatedAt: new Date(p.updated_at).getTime(),
+      lastUsedAt: p.last_used_at ? new Date(p.last_used_at).getTime() : undefined
+    }));
+  } catch (error) {
+    console.error('Failed to load recent prompts:', error);
+    showError(`Failed to load recent prompts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return [];
   }
 }

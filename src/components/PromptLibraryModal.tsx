@@ -46,8 +46,8 @@ export function PromptLibraryModal({ show, onSelectPrompt, onCancel }: PromptLib
 
   if (!show) return null;
 
-  const handleSelectPrompt = (prompt: Prompt) => {
-    markPromptAsUsed(prompt.id);
+  const handleSelectPrompt = async (prompt: Prompt) => {
+    await markPromptAsUsed(prompt.id);
     onSelectPrompt(prompt.content);
     onCancel();
   };

@@ -22,7 +22,9 @@ import {
   saveSingleConversation,
   loadPrompts,
   savePrompt,
-  deletePrompt
+  deletePrompt,
+  updatePromptLastUsed,
+  loadRecentPrompts
 } from '../utils/sqlStorage';
 import { deleteConversationImages, cleanupOrphanedImages } from '../utils/images';
 
@@ -127,6 +129,10 @@ async function initializeFromStorage() {
     // Load prompts using enhanced storage
     const savedPrompts = await loadPrompts();
     prompts.value = savedPrompts;
+    
+    // Load recent prompts
+    const savedRecentPrompts = await loadRecentPrompts();
+    recentPrompts.value = savedRecentPrompts;
   } catch (error) {
     console.error('Failed to initialize from storage:', error);
   }
@@ -783,15 +789,27 @@ export function searchPrompts(query: string): Prompt[] {
 }
 
 // Recent prompts management
-export function markPromptAsUsed(promptId: string): void {
+export async function markPromptAsUsed(promptId: string): Promise<void> {
   const prompt = prompts.value.find(p => p.id === promptId);
   if (!prompt) return;
 
-  // Remove from current position if exists
-  const filtered = recentPrompts.value.filter(p => p.id !== promptId);
-  
-  // Add to front of list
-  recentPrompts.value = [prompt, ...filtered].slice(0, 10); // Keep only last 10
+  try {
+    // Update last used timestamp in database
+    await updatePromptLastUsed(promptId);
+    
+    // Update the prompt's lastUsedAt in memory
+    const now = Date.now();
+    const updatedPrompt = { ...prompt, lastUsedAt: now };
+    prompts.value = prompts.value.map(p => p.id === promptId ? updatedPrompt : p);
+
+    // Remove from current position if exists
+    const filtered = recentPrompts.value.filter(p => p.id !== promptId);
+    
+    // Add to front of list with updated timestamp
+    recentPrompts.value = [updatedPrompt, ...filtered].slice(0, 10); // Keep only last 10
+  } catch (error) {
+    console.error('Failed to mark prompt as used:', error);
+  }
 }
 
 

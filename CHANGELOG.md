@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved prompt library modal layout with more compact design and smaller buttons
 - Enhanced prompt library interface for better visibility of more prompts at once
+- Recent prompts now persist across application restarts
+- Prompt library modal now sorts prompts by usage recency instead of last update time
 - System URL opener for links in messages using Tauri opener plugin
   - Links in assistant and user messages now open in the system default browser
   - Enhanced security by sanitizing JavaScript URLs and validating external links
