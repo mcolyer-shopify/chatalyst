@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { handleFileInput } from '../utils/images';
 import type { PendingImage } from '../types';
+import { RecentPromptPicker } from './RecentPromptPicker';
 
 interface MessageFormProps {
   message: string;
@@ -19,6 +20,7 @@ interface MessageFormProps {
   isProcessingImages: boolean;
   onImageSelect: (files: File[]) => Promise<void>;
   onOpenPromptLibrary: () => void;
+  onSelectPrompt: (content: string) => void;
 }
 
 export function MessageForm({
@@ -37,7 +39,8 @@ export function MessageForm({
   inputRef,
   isProcessingImages,
   onImageSelect,
-  onOpenPromptLibrary
+  onOpenPromptLibrary,
+  onSelectPrompt
 }: MessageFormProps) {
   const [isStopping, setIsStopping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,16 +115,11 @@ export function MessageForm({
             {isProcessingImages ? '⏳' : '📎'}
           </span>
         </button>
-        <button
-          type="button"
-          onClick={onOpenPromptLibrary}
+        <RecentPromptPicker
+          onSelectPrompt={onSelectPrompt}
+          onOpenFullLibrary={onOpenPromptLibrary}
           disabled={disabled && !isGenerating}
-          class="message-input-prompt-button"
-          title="Open prompt library"
-          aria-label="Open prompt library"
-        >
-          <span aria-hidden="true">💬</span>
-        </button>
+        />
         <textarea
           ref={inputRef}
           value={message}

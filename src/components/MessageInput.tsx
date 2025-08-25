@@ -218,6 +218,15 @@ export function MessageInput({
           }
         }}
         onOpenPromptLibrary={onOpenPromptLibrary}
+        onSelectPrompt={(content: string) => {
+          dispatch({ type: 'SET_MESSAGE', payload: content });
+          // Focus the input after setting the prompt
+          if (inputRef.current) {
+            inputRef.current.focus();
+            // Move cursor to the end
+            inputRef.current.setSelectionRange(content.length, content.length);
+          }
+        }}
       />
     </div>
   );

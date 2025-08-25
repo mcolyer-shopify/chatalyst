@@ -196,6 +196,13 @@ pub fn get_migrations() -> Vec<Migration> {
             ALTER TABLE prompts_new RENAME TO prompts;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 15,
+            description: "Add last_used_at column to prompts table for usage tracking",
+            sql: "ALTER TABLE prompts ADD COLUMN last_used_at DATETIME;
+            UPDATE prompts SET last_used_at = updated_at WHERE last_used_at IS NULL;",
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
