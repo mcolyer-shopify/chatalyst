@@ -180,8 +180,11 @@ export async function createConversation(
   title: string,
   model?: string
 ): Promise<ConversationType> {
-  // Get the highest display order for new conversation
-  const maxOrder = Math.max(0, ...conversations.value.map(c => c.displayOrder || 0));
+  // Get the highest display order for new conversation to add it at the end
+  const activeConversations = conversations.value.filter(c => !c.archived);
+  const maxOrder = activeConversations.length > 0 
+    ? Math.max(...activeConversations.map(c => c.displayOrder ?? 0))
+    : -1;
   
   const newConversation: ConversationType = {
     id: Date.now().toString(),

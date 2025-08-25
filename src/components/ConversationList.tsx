@@ -96,8 +96,6 @@ export function ConversationList({
       setTimeout(() => {
         if (!container) return;
         
-        console.log('Initializing Sortable for', activeTab, 'tab with', filteredConversations.length, 'conversations');
-        
         // Create new Sortable instance
         sortableInstanceRef.current = Sortable.create(container, {
           animation: 150,
@@ -106,10 +104,10 @@ export function ConversationList({
           chosenClass: 'conversation-drag-chosen',
           dragClass: 'conversation-drag-active',
           draggable: '.conversation-item',  // Explicitly specify draggable elements
-          forceFallback: true,  // Force fallback for better compatibility
+          forceFallback: false,  // Use native drag and drop for better performance
+          swapThreshold: 0.65,  // Adjust swap threshold for better last position detection
+          direction: 'vertical',  // Explicitly set vertical direction
           onEnd: async (evt) => {
-            console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex });
-            
             if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
             if (evt.oldIndex === evt.newIndex) return;
             
@@ -117,8 +115,6 @@ export function ConversationList({
             const allConversations = conversations.filter(c => 
               activeTab === 'active' ? !c.archived : c.archived
             );
-            
-            console.log('Reordering conversations:', allConversations.length, 'total');
             
             // Reorder the conversations array
             const movedItem = allConversations[evt.oldIndex];
@@ -128,8 +124,6 @@ export function ConversationList({
             
             // Get the IDs in new order
             const reorderedIds = reordered.map(c => c.id);
-            
-            console.log('New order IDs:', reorderedIds);
             
             // Update the order in the store
             await updateConversationOrders(reorderedIds);

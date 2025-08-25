@@ -81,6 +81,8 @@ body {
 .conversations {
   flex: 1;
   overflow-y: auto;
+  padding-bottom: 10px; /* Add padding for last position drop zone */
+  min-height: 100px; /* Ensure minimum height for drop area */
 }
 
 .conversation-item {
