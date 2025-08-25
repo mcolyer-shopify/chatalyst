@@ -180,13 +180,17 @@ export async function createConversation(
   title: string,
   model?: string
 ): Promise<ConversationType> {
+  // Get the highest display order for new conversation
+  const maxOrder = Math.max(0, ...conversations.value.map(c => c.displayOrder || 0));
+  
   const newConversation: ConversationType = {
     id: Date.now().toString(),
     title,
     model: model || settings.value.defaultModel,
     messages: [],
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    displayOrder: maxOrder + 1
   };
 
   try {
@@ -614,6 +618,29 @@ export function removeMCPServer(serverId: string) {
 
 export function clearMCPServers() {
   mcpServers.value = [];
+}
+
+// Update conversation display orders after drag and drop
+export async function updateConversationOrders(conversationIds: string[]) {
+  try {
+    // Update in-memory state
+    const updatedConversations = conversations.value.map(conv => {
+      const newOrder = conversationIds.indexOf(conv.id);
+      if (newOrder !== -1) {
+        return { ...conv, displayOrder: newOrder };
+      }
+      return conv;
+    });
+    
+    conversations.value = updatedConversations;
+    
+    // Save updated orders to database
+    const { updateConversationOrders: updateOrdersInDB } = await import('../utils/sqlStorage');
+    await updateOrdersInDB(conversationIds);
+  } catch (error) {
+    console.error('Failed to update conversation orders:', error);
+    showError(`Failed to update conversation order: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 export function toggleConversationTool(conversationId: string, serverId: string, toolName: string, enabled: boolean) {

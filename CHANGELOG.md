@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Drag and drop functionality for reordering conversations in the sidebar
+  - Visual drag handle icon for each conversation item
+  - Smooth animations during drag operations
+  - Persistent conversation ordering across sessions
+  - Support for both active and archived conversations
+  - Dark mode support for drag and drop visual feedback
 - Claude Code linting hook that automatically runs ESLint on TypeScript/JavaScript files after edits
 - Streamlined prompt picker with recent prompts access
   - Quick dropdown showing last 5 used prompts for easy reuse

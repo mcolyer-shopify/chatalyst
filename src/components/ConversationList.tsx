@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo } from 'preact/hooks';
+import { useEffect, useState, useMemo, useRef } from 'preact/hooks';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
-import { generatingTitleFor } from '../store';
+import { generatingTitleFor, updateConversationOrders } from '../store';
+import Sortable from 'sortablejs';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -41,16 +42,30 @@ export function ConversationList({
   const [editTitle, setEditTitle] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Refs for sortable containers
+  const activeListRef = useRef<HTMLDivElement>(null);
+  const archivedListRef = useRef<HTMLDivElement>(null);
+  const sortableInstanceRef = useRef<Sortable | null>(null);
 
-  // Filter conversations based on tab and search query
+  // Filter and sort conversations based on tab and search query
   const filteredConversations = useMemo(() => {
     const isArchived = activeTab === 'archived';
-    return conversations.filter(conv => {
+    const filtered = conversations.filter(conv => {
       // Handle undefined archived field (treat as not archived)
       const matchesTab = isArchived ? conv.archived === true : conv.archived !== true;
       const matchesSearch = searchQuery === '' || 
         conv.title.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesTab && matchesSearch;
+    });
+    
+    // Sort by displayOrder (ascending), fallback to updatedAt (descending)
+    return filtered.sort((a, b) => {
+      if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+        return a.displayOrder - b.displayOrder;
+      }
+      // Fallback to updatedAt for conversations without displayOrder
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
     });
   }, [conversations, activeTab, searchQuery]);
 
@@ -65,6 +80,72 @@ export function ConversationList({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Initialize Sortable for drag and drop
+  useEffect(() => {
+    const container = activeTab === 'active' ? activeListRef.current : archivedListRef.current;
+    
+    if (container && filteredConversations.length > 0) {
+      // Destroy previous instance if it exists
+      if (sortableInstanceRef.current) {
+        sortableInstanceRef.current.destroy();
+        sortableInstanceRef.current = null;
+      }
+
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        if (!container) return;
+        
+        console.log('Initializing Sortable for', activeTab, 'tab with', filteredConversations.length, 'conversations');
+        
+        // Create new Sortable instance
+        sortableInstanceRef.current = Sortable.create(container, {
+          animation: 150,
+          handle: '.drag-handle',
+          ghostClass: 'conversation-drag-ghost',
+          chosenClass: 'conversation-drag-chosen',
+          dragClass: 'conversation-drag-active',
+          draggable: '.conversation-item',  // Explicitly specify draggable elements
+          forceFallback: true,  // Force fallback for better compatibility
+          onEnd: async (evt) => {
+            console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex });
+            
+            if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
+            if (evt.oldIndex === evt.newIndex) return;
+            
+            // Get all conversation IDs in the current tab
+            const allConversations = conversations.filter(c => 
+              activeTab === 'active' ? !c.archived : c.archived
+            );
+            
+            console.log('Reordering conversations:', allConversations.length, 'total');
+            
+            // Reorder the conversations array
+            const movedItem = allConversations[evt.oldIndex];
+            const reordered = [...allConversations];
+            reordered.splice(evt.oldIndex, 1);
+            reordered.splice(evt.newIndex, 0, movedItem);
+            
+            // Get the IDs in new order
+            const reorderedIds = reordered.map(c => c.id);
+            
+            console.log('New order IDs:', reorderedIds);
+            
+            // Update the order in the store
+            await updateConversationOrders(reorderedIds);
+          }
+        });
+      }, 100);
+    }
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (sortableInstanceRef.current) {
+        sortableInstanceRef.current.destroy();
+        sortableInstanceRef.current = null;
+      }
+    };
+  }, [activeTab, filteredConversations, conversations]);
 
   const handleRename = (conversation: Conversation) => {
     setEditingId(conversation.id);
@@ -138,12 +219,21 @@ export function ConversationList({
           </div>
         )}
       </div>
-      <div class="conversations">
+      <div 
+        class="conversations"
+        ref={activeTab === 'active' ? activeListRef : archivedListRef}
+      >
         {filteredConversations.map((conversation) => (
           <div
             key={conversation.id}
+            data-conversation-id={conversation.id}
             class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''}`}
           >
+            <div class="drag-handle" title="Drag to reorder">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="drag-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+              </svg>
+            </div>
             {editingId === conversation.id ? (
               <input
                 type="text"

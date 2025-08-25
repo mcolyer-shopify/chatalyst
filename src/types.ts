@@ -33,6 +33,7 @@ export interface Conversation {
   sdkMessages?: CoreMessage[];
   archived?: boolean;
   archivedAt?: number;
+  displayOrder?: number; // Order for drag and drop sorting
 }
 
 export interface Model {

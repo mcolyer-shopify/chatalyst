@@ -203,6 +203,17 @@ pub fn get_migrations() -> Vec<Migration> {
             UPDATE prompts SET last_used_at = updated_at WHERE last_used_at IS NULL;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 16,
+            description: "Add display_order column to conversations table for drag and drop ordering",
+            sql: "ALTER TABLE conversations ADD COLUMN display_order INTEGER DEFAULT 0;
+            UPDATE conversations SET display_order = (
+                SELECT COUNT(*) 
+                FROM conversations c2 
+                WHERE c2.updated_at >= conversations.updated_at
+            );",
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

@@ -26,9 +26,11 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-shell": "^2.2.1",
     "@tauri-apps/plugin-sql": "^2.3.0",
+    "@types/sortablejs": "^1.15.8",
     "ai": "4.3.16",
     "marked": "^15.0.12",
-    "preact": "^10.25.1"
+    "preact": "^10.25.1",
+    "sortablejs": "^1.15.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
