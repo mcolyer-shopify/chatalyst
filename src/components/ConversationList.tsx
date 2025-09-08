@@ -97,43 +97,46 @@ export function ConversationList({
         if (!container) return;
         
         console.log('Creating Sortable instance for', activeTab, 'with', filteredConversations.length, 'conversations');
+        console.log('Container children:', container.children.length);
+        console.log('First child:', container.children[0]);
         
-        // Create new Sortable instance
-        sortableInstanceRef.current = Sortable.create(container, {
-          animation: 150,
-          handle: '.drag-handle',
-          ghostClass: 'conversation-drag-ghost',
-          chosenClass: 'conversation-drag-chosen',
-          dragClass: 'conversation-drag-active',
-          draggable: '.conversation-item',  // Explicitly specify draggable elements
-          forceFallback: false,  // Use native drag and drop for better performance
-          swapThreshold: 0.65,  // Adjust swap threshold for better last position detection
-          direction: 'vertical',  // Explicitly set vertical direction
-          onStart: (evt) => {
-            console.log('Drag started:', evt.oldIndex);
-          },
-          onEnd: async (evt) => {
-            console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex });
-            
-            if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
-            if (evt.oldIndex === evt.newIndex) return;
-            
-            // Get all conversation IDs in the current tab (use filteredConversations which is already filtered)
-            const allConversations = filteredConversations;
-            
-            // Reorder the conversations array
-            const movedItem = allConversations[evt.oldIndex];
-            const reordered = [...allConversations];
-            reordered.splice(evt.oldIndex, 1);
-            reordered.splice(evt.newIndex, 0, movedItem);
-            
-            // Get the IDs in new order
-            const reorderedIds = reordered.map(c => c.id);
-            
-            // Update the order in the store
-            await updateConversationOrders(reorderedIds);
-          }
-        });
+        // Create new Sortable instance - try without handle first to test basic functionality
+        try {
+          sortableInstanceRef.current = Sortable.create(container, {
+            animation: 150,
+            // Remove handle temporarily to test if basic drag works
+            // handle: '.drag-handle',
+            onStart: (evt) => {
+              console.log('Drag started:', evt.oldIndex, evt.item);
+            },
+            onEnd: async (evt) => {
+              console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex, item: evt.item });
+              
+              if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
+              if (evt.oldIndex === evt.newIndex) return;
+              
+              // Get all conversation IDs in the current tab (use filteredConversations which is already filtered)
+              const allConversations = filteredConversations;
+              
+              // Reorder the conversations array
+              const movedItem = allConversations[evt.oldIndex];
+              const reordered = [...allConversations];
+              reordered.splice(evt.oldIndex, 1);
+              reordered.splice(evt.newIndex, 0, movedItem);
+              
+              // Get the IDs in new order
+              const reorderedIds = reordered.map(c => c.id);
+              
+              console.log('Reordered IDs:', reorderedIds);
+              
+              // Update the order in the store
+              await updateConversationOrders(reorderedIds);
+            }
+          });
+          console.log('Sortable instance created successfully:', sortableInstanceRef.current);
+        } catch (error) {
+          console.error('Failed to create Sortable instance:', error);
+        }
       }, 100);
     }
 
@@ -232,11 +235,8 @@ export function ConversationList({
               class="drag-handle" 
               title="Drag to reorder"
               onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="drag-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
-              </svg>
+              ⋮⋮
             </div>
             {editingId === conversation.id ? (
               <input
