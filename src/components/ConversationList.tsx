@@ -96,6 +96,8 @@ export function ConversationList({
       setTimeout(() => {
         if (!container) return;
         
+        console.log('Creating Sortable instance for', activeTab, 'with', filteredConversations.length, 'conversations');
+        
         // Create new Sortable instance
         sortableInstanceRef.current = Sortable.create(container, {
           animation: 150,
@@ -107,14 +109,17 @@ export function ConversationList({
           forceFallback: false,  // Use native drag and drop for better performance
           swapThreshold: 0.65,  // Adjust swap threshold for better last position detection
           direction: 'vertical',  // Explicitly set vertical direction
+          onStart: (evt) => {
+            console.log('Drag started:', evt.oldIndex);
+          },
           onEnd: async (evt) => {
+            console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex });
+            
             if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
             if (evt.oldIndex === evt.newIndex) return;
             
-            // Get all conversation IDs in the current tab
-            const allConversations = conversations.filter(c => 
-              activeTab === 'active' ? !c.archived : c.archived
-            );
+            // Get all conversation IDs in the current tab (use filteredConversations which is already filtered)
+            const allConversations = filteredConversations;
             
             // Reorder the conversations array
             const movedItem = allConversations[evt.oldIndex];
@@ -139,7 +144,7 @@ export function ConversationList({
         sortableInstanceRef.current = null;
       }
     };
-  }, [activeTab, filteredConversations, conversations]);
+  }, [activeTab, filteredConversations]);
 
   const handleRename = (conversation: Conversation) => {
     setEditingId(conversation.id);
@@ -223,7 +228,12 @@ export function ConversationList({
             data-conversation-id={conversation.id}
             class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''}`}
           >
-            <div class="drag-handle" title="Drag to reorder">
+            <div 
+              class="drag-handle" 
+              title="Drag to reorder"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="drag-icon">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
               </svg>

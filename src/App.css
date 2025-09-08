@@ -198,6 +198,9 @@ body {
   justify-content: center;
   opacity: 0.3;
   transition: opacity 0.2s;
+  pointer-events: auto;
+  z-index: 1;
+  position: relative;
 }
 
 .drag-handle:hover {
