@@ -109,9 +109,16 @@ export function ConversationList({
             chosenClass: 'conversation-drag-chosen', 
             dragClass: 'conversation-drag-active',
             fallbackClass: 'conversation-drag-fallback',
-            forceFallback: false,
+            forceFallback: true,
+            swapThreshold: 0.3,
+            invertSwap: false,
+            direction: 'vertical',
+            touchStartThreshold: 0,
             onStart: (evt) => {
               console.log('Drag started:', evt.oldIndex, evt.item);
+            },
+            onMove: (evt) => {
+              console.log('Moving over:', evt.related, 'at position:', evt.willInsertAfter ? 'after' : 'before');
             },
             onEnd: async (evt) => {
               console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex, item: evt.item });
