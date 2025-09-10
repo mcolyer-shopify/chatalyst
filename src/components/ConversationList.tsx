@@ -100,34 +100,25 @@ export function ConversationList({
         console.log('Container children:', container.children.length);
         console.log('First child:', container.children[0]);
         
-        // Create new Sortable instance with proper visual feedback
+        // Create new Sortable instance with simplified config for better reliability
         try {
           sortableInstanceRef.current = Sortable.create(container, {
             animation: 150,
             handle: '.drag-handle',
-            ghostClass: 'conversation-drag-ghost',
-            chosenClass: 'conversation-drag-chosen', 
-            dragClass: 'conversation-drag-active',
-            fallbackClass: 'conversation-drag-fallback',
-            forceFallback: true,
-            swapThreshold: 0.3,
-            invertSwap: false,
-            direction: 'vertical',
-            touchStartThreshold: 0,
             onStart: (evt) => {
-              console.log('Drag started:', evt.oldIndex, evt.item);
-            },
-            onMove: (evt) => {
-              console.log('Moving over:', evt.related, 'at position:', evt.willInsertAfter ? 'after' : 'before');
+              console.log('Drag started:', evt.oldIndex, evt.item.dataset.conversationId);
+              evt.item.classList.add('conversation-drag-chosen');
             },
             onEnd: async (evt) => {
-              console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex, item: evt.item });
+              evt.item.classList.remove('conversation-drag-chosen');
+              console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex, from: evt.from, to: evt.to });
               
               if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
               if (evt.oldIndex === evt.newIndex) return;
               
               // Get all conversation IDs in the current tab (use filteredConversations which is already filtered)
               const allConversations = filteredConversations;
+              console.log('Original order:', allConversations.map(c => c.title));
               
               // Reorder the conversations array
               const movedItem = allConversations[evt.oldIndex];
@@ -135,10 +126,10 @@ export function ConversationList({
               reordered.splice(evt.oldIndex, 1);
               reordered.splice(evt.newIndex, 0, movedItem);
               
+              console.log('New order:', reordered.map(c => c.title));
+              
               // Get the IDs in new order
               const reorderedIds = reordered.map(c => c.id);
-              
-              console.log('Reordered IDs:', reorderedIds);
               
               // Update the order in the store
               await updateConversationOrders(reorderedIds);
