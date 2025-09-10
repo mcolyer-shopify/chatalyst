@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved prompt library modal layout with more compact design and smaller buttons
+
+### Fixed
+- Fixed drag and drop functionality for conversation reordering
+  - Replaced SortableJS with native HTML5 drag and drop implementation
+  - Added `dragDropEnabled: false` to Tauri config to disable conflicting drag system
+  - Removed `user-select: none` from conversation items that was blocking drag events
+  - Added proper visual feedback for dragging and drop zones
 - Enhanced prompt library interface for better visibility of more prompts at once
 - Recent prompts now persist across application restarts
 - Prompt library modal now sorts prompts by usage recency instead of last update time

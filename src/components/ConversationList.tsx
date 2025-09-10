@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useRef } from 'preact/hooks';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
 import { generatingTitleFor, updateConversationOrders } from '../store';
-import Sortable from 'sortablejs';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -43,10 +42,13 @@ export function ConversationList({
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Refs for sortable containers
+  // Refs for drag containers
   const activeListRef = useRef<HTMLDivElement>(null);
   const archivedListRef = useRef<HTMLDivElement>(null);
-  const sortableInstanceRef = useRef<Sortable | null>(null);
+  
+  // Drag state
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Filter and sort conversations based on tab and search query
   const filteredConversations = useMemo(() => {
@@ -81,75 +83,93 @@ export function ConversationList({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Initialize Sortable for drag and drop
+  // Use refs to attach native DOM event listeners
   useEffect(() => {
     const container = activeTab === 'active' ? activeListRef.current : archivedListRef.current;
-    
-    if (container && filteredConversations.length > 0) {
-      // Destroy previous instance if it exists
-      if (sortableInstanceRef.current) {
-        sortableInstanceRef.current.destroy();
-        sortableInstanceRef.current = null;
-      }
+    if (!container) return;
 
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        if (!container) return;
-        
-        console.log('Creating Sortable instance for', activeTab, 'with', filteredConversations.length, 'conversations');
-        console.log('Container children:', container.children.length);
-        console.log('First child:', container.children[0]);
-        
-        // Create new Sortable instance with simplified config for better reliability
-        try {
-          sortableInstanceRef.current = Sortable.create(container, {
-            animation: 150,
-            handle: '.drag-handle',
-            onStart: (evt) => {
-              console.log('Drag started:', evt.oldIndex, evt.item.dataset.conversationId);
-              evt.item.classList.add('conversation-drag-chosen');
-            },
-            onEnd: async (evt) => {
-              evt.item.classList.remove('conversation-drag-chosen');
-              console.log('Drag ended:', { oldIndex: evt.oldIndex, newIndex: evt.newIndex, from: evt.from, to: evt.to });
-              
-              if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
-              if (evt.oldIndex === evt.newIndex) return;
-              
-              // Get all conversation IDs in the current tab (use filteredConversations which is already filtered)
-              const allConversations = filteredConversations;
-              console.log('Original order:', allConversations.map(c => c.title));
-              
-              // Reorder the conversations array
-              const movedItem = allConversations[evt.oldIndex];
-              const reordered = [...allConversations];
-              reordered.splice(evt.oldIndex, 1);
-              reordered.splice(evt.newIndex, 0, movedItem);
-              
-              console.log('New order:', reordered.map(c => c.title));
-              
-              // Get the IDs in new order
-              const reorderedIds = reordered.map(c => c.id);
-              
-              // Update the order in the store
-              await updateConversationOrders(reorderedIds);
-            }
-          });
-          console.log('Sortable instance created successfully:', sortableInstanceRef.current);
-        } catch (error) {
-          console.error('Failed to create Sortable instance:', error);
-        }
-      }, 100);
-    }
-
-    // Cleanup on unmount or when dependencies change
-    return () => {
-      if (sortableInstanceRef.current) {
-        sortableInstanceRef.current.destroy();
-        sortableInstanceRef.current = null;
-      }
+    const handleDragStart = (e: any) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.conversation-item') as HTMLElement;
+      if (!item) return;
+      
+      const conversationId = item.dataset.conversationId!;
+      
+      setDraggedItem(conversationId);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', conversationId);
     };
-  }, [activeTab, filteredConversations]);
+
+    const handleDragOver = (e: any, index: number) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverIndex(index);
+    };
+
+    const handleDragLeave = () => {
+      setDragOverIndex(null);
+    };
+
+    const handleDrop = async (e: any, dropIndex: number) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain');
+      
+      if (!draggedItem || draggedId !== draggedItem) return;
+      
+      const dragIndex = filteredConversations.findIndex(c => c.id === draggedId);
+      if (dragIndex === -1 || dragIndex === dropIndex) {
+        setDraggedItem(null);
+        setDragOverIndex(null);
+        return;
+      }
+      
+      // Reorder the conversations
+      const reordered = [...filteredConversations];
+      const movedItem = reordered[dragIndex];
+      reordered.splice(dragIndex, 1);
+      reordered.splice(dropIndex, 0, movedItem);
+      
+      // Update the order in the store
+      const reorderedIds = reordered.map(c => c.id);
+      await updateConversationOrders(reorderedIds);
+      
+      setDraggedItem(null);
+      setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+      setDraggedItem(null);
+      setDragOverIndex(null);
+    };
+
+    // Add event listeners to all drag handles
+    const dragHandles = container.querySelectorAll('.drag-handle');
+    dragHandles.forEach(handle => {
+      handle.addEventListener('dragstart', handleDragStart);
+      handle.addEventListener('dragend', handleDragEnd);
+    });
+
+    // Add event listeners to each conversation item for drag over/drop
+    const conversationItems = container.querySelectorAll('.conversation-item');
+    
+    conversationItems.forEach((item, index) => {
+      item.addEventListener('dragover', (e) => handleDragOver(e, index));
+      item.addEventListener('dragleave', handleDragLeave);
+      item.addEventListener('drop', (e) => handleDrop(e, index));
+    });
+
+    return () => {
+      dragHandles.forEach(handle => {
+        handle.removeEventListener('dragstart', handleDragStart);
+        handle.removeEventListener('dragend', handleDragEnd);
+      });
+      conversationItems.forEach((item, index) => {
+        item.removeEventListener('dragover', (e) => handleDragOver(e, index));
+        item.removeEventListener('dragleave', handleDragLeave);
+        item.removeEventListener('drop', (e) => handleDrop(e, index));
+      });
+    };
+  }, [activeTab, filteredConversations, draggedItem]);
 
   const handleRename = (conversation: Conversation) => {
     setEditingId(conversation.id);
@@ -227,16 +247,16 @@ export function ConversationList({
         class="conversations"
         ref={activeTab === 'active' ? activeListRef : archivedListRef}
       >
-        {filteredConversations.map((conversation) => (
+        {filteredConversations.map((conversation, index) => (
           <div
             key={conversation.id}
             data-conversation-id={conversation.id}
-            class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''}`}
+            class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''} ${draggedItem === conversation.id ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
           >
             <div 
               class="drag-handle" 
               title="Drag to reorder"
-              onClick={(e) => e.stopPropagation()}
+              draggable={true}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="drag-icon">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
