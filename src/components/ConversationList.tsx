@@ -100,12 +100,16 @@ export function ConversationList({
         console.log('Container children:', container.children.length);
         console.log('First child:', container.children[0]);
         
-        // Create new Sortable instance - try without handle first to test basic functionality
+        // Create new Sortable instance with proper visual feedback
         try {
           sortableInstanceRef.current = Sortable.create(container, {
             animation: 150,
-            // Remove handle temporarily to test if basic drag works
-            // handle: '.drag-handle',
+            handle: '.drag-handle',
+            ghostClass: 'conversation-drag-ghost',
+            chosenClass: 'conversation-drag-chosen', 
+            dragClass: 'conversation-drag-active',
+            fallbackClass: 'conversation-drag-fallback',
+            forceFallback: false,
             onStart: (evt) => {
               console.log('Drag started:', evt.oldIndex, evt.item);
             },
@@ -236,7 +240,9 @@ export function ConversationList({
               title="Drag to reorder"
               onClick={(e) => e.stopPropagation()}
             >
-              ⋮⋮
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="drag-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+              </svg>
             </div>
             {editingId === conversation.id ? (
               <input

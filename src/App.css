@@ -218,18 +218,57 @@ body {
 
 /* Sortable drag states */
 .conversation-drag-ghost {
-  opacity: 0.4;
-  background: #f0f0f0;
+  opacity: 0.5;
+  background: #e3f2fd !important;
+  border: 2px dashed #2196F3;
+  transform: rotate(2deg);
 }
 
 .conversation-drag-chosen {
-  opacity: 0.6;
-  background: #e3f2fd;
+  background: #e3f2fd !important;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+  transform: scale(1.02);
 }
 
 .conversation-drag-active {
+  background: #ffffff !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  transform: rotate(1deg);
+  z-index: 1000;
+}
+
+.conversation-drag-fallback {
   background: #ffffff;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  opacity: 0.8;
+}
+
+/* Drop indicator line */
+.sortable-ghost {
+  opacity: 0.4;
+}
+
+.conversations .conversation-item::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #2196F3;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 2px;
+}
+
+.conversations .conversation-item.sortable-ghost::before,
+.conversations .conversation-item:hover::before {
+  opacity: 0;
+}
+
+/* Show drop indicator on drag over */
+.conversations:not(.sortable-ghost) .conversation-item.sortable-ghost + .conversation-item::before {
+  opacity: 1;
 }
 
 /* Sidebar Toggle Styles */
@@ -1610,16 +1649,28 @@ body {
   }
   
   .conversation-drag-ghost {
-    background: #2a2a2a;
+    background: #1e3a5f !important;
+    border-color: #64b5f6;
   }
   
   .conversation-drag-chosen {
-    background: #1e3a5f;
+    background: #1e3a5f !important;
+    box-shadow: 0 2px 8px rgba(100, 181, 246, 0.5);
   }
   
   .conversation-drag-active {
+    background: #3a3a3a !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+  }
+  
+  .conversation-drag-fallback {
     background: #3a3a3a;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Dark mode drop indicator */
+  .conversations .conversation-item::before {
+    background: #64b5f6;
   }
 
   .conversation-empty {
