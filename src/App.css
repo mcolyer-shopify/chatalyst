@@ -55,7 +55,8 @@ body {
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  min-height: 76px;
 }
 
 .conversation-list-footer {
@@ -923,9 +924,12 @@ body {
 .message-input {
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 1rem;
   background: white;
   border-top: 1px solid #e0e0e0;
+  min-height: 76px;
+  box-sizing: border-box;
 }
 
 .message-input-content {
@@ -2032,29 +2036,6 @@ body {
   background-color: #ffcdd2;
 }
 
-.message-input-wrapper {
-  position: relative;
-  flex: 1;
-}
-
-.interim-transcript-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  font-family: inherit;
-  line-height: 1.5;
-  color: rgba(33, 150, 243, 0.7);
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow: hidden;
-  border: 2px solid transparent;
-  border-radius: 0.5rem;
-}
 
 .message-input-prompt-button {
   background: none;
@@ -2302,9 +2283,6 @@ body {
     background-color: #5a3d3d;
   }
 
-  .interim-transcript-overlay {
-    color: rgba(100, 181, 246, 0.7);
-  }
 
   .image-processing-indicator {
     background: #2d4a5a;

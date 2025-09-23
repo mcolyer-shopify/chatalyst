@@ -77,6 +77,9 @@ export function MessageForm({
     }
   }, [transcript, message, setMessage, clearTranscript]);
 
+  // Update message with interim transcript in real-time
+  const displayValue = message + interimTranscript;
+
   const handleFileInputChange = (event: Event) => {
     const files = handleFileInput(event);
     if (files.length > 0) {
@@ -171,26 +174,19 @@ export function MessageForm({
           onOpenFullLibrary={onOpenPromptLibrary}
           disabled={disabled && !isGenerating}
         />
-        <div class="message-input-wrapper">
-          <textarea
-            ref={inputRef}
-            value={message}
-            onInput={(e) => setMessage(e.currentTarget.value)}
-            onKeyDown={combinedKeyDown}
-            onPaste={onPaste}
-            placeholder={`Type a message or use voice input... (Shift+Enter for new line, ${isMac ? 'Cmd+V' : 'Ctrl+V'} to paste images${isSpeechSupported ? ', 🎤 for voice' : ''})`}
-            disabled={disabled && !isGenerating}
-            class="message-input-field"
-            rows={1}
-            aria-label="Message input"
-            aria-describedby="message-input-instructions"
-          />
-          {interimTranscript && (
-            <div class="interim-transcript-overlay">
-              {message}{interimTranscript}
-            </div>
-          )}
-        </div>
+        <textarea
+          ref={inputRef}
+          value={displayValue}
+          onInput={(e) => setMessage(e.currentTarget.value)}
+          onKeyDown={combinedKeyDown}
+          onPaste={onPaste}
+          placeholder={`Type a message... (${isMac ? '⌘V' : 'Ctrl+V'} for images${isSpeechSupported ? ', 🎤 for voice' : ''})`}
+          disabled={disabled && !isGenerating}
+          class="message-input-field"
+          rows={1}
+          aria-label="Message input"
+          aria-describedby="message-input-instructions"
+        />
         <button
           type="submit"
           disabled={isStopping || (!isGenerating && (disabled || (!message.trim() && pendingImages.length === 0)))}
