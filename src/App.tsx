@@ -143,8 +143,12 @@ function App() {
     await generateConversationTitle(id);
   };
 
-  const handleStartFresh = (id: string) => {
-    startFreshConversation(id);
+  const handleStartFresh = async (id: string) => {
+    try {
+      await startFreshConversation(id);
+    } catch {
+      // Error is already handled in startFreshConversation
+    }
   };
 
   // Settings management

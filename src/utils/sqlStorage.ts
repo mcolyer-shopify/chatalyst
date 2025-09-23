@@ -202,11 +202,12 @@ class SqlStorage {
       if (conversationsData) {
         const conversations = JSON.parse(conversationsData) as Conversation[];
         
-        for (const conv of conversations) {
+        for (let index = 0; index < conversations.length; index++) {
+          const conv = conversations[index];
           await database.execute(
             `INSERT OR REPLACE INTO conversations 
-             (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+             (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at, display_order) 
+             VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'), ?)`,
             [
               conv.id,
               conv.title,
@@ -215,7 +216,8 @@ class SqlStorage {
               conv.archived ? 1 : 0,
               conv.archivedAt ? new Date(conv.archivedAt).toISOString() : null,
               (conv.createdAt / 1000).toString(),
-              (conv.updatedAt / 1000).toString()
+              (conv.updatedAt / 1000).toString(),
+              index
             ]
           );
 
@@ -446,8 +448,8 @@ export async function saveSingleConversation(conversation: Conversation): Promis
       // Update or insert the conversation
         await database.execute(
           `INSERT OR REPLACE INTO conversations 
-         (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+         (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at, display_order) 
+         VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'), ?)`,
           [
             conversation.id,
             conversation.title,
@@ -456,7 +458,8 @@ export async function saveSingleConversation(conversation: Conversation): Promis
             conversation.archived ? 1 : 0,
             conversation.archivedAt ? new Date(conversation.archivedAt).toISOString() : null,
             (conversation.createdAt / 1000).toString(),
-            (conversation.updatedAt / 1000).toString()
+            (conversation.updatedAt / 1000).toString(),
+            conversation.displayOrder || 0
           ]
         );
       
@@ -563,8 +566,9 @@ export async function loadConversations(): Promise<Conversation[]> {
       archived_at: string | null;
       created_at: string;
       updated_at: string;
+      display_order: number;
     }[]>(
-      'SELECT * FROM conversations ORDER BY updated_at DESC'
+      'SELECT * FROM conversations ORDER BY display_order ASC, updated_at DESC'
     );
     
     debugLog('LOAD_CONVERSATIONS: Query complete', { conversationCount: conversations.length });
@@ -632,7 +636,8 @@ export async function loadConversations(): Promise<Conversation[]> {
         archived: Boolean(conv.archived),
         archivedAt: conv.archived_at ? new Date(conv.archived_at).getTime() : undefined,
         createdAt: new Date(conv.created_at).getTime(),
-        updatedAt: new Date(conv.updated_at).getTime()
+        updatedAt: new Date(conv.updated_at).getTime(),
+        displayOrder: conv.display_order
       });
     }
     
@@ -787,8 +792,8 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
           // Save conversation
           await database.execute(
             `INSERT OR REPLACE INTO conversations 
-             (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'))`,
+             (id, title, model, enabled_tools, archived, archived_at, created_at, updated_at, display_order) 
+             VALUES (?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch', 'localtime'), datetime(?, 'unixepoch', 'localtime'), ?)`,
             [
               conv.id,
               conv.title,
@@ -797,7 +802,8 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
               conv.archived ? 1 : 0,
               conv.archivedAt ? new Date(conv.archivedAt).toISOString() : null,
               (conv.createdAt / 1000).toString(),
-              (conv.updatedAt / 1000).toString()
+              (conv.updatedAt / 1000).toString(),
+              conv.displayOrder || 0
             ]
           );
 
@@ -1138,5 +1144,29 @@ export async function loadRecentPrompts(limit: number = 10): Promise<Prompt[]> {
     console.error('Failed to load recent prompts:', error);
     showError(`Failed to load recent prompts: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return [];
+  }
+}
+
+// Update conversation display orders after drag and drop
+export async function updateConversationOrders(conversationIds: string[]): Promise<void> {
+  debugLog('UPDATE_CONVERSATION_ORDERS: Starting update', { count: conversationIds.length });
+  try {
+    await sqlStorage.init();
+    const database = await getDatabase();
+    
+    // Update each conversation with its new display order
+    for (let i = 0; i < conversationIds.length; i++) {
+      await database.execute(
+        'UPDATE conversations SET display_order = ? WHERE id = ?',
+        [i, conversationIds[i]]
+      );
+    }
+    
+    debugLog('UPDATE_CONVERSATION_ORDERS: Successfully updated orders');
+  } catch (error) {
+    debugLog('UPDATE_CONVERSATION_ORDERS: Failed to update', { error });
+    console.error('Failed to update conversation orders:', error);
+    showError(`Failed to update conversation order: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
   }
 }

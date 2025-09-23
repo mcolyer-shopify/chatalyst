@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'preact/hooks';
+import { useEffect, useState, useMemo, useRef } from 'preact/hooks';
 import type { Conversation } from '../types';
 import { ModelSelector } from './ModelSelector';
-import { generatingTitleFor } from '../store';
+import { generatingTitleFor, updateConversationOrders } from '../store';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -41,16 +41,33 @@ export function ConversationList({
   const [editTitle, setEditTitle] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Refs for drag containers
+  const activeListRef = useRef<HTMLDivElement>(null);
+  const archivedListRef = useRef<HTMLDivElement>(null);
+  
+  // Drag state
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Filter conversations based on tab and search query
+  // Filter and sort conversations based on tab and search query
   const filteredConversations = useMemo(() => {
     const isArchived = activeTab === 'archived';
-    return conversations.filter(conv => {
+    const filtered = conversations.filter(conv => {
       // Handle undefined archived field (treat as not archived)
       const matchesTab = isArchived ? conv.archived === true : conv.archived !== true;
       const matchesSearch = searchQuery === '' || 
         conv.title.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesTab && matchesSearch;
+    });
+    
+    // Sort by displayOrder (ascending), fallback to updatedAt (descending)
+    return filtered.sort((a, b) => {
+      if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+        return a.displayOrder - b.displayOrder;
+      }
+      // Fallback to updatedAt for conversations without displayOrder
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
     });
   }, [conversations, activeTab, searchQuery]);
 
@@ -65,6 +82,94 @@ export function ConversationList({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Use refs to attach native DOM event listeners
+  useEffect(() => {
+    const container = activeTab === 'active' ? activeListRef.current : archivedListRef.current;
+    if (!container) return;
+
+    const handleDragStart = (e: any) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.conversation-item') as HTMLElement;
+      if (!item) return;
+      
+      const conversationId = item.dataset.conversationId!;
+      
+      setDraggedItem(conversationId);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', conversationId);
+    };
+
+    const handleDragOver = (e: any, index: number) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverIndex(index);
+    };
+
+    const handleDragLeave = () => {
+      setDragOverIndex(null);
+    };
+
+    const handleDrop = async (e: any, dropIndex: number) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain');
+      
+      if (!draggedItem || draggedId !== draggedItem) return;
+      
+      const dragIndex = filteredConversations.findIndex(c => c.id === draggedId);
+      if (dragIndex === -1 || dragIndex === dropIndex) {
+        setDraggedItem(null);
+        setDragOverIndex(null);
+        return;
+      }
+      
+      // Reorder the conversations
+      const reordered = [...filteredConversations];
+      const movedItem = reordered[dragIndex];
+      reordered.splice(dragIndex, 1);
+      reordered.splice(dropIndex, 0, movedItem);
+      
+      // Update the order in the store
+      const reorderedIds = reordered.map(c => c.id);
+      await updateConversationOrders(reorderedIds);
+      
+      setDraggedItem(null);
+      setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+      setDraggedItem(null);
+      setDragOverIndex(null);
+    };
+
+    // Add event listeners to all drag handles
+    const dragHandles = container.querySelectorAll('.drag-handle');
+    dragHandles.forEach(handle => {
+      handle.addEventListener('dragstart', handleDragStart);
+      handle.addEventListener('dragend', handleDragEnd);
+    });
+
+    // Add event listeners to each conversation item for drag over/drop
+    const conversationItems = container.querySelectorAll('.conversation-item');
+    
+    conversationItems.forEach((item, index) => {
+      item.addEventListener('dragover', (e) => handleDragOver(e, index));
+      item.addEventListener('dragleave', handleDragLeave);
+      item.addEventListener('drop', (e) => handleDrop(e, index));
+    });
+
+    return () => {
+      dragHandles.forEach(handle => {
+        handle.removeEventListener('dragstart', handleDragStart);
+        handle.removeEventListener('dragend', handleDragEnd);
+      });
+      conversationItems.forEach((item, index) => {
+        item.removeEventListener('dragover', (e) => handleDragOver(e, index));
+        item.removeEventListener('dragleave', handleDragLeave);
+        item.removeEventListener('drop', (e) => handleDrop(e, index));
+      });
+    };
+  }, [activeTab, filteredConversations, draggedItem]);
 
   const handleRename = (conversation: Conversation) => {
     setEditingId(conversation.id);
@@ -138,12 +243,25 @@ export function ConversationList({
           </div>
         )}
       </div>
-      <div class="conversations">
-        {filteredConversations.map((conversation) => (
+      <div 
+        class="conversations"
+        ref={activeTab === 'active' ? activeListRef : archivedListRef}
+      >
+        {filteredConversations.map((conversation, index) => (
           <div
             key={conversation.id}
-            class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''}`}
+            data-conversation-id={conversation.id}
+            class={`conversation-item ${selectedId === conversation.id ? 'selected' : ''} ${draggedItem === conversation.id ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
           >
+            <div 
+              class="drag-handle" 
+              title="Drag to reorder"
+              draggable={true}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="drag-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+              </svg>
+            </div>
             {editingId === conversation.id ? (
               <input
                 type="text"

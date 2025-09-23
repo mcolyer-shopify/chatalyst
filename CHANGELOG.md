@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Drag and drop functionality for reordering conversations in the sidebar
+  - Visual drag handle icon for each conversation item
+  - Smooth animations during drag operations
+  - Persistent conversation ordering across sessions
+  - Support for both active and archived conversations
+  - Dark mode support for drag and drop visual feedback
 - Claude Code linting hook that automatically runs ESLint on TypeScript/JavaScript files after edits
 - Streamlined prompt picker with recent prompts access
   - Quick dropdown showing last 5 used prompts for easy reuse
@@ -22,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved prompt library modal layout with more compact design and smaller buttons
+
+### Fixed
+- Fixed drag and drop functionality for conversation reordering
+  - Replaced SortableJS with native HTML5 drag and drop implementation
+  - Added `dragDropEnabled: false` to Tauri config to disable conflicting drag system
+  - Removed `user-select: none` from conversation items that was blocking drag events
+  - Added proper visual feedback for dragging and drop zones
 - Enhanced prompt library interface for better visibility of more prompts at once
 - Recent prompts now persist across application restarts
 - Prompt library modal now sorts prompts by usage recency instead of last update time

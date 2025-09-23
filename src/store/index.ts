@@ -180,13 +180,20 @@ export async function createConversation(
   title: string,
   model?: string
 ): Promise<ConversationType> {
+  // Get the highest display order for new conversation to add it at the end
+  const activeConversations = conversations.value.filter(c => !c.archived);
+  const maxOrder = activeConversations.length > 0 
+    ? Math.max(...activeConversations.map(c => c.displayOrder ?? 0))
+    : -1;
+  
   const newConversation: ConversationType = {
     id: Date.now().toString(),
     title,
     model: model || settings.value.defaultModel,
     messages: [],
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    displayOrder: maxOrder + 1
   };
 
   try {
@@ -207,14 +214,20 @@ export async function createConversation(
   return newConversation;
 }
 
-export function startFreshConversation(
+export async function startFreshConversation(
   templateId: string,
   title?: string
-): ConversationType | null {
+): Promise<ConversationType | null> {
   const templateConversation = conversations.value.find(c => c.id === templateId);
   if (!templateConversation) {
     return null;
   }
+
+  // Get the highest display order for new conversation to add it at the end
+  const activeConversations = conversations.value.filter(c => !c.archived);
+  const maxOrder = activeConversations.length > 0 
+    ? Math.max(...activeConversations.map(c => c.displayOrder ?? 0))
+    : -1;
 
   const newConversation: ConversationType = {
     id: Date.now().toString(),
@@ -223,13 +236,24 @@ export function startFreshConversation(
     enabledTools: templateConversation.enabledTools,
     messages: [],
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    displayOrder: maxOrder + 1
   };
 
-  batch(() => {
-    conversations.value = [...conversations.value, newConversation];
-    selectedConversationId.value = newConversation.id;
-  });
+  try {
+    // Save to database first
+    await saveSingleConversation(newConversation);
+    
+    // Update memory state
+    batch(() => {
+      conversations.value = [...conversations.value, newConversation];
+      selectedConversationId.value = newConversation.id;
+    });
+  } catch (error) {
+    console.error('Failed to create fresh conversation:', error);
+    showError(`Failed to create fresh conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return null;
+  }
 
   return newConversation;
 }
@@ -614,6 +638,29 @@ export function removeMCPServer(serverId: string) {
 
 export function clearMCPServers() {
   mcpServers.value = [];
+}
+
+// Update conversation display orders after drag and drop
+export async function updateConversationOrders(conversationIds: string[]) {
+  try {
+    // Update in-memory state
+    const updatedConversations = conversations.value.map(conv => {
+      const newOrder = conversationIds.indexOf(conv.id);
+      if (newOrder !== -1) {
+        return { ...conv, displayOrder: newOrder };
+      }
+      return conv;
+    });
+    
+    conversations.value = updatedConversations;
+    
+    // Save updated orders to database
+    const { updateConversationOrders: updateOrdersInDB } = await import('../utils/sqlStorage');
+    await updateOrdersInDB(conversationIds);
+  } catch (error) {
+    console.error('Failed to update conversation orders:', error);
+    showError(`Failed to update conversation order: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 export function toggleConversationTool(conversationId: string, serverId: string, toolName: string, enabled: boolean) {
