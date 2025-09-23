@@ -1995,6 +1995,67 @@ body {
   background-color: #e3f2fd;
 }
 
+.message-input-mic-button {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background-color 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-input-mic-button:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.message-input-mic-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.message-input-mic-button.processing {
+  animation: pulse 1.5s ease-in-out infinite;
+  background-color: #fff3e0;
+}
+
+.message-input-mic-button.listening {
+  background-color: #ffebee;
+  animation: pulse 2s ease-in-out infinite;
+  border: 2px solid #f44336;
+}
+
+.message-input-mic-button.listening:hover:not(:disabled) {
+  background-color: #ffcdd2;
+}
+
+.message-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.interim-transcript-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: rgba(33, 150, 243, 0.7);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+}
+
 .message-input-prompt-button {
   background: none;
   border: none;
@@ -2218,6 +2279,31 @@ body {
 
   .message-input-prompt-button:hover:not(:disabled) {
     background-color: #4a4a4a;
+  }
+
+  .message-input-mic-button {
+    color: #ccc;
+  }
+
+  .message-input-mic-button:hover:not(:disabled) {
+    background-color: #4a4a4a;
+  }
+
+  .message-input-mic-button.processing {
+    background-color: #2d4a5a;
+  }
+
+  .message-input-mic-button.listening {
+    background-color: #4a2d2d;
+    border-color: #f44336;
+  }
+
+  .message-input-mic-button.listening:hover:not(:disabled) {
+    background-color: #5a3d3d;
+  }
+
+  .interim-transcript-overlay {
+    color: rgba(100, 181, 246, 0.7);
   }
 
   .image-processing-indicator {

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'preact/hooks';
 import { handleFileInput } from '../utils/images';
 import type { PendingImage } from '../types';
 import { RecentPromptPicker } from './RecentPromptPicker';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
 interface MessageFormProps {
   message: string;
@@ -48,13 +49,33 @@ export function MessageForm({
   // Detect if we're on macOS
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
-  // Auto-resize textarea based on content
+  // Speech recognition hook
+  const {
+    isSupported: isSpeechSupported,
+    isListening,
+    isProcessing: isSpeechProcessing,
+    transcript,
+    interimTranscript,
+    startListening,
+    stopListening,
+    clearTranscript
+  } = useSpeechRecognition();
+
+  // Auto-resize textarea based on content (but not for interim text)
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
       inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
     }
   }, [message]);
+
+  // Handle speech recognition transcript
+  useEffect(() => {
+    if (transcript) {
+      setMessage(message + transcript);
+      clearTranscript();
+    }
+  }, [transcript, message, setMessage, clearTranscript]);
 
   const handleFileInputChange = (event: Event) => {
     const files = handleFileInput(event);
@@ -69,6 +90,14 @@ export function MessageForm({
 
   const openFileDialog = () => {
     fileInputRef.current?.click();
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
   };
 
   const handleSubmit = (e?: Event) => {
@@ -115,24 +144,53 @@ export function MessageForm({
             {isProcessingImages ? '⏳' : '📎'}
           </span>
         </button>
+        {isSpeechSupported && (
+          <button
+            type="button"
+            onClick={toggleSpeechRecognition}
+            disabled={disabled && !isGenerating}
+            class={`message-input-mic-button ${isListening ? 'listening' : ''} ${isSpeechProcessing ? 'processing' : ''}`}
+            title={
+              isListening ? 'Stop recording' : 
+                isSpeechProcessing ? 'Starting microphone...' : 
+                  'Start voice input'
+            }
+            aria-label={
+              isListening ? 'Stop voice recording' : 
+                isSpeechProcessing ? 'Starting microphone, please wait' : 
+                  'Start voice input'
+            }
+          >
+            <span aria-hidden="true">
+              {isSpeechProcessing ? '⏳' : isListening ? '⏸️' : '🎤'}
+            </span>
+          </button>
+        )}
         <RecentPromptPicker
           onSelectPrompt={onSelectPrompt}
           onOpenFullLibrary={onOpenPromptLibrary}
           disabled={disabled && !isGenerating}
         />
-        <textarea
-          ref={inputRef}
-          value={message}
-          onInput={(e) => setMessage(e.currentTarget.value)}
-          onKeyDown={combinedKeyDown}
-          onPaste={onPaste}
-          placeholder={`Type a message... (Shift+Enter for new line, ${isMac ? 'Cmd+V' : 'Ctrl+V'} to paste images)`}
-          disabled={disabled && !isGenerating}
-          class="message-input-field"
-          rows={1}
-          aria-label="Message input"
-          aria-describedby="message-input-instructions"
-        />
+        <div class="message-input-wrapper">
+          <textarea
+            ref={inputRef}
+            value={message}
+            onInput={(e) => setMessage(e.currentTarget.value)}
+            onKeyDown={combinedKeyDown}
+            onPaste={onPaste}
+            placeholder={`Type a message or use voice input... (Shift+Enter for new line, ${isMac ? 'Cmd+V' : 'Ctrl+V'} to paste images${isSpeechSupported ? ', 🎤 for voice' : ''})`}
+            disabled={disabled && !isGenerating}
+            class="message-input-field"
+            rows={1}
+            aria-label="Message input"
+            aria-describedby="message-input-instructions"
+          />
+          {interimTranscript && (
+            <div class="interim-transcript-overlay">
+              {message}{interimTranscript}
+            </div>
+          )}
+        </div>
         <button
           type="submit"
           disabled={isStopping || (!isGenerating && (disabled || (!message.trim() && pendingImages.length === 0)))}
@@ -150,7 +208,7 @@ export function MessageForm({
         id="message-input-instructions" 
         class="sr-only"
       >
-        Use Shift+Enter for new line, {isMac ? 'Cmd+V' : 'Ctrl+V'} to paste images, or click the attach button to select image files.
+        Use Shift+Enter for new line, {isMac ? 'Cmd+V' : 'Ctrl+V'} to paste images, click the attach button to select image files{isSpeechSupported ? ', or click the microphone button for voice input' : ''}.
       </div>
       
       {/* Hidden file input */}
