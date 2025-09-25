@@ -69,16 +69,77 @@ export function MessageForm({
     }
   }, [message]);
 
+  // Hotkey for speech recognition (right Cmd key)
+  useEffect(() => {
+    if (!isSpeechSupported) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for right Cmd key (location 2 = right modifier key)
+      if (event.key === 'Meta' && event.location === 2) {
+        event.preventDefault();
+        if (!isListening) {
+          startListening();
+        }
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      // Release right Cmd key to stop recording
+      if (event.key === 'Meta' && event.location === 2 && isListening) {
+        event.preventDefault();
+        stopListening();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isSpeechSupported, isListening, startListening, stopListening]);
+
+  // Track cursor position for speech insertion
+  const cursorPositionRef = useRef<number>(0);
+
+  // Update cursor position when user interacts with textarea
+  const handleCursorChange = () => {
+    if (inputRef.current) {
+      cursorPositionRef.current = inputRef.current.selectionStart || 0;
+    }
+  };
+
   // Handle speech recognition transcript
   useEffect(() => {
-    if (transcript) {
-      setMessage(message + transcript);
+    if (transcript && inputRef.current) {
+      const cursorPos = cursorPositionRef.current;
+      const beforeCursor = message.slice(0, cursorPos);
+      const afterCursor = message.slice(cursorPos);
+      const newMessage = beforeCursor + transcript + afterCursor;
+      
+      setMessage(newMessage);
+      
+      // Update cursor position to after inserted text
+      const newCursorPos = cursorPos + transcript.length;
+      cursorPositionRef.current = newCursorPos;
+      
+      // Set cursor position after state update
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+      
       clearTranscript();
     }
   }, [transcript, message, setMessage, clearTranscript]);
 
-  // Update message with interim transcript in real-time
-  const displayValue = message + interimTranscript;
+  // Update message with interim transcript at cursor position
+  const cursorPos = cursorPositionRef.current;
+  const beforeCursor = message.slice(0, cursorPos);
+  const afterCursor = message.slice(cursorPos);
+  const displayValue = beforeCursor + interimTranscript + afterCursor;
 
   const handleFileInputChange = (event: Event) => {
     const files = handleFileInput(event);
@@ -177,9 +238,17 @@ export function MessageForm({
         <textarea
           ref={inputRef}
           value={displayValue}
-          onInput={(e) => setMessage(e.currentTarget.value)}
-          onKeyDown={combinedKeyDown}
+          onInput={(e) => {
+            setMessage(e.currentTarget.value);
+            handleCursorChange();
+          }}
+          onKeyDown={(e) => {
+            combinedKeyDown(e);
+            handleCursorChange();
+          }}
           onPaste={onPaste}
+          onClick={handleCursorChange}
+          onSelect={handleCursorChange}
           placeholder={`Type a message... (${isMac ? '⌘V' : 'Ctrl+V'} for images${isSpeechSupported ? ', 🎤 for voice' : ''})`}
           disabled={disabled && !isGenerating}
           class="message-input-field"
