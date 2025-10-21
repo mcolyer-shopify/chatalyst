@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Upgraded Tauri to v2.9.0 and related plugins for improved performance and new features
+  - Updated core Tauri framework from v2 to v2.9.0
+  - Updated @tauri-apps/api from v2 to v2.9.0
+  - Updated @tauri-apps/cli from v2 to v2.9.0
+  - Updated tauri-plugin-http from v2.4.4 to v2.5.2
+  - Updated tauri-plugin-shell from v2.2.1 to v2.3.1
+  - Updated tauri-plugin-opener to v2.3.0+
+  - All updates are backward compatible with no breaking changes
+
 ### Added
 - Voice input functionality for message dictation
   - Microphone button in message input for speech-to-text
