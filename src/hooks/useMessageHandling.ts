@@ -283,10 +283,7 @@ ${conversationContext}
 
 Title:`,
         temperature: 0.3, // Lower temperature for more consistent results
-        maxTokens: 50,    // Sufficient tokens to avoid truncation issues
-        topP: 1,
-        frequencyPenalty: 0,
-        presencePenalty: 0
+        maxTokens: 50     // Sufficient tokens to avoid truncation issues
       });
 
       const title = result.text?.trim();

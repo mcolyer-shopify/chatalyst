@@ -48,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed drag and drop functionality for conversation reordering
+- Fixed "generate title" failing with 400 error when using OpenAI Responses API
+  - Removed unsupported parameters (frequencyPenalty, presencePenalty, topP) from title generation API call
+  - Now uses only universally supported parameters (temperature, maxTokens)
   - Replaced SortableJS with native HTML5 drag and drop implementation
   - Added `dragDropEnabled: false` to Tauri config to disable conflicting drag system
   - Removed `user-select: none` from conversation items that was blocking drag events
