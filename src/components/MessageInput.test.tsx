@@ -21,9 +21,24 @@ vi.mock('./ErrorToast', () => ({
   )
 }));
 
+// Mock useSpeechRecognition hook
+vi.mock('../hooks/useSpeechRecognition', () => ({
+  useSpeechRecognition: () => ({
+    isSupported: false,
+    isListening: false,
+    isProcessing: false,
+    transcript: '',
+    interimTranscript: '',
+    error: null,
+    startListening: vi.fn(),
+    stopListening: vi.fn(),
+    clearTranscript: vi.fn()
+  })
+}));
+
 describe('MessageInput', () => {
   const mockOnSend = vi.fn();
-  const placeholder = 'Type a message... (Shift+Enter for new line, Ctrl+V to paste images)';
+  const placeholder = 'Type a message... (Ctrl+V for images)';
   
   const mockValidateImageFileSecure = vi.mocked(imageUtils.validateImageFileSecure);
   const mockCreatePendingImage = vi.mocked(imageUtils.createPendingImage);
@@ -415,7 +430,7 @@ describe('MessageInput', () => {
       render(<MessageInput onSend={mockOnSend} />);
       
       const textarea = screen.getByPlaceholderText(placeholder);
-      expect(textarea).toHaveAttribute('placeholder', 'Type a message... (Shift+Enter for new line, Ctrl+V to paste images)');
+      expect(textarea).toHaveAttribute('placeholder', 'Type a message... (Ctrl+V for images)');
     });
   });
 

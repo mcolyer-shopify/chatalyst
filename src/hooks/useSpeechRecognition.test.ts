@@ -1,6 +1,30 @@
 import { renderHook, act } from '@testing-library/preact';
 import { useSpeechRecognition } from './useSpeechRecognition';
 
+// Define types for testing
+interface MockWindow {
+  SpeechRecognition?: unknown;
+  webkitSpeechRecognition?: unknown;
+}
+
+interface SpeechRecognitionResultEvent {
+  results: {
+    length: number;
+    [key: number]: {
+      [key: number]: { transcript: string; confidence: number };
+      isFinal: boolean;
+      length: number;
+    };
+    item: (index: number) => SpeechRecognitionResultEvent['results'][number];
+  };
+  resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+  message: string;
+}
+
 // Mock SpeechRecognition
 const mockSpeechRecognition = {
   continuous: false,
@@ -55,9 +79,9 @@ describe('useSpeechRecognition', () => {
   });
 
   it('should detect unsupported browser', () => {
-    const windowWithoutSpeech = { ...window };
-    delete (windowWithoutSpeech as any).SpeechRecognition;
-    delete (windowWithoutSpeech as any).webkitSpeechRecognition;
+    const windowWithoutSpeech = { ...window } as MockWindow;
+    delete windowWithoutSpeech.SpeechRecognition;
+    delete windowWithoutSpeech.webkitSpeechRecognition;
 
     Object.defineProperty(global, 'window', {
       value: windowWithoutSpeech,
@@ -109,7 +133,7 @@ describe('useSpeechRecognition', () => {
     });
 
     // Mock speech recognition result event
-    const mockResultEvent = {
+    const mockResultEvent: SpeechRecognitionResultEvent = {
       results: {
         length: 1,
         0: {
@@ -124,7 +148,7 @@ describe('useSpeechRecognition', () => {
 
     act(() => {
       if (mockSpeechRecognition.onresult) {
-        mockSpeechRecognition.onresult(mockResultEvent as any);
+        mockSpeechRecognition.onresult(mockResultEvent as never);
       }
     });
 
@@ -139,7 +163,7 @@ describe('useSpeechRecognition', () => {
     });
 
     // Mock interim result event
-    const mockInterimEvent = {
+    const mockInterimEvent: SpeechRecognitionResultEvent = {
       results: {
         length: 1,
         0: {
@@ -154,7 +178,7 @@ describe('useSpeechRecognition', () => {
 
     act(() => {
       if (mockSpeechRecognition.onresult) {
-        mockSpeechRecognition.onresult(mockInterimEvent as any);
+        mockSpeechRecognition.onresult(mockInterimEvent as never);
       }
     });
 
@@ -170,14 +194,14 @@ describe('useSpeechRecognition', () => {
     });
 
     // Mock error event
-    const mockErrorEvent = {
+    const mockErrorEvent: SpeechRecognitionErrorEvent = {
       error: 'not-allowed',
       message: 'Permission denied'
     };
 
     act(() => {
       if (mockSpeechRecognition.onerror) {
-        mockSpeechRecognition.onerror(mockErrorEvent as any);
+        mockSpeechRecognition.onerror(mockErrorEvent as never);
       }
     });
 
@@ -234,7 +258,7 @@ describe('useSpeechRecognition', () => {
       result.current.startListening();
     });
 
-    const mockResultEvent = {
+    const mockResultEvent: SpeechRecognitionResultEvent = {
       results: {
         length: 1,
         0: {
@@ -249,7 +273,7 @@ describe('useSpeechRecognition', () => {
 
     act(() => {
       if (mockSpeechRecognition.onresult) {
-        mockSpeechRecognition.onresult(mockResultEvent as any);
+        mockSpeechRecognition.onresult(mockResultEvent as never);
       }
     });
 
@@ -274,9 +298,9 @@ describe('useSpeechRecognition', () => {
   });
 
   it('should show error for unsupported browser when starting', () => {
-    const windowWithoutSpeech = { ...window };
-    delete (windowWithoutSpeech as any).SpeechRecognition;
-    delete (windowWithoutSpeech as any).webkitSpeechRecognition;
+    const windowWithoutSpeech = { ...window } as MockWindow;
+    delete windowWithoutSpeech.SpeechRecognition;
+    delete windowWithoutSpeech.webkitSpeechRecognition;
 
     Object.defineProperty(global, 'window', {
       value: windowWithoutSpeech,
