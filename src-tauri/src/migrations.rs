@@ -1,33 +1,5 @@
-use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri_plugin_sql::{Migration, MigrationKind};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct StoredImage {
-    pub id: i64,
-    pub hash: String,
-    pub data: Vec<u8>,
-    pub mime_type: String,
-    pub size: i64,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ImageReference {
-    pub id: i64,
-    pub image_id: i64,
-    pub conversation_id: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ImageMetadata {
-    pub id: i64,
-    pub hash: String,
-    pub mime_type: String,
-    pub size: i64,
-    pub created_at: String,
-}
 
 pub fn get_migrations() -> Vec<Migration> {
     vec![

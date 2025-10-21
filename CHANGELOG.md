@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Voice input functionality for message dictation
+  - Microphone button in message input for speech-to-text
+  - Real-time interim transcript display while speaking
+  - Support for continuous speech recognition
+  - Proper microphone permissions handling for macOS
+  - Visual feedback with pulsing animation when listening
+  - Cross-browser compatibility using Web Speech API
 - Drag and drop functionality for reordering conversations in the sidebar
   - Visual drag handle icon for each conversation item
   - Smooth animations during drag operations
