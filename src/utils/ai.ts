@@ -53,10 +53,10 @@ export function shouldUseResponsesAPI(provider: string, model: string): boolean 
 }
 
 // Create a model function that can use either standard or responses API
-export function createModelFunction(provider: AIProviderWithMetadata, model: string) {
+export function createModelFunction(provider: AIProviderWithMetadata, model: string): unknown {
   const providerType = provider._providerType;
   const useResponsesAPI = shouldUseResponsesAPI(providerType, model);
-  
+
   if (useResponsesAPI && providerType === AI_PROVIDERS.OPENAI && 'responses' in provider) {
     return (provider as ReturnType<typeof createOpenAI>).responses(model);
   }

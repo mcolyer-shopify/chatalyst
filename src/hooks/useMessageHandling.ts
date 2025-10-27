@@ -155,7 +155,9 @@ export function useMessageHandling() {
       const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
 
       const result = await streamText({
-        ...filteredOptions,
+        model: streamTextOptions.model as any,
+        messages: streamTextOptions.messages,
+        ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
             // Create initial tool message when tool is called
@@ -165,7 +167,7 @@ export function useMessageHandling() {
               content: 'Calling tool...',
               timestamp: Date.now(),
               toolName: chunk.toolName || 'unknown',
-              toolCall: chunk.args,
+              toolCall: chunk.input,
               toolResult: undefined
             };
             toolMessagesMap.set(chunk.toolCallId, toolMessage);
@@ -175,8 +177,8 @@ export function useMessageHandling() {
             const existingMessage = toolMessagesMap.get(chunk.toolCallId);
             if (existingMessage) {
               updateMessage(conversation.id, existingMessage.id, {
-                content: JSON.stringify(chunk.result),
-                toolResult: chunk.result
+                content: JSON.stringify(chunk.output),
+                toolResult: chunk.output
               });
             }
           }
@@ -286,14 +288,13 @@ export function useMessageHandling() {
       const modelToUse = settings.value.defaultModel || DEFAULT_MODEL;
       
       const result = await generateText({
-        model: createModelFunction(aiProvider, modelToUse),
+        model: createModelFunction(aiProvider, modelToUse) as any,
         prompt: `Based on the following conversation, generate a brief 3-5 word title that captures the main topic. Respond with only the title, no additional text, quotes, or punctuation.
 
 Conversation:
 ${conversationContext}
 
-Title:`,
-        maxTokens: 50     // Sufficient tokens to avoid truncation issues
+Title:`
       });
 
       const title = result.text?.trim();
@@ -400,7 +401,9 @@ Title:`,
       const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
 
       const result = await streamText({
-        ...filteredOptions,
+        model: streamTextOptions.model as any,
+        messages: streamTextOptions.messages,
+        ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
             // Create initial tool message when tool is called
@@ -410,7 +413,7 @@ Title:`,
               content: 'Calling tool...',
               timestamp: Date.now(),
               toolName: chunk.toolName || 'unknown',
-              toolCall: chunk.args,
+              toolCall: chunk.input,
               toolResult: undefined
             };
             toolMessagesMap.set(chunk.toolCallId, toolMessage);
@@ -420,8 +423,8 @@ Title:`,
             const existingMessage = toolMessagesMap.get(chunk.toolCallId);
             if (existingMessage) {
               updateMessage(conversation.id, existingMessage.id, {
-                content: JSON.stringify(chunk.result),
-                toolResult: chunk.result
+                content: JSON.stringify(chunk.output),
+                toolResult: chunk.output
               });
             }
           }
