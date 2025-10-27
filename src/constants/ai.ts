@@ -1,4 +1,4 @@
-export const DEFAULT_MODEL = 'gpt-4-turbo';
+export const DEFAULT_MODEL = 'gpt-5';
 export const MAX_TOOL_STEPS = 10;
 
 export const AI_PROVIDERS = {

@@ -56,8 +56,8 @@ export function createBuiltinToolsObject(
   
   builtinTools.forEach(tool => {
     switch (tool.type) {
-    case 'web_search_preview':
-      toolsObject[tool.type] = openaiProvider.tools.webSearchPreview({
+    case 'web_search':
+      toolsObject[tool.type] = openaiProvider.tools.webSearch({
         searchContextSize: config?.searchContextSize || 'medium',
         userLocation: config?.userLocation
       });

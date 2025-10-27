@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add support for GPT-5 with responses API and web search
+
+### Changed
+- Updated web search tool from 'web_search_preview' to 'web_search' for responses API compatibility with latest OpenAI API changes
+  - All models using responses API (GPT-5, GPT-4o, o1, o3, o4-mini) now use the updated 'web_search' tool identifier
+  - Tool method call updated from `webSearchPreview` to `webSearch` in OpenAI provider
+- Handle model-specific parameter restrictions for reasoning models (GPT-5, o1, o3, o4-mini)
+  - Reasoning models don't support temperature and other sampling parameters
+  - Automatically filters out unsupported parameters based on model capabilities
+  - Fixes "Unsupported parameter" errors when using reasoning models
+  - Updated @ai-sdk/openai from 1.3.22 to 2.0.56 for full web search and reasoning model support
+- Upgraded Vercel AI SDK from 4.3.16 to 5.0.81 for improved GPT-5 support and stream handling
+  - AI SDK v5 provides better compatibility with reasoning models and new stream lifecycle events
+  - Added handling for `stream-start` chunk type and other stream events
+  - All breaking changes from v4 to v5 have been addressed and tested
+
 ## [1.2.0] - 2025-10-21
 
 ### Changed

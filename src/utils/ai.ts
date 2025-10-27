@@ -10,6 +10,12 @@ type AIProviderWithMetadata = (ReturnType<typeof createOpenAI> | ReturnType<type
 
 // Common OpenAI models that support the responses API
 const OPENAI_MODELS = [
+  'gpt-5',
+  'gpt-5-chat-latest',
+  'gpt-5-mini',
+  'gpt-5-nano',
+  'gpt-5-turbo',
+  'gpt-5-preview',
   'gpt-4o',
   'gpt-4o-mini',
   'gpt-4o-2024-08-06',
@@ -60,6 +66,66 @@ export function createModelFunction(provider: AIProviderWithMetadata, model: str
 // Check if a model supports built-in tools
 export function modelSupportsBuiltinTools(provider: string, model: string): boolean {
   return provider === AI_PROVIDERS.OPENAI && shouldUseResponsesAPI(provider, model);
+}
+
+// Models that have restricted parameter support (reasoning models)
+const RESTRICTED_PARAMETER_MODELS = [
+  'gpt-5',
+  'gpt-5-chat-latest',
+  'gpt-5-mini',
+  'gpt-5-nano',
+  'gpt-5-turbo',
+  'gpt-5-preview',
+  'o1-preview',
+  'o1-mini',
+  'o3-deep-research',
+  'o4-mini-deep-research'
+];
+
+// Check if a model has restricted parameter support (e.g., reasoning models that don't support temperature)
+export function modelHasRestrictedParameters(model: string): boolean {
+  return RESTRICTED_PARAMETER_MODELS.some(restrictedModel =>
+    model.toLowerCase() === restrictedModel.toLowerCase() ||
+    model.toLowerCase().includes(restrictedModel.toLowerCase())
+  );
+}
+
+// Build parameters object based on model capabilities
+export interface GenerateTextParams {
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+}
+
+export function buildModelSpecificParams(model: string, params: GenerateTextParams): GenerateTextParams {
+  // For restricted parameter models, only include maxTokens
+  if (modelHasRestrictedParameters(model)) {
+    return {
+      maxTokens: params.maxTokens
+    };
+  }
+
+  // For other models, include all provided parameters
+  return params;
+}
+
+// Filter streamText options for model capabilities
+// For reasoning models (GPT-5, o1, o3), only pass parameters they support
+export function filterStreamTextOptionsForModel(
+  model: string,
+  options: Record<string, unknown>
+): Record<string, unknown> {
+  if (modelHasRestrictedParameters(model)) {
+    // For reasoning models, only pass core parameters they support
+    // Exclude all sampling parameters: temperature, topP, topK, frequencyPenalty, presencePenalty, stopSequences, seed
+    const { temperature: _temperature, topP: _topP, topK: _topK, frequencyPenalty: _frequencyPenalty, presencePenalty: _presencePenalty, stopSequences: _stopSequences, seed: _seed, ...supportedOptions } = options;
+    return supportedOptions;
+  }
+
+  // For other models, return all options unchanged
+  return options;
 }
 
 export function createAIProvider(settings: Settings): AIProviderWithMetadata {

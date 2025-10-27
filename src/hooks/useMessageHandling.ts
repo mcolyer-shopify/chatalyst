@@ -16,7 +16,7 @@ import {
   generatingTitleFor,
   removeMessagesAfter
 } from '../store';
-import { createAIProvider, createModelFunction } from '../utils/ai';
+import { createAIProvider, createModelFunction, filterStreamTextOptionsForModel } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject, getBuiltinToolsForModel, createBuiltinToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
@@ -143,13 +143,19 @@ export function useMessageHandling() {
         ? { ...toolsObject, ...builtinToolsObject }
         : toolsObject;
 
-      const result = await streamText({
+      const streamTextOptions = {
         model: createModelFunction(aiProvider, modelToUse),
         messages: conversationMessages,
         tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
-        abortSignal: controller.signal,
+        abortSignal: controller.signal
+      };
+
+      const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
+
+      const result = await streamText({
+        ...filteredOptions,
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
             // Create initial tool message when tool is called
@@ -188,7 +194,7 @@ export function useMessageHandling() {
       for await (const part of result.fullStream) {
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
-          
+
           if (errorResult.errorContent) {
             updateMessage(conversation.id, assistantMessage.id, {
               content: errorResult.errorContent,
@@ -200,9 +206,18 @@ export function useMessageHandling() {
           }
           break;
         }
-        
-        if (part.type === 'text-delta') {
-          fullContent += (part as { textDelta: string }).textDelta;
+
+        // Skip stream lifecycle events that don't need processing
+        if (part.type === 'start' || part.type === 'start-step') {
+          continue;
+        }
+
+        if (part.type === 'text') {
+          fullContent += (part as { text: string }).text;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'reasoning') {
+          // Include reasoning in the content for reasoning models
+          fullContent += (part as { text: string }).text;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'finish') {
           await handleStreamFinish(
@@ -282,7 +297,6 @@ Conversation:
 ${conversationContext}
 
 Title:`,
-        temperature: 0.3, // Lower temperature for more consistent results
         maxTokens: 50     // Sufficient tokens to avoid truncation issues
       });
 
@@ -378,13 +392,19 @@ Title:`,
         ? { ...toolsObject, ...builtinToolsObject }
         : toolsObject;
 
-      const result = await streamText({
+      const streamTextOptions = {
         model: createModelFunction(aiProvider, modelToUse),
         messages: conversationMessages,
         tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
-        abortSignal: controller.signal,
+        abortSignal: controller.signal
+      };
+
+      const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
+
+      const result = await streamText({
+        ...filteredOptions,
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
             // Create initial tool message when tool is called
@@ -423,7 +443,7 @@ Title:`,
       for await (const part of result.fullStream) {
         if (part.type === 'error') {
           const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
-          
+
           if (errorResult.errorContent) {
             updateMessage(conversation.id, assistantMessage.id, {
               content: errorResult.errorContent,
@@ -435,9 +455,18 @@ Title:`,
           }
           break;
         }
-        
-        if (part.type === 'text-delta') {
-          fullContent += (part as { textDelta: string }).textDelta;
+
+        // Skip stream lifecycle events that don't need processing
+        if (part.type === 'start' || part.type === 'start-step') {
+          continue;
+        }
+
+        if (part.type === 'text') {
+          fullContent += (part as { text: string }).text;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'reasoning') {
+          // Include reasoning in the content for reasoning models
+          fullContent += (part as { text: string }).text;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'finish') {
           await handleStreamFinish(
