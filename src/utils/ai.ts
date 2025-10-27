@@ -8,8 +8,10 @@ type AIProviderWithMetadata = (ReturnType<typeof createOpenAI> | ReturnType<type
   _providerType: string;
 };
 
-// Common OpenAI models that support the responses API
-const OPENAI_MODELS = [
+// OpenAI models that explicitly support the responses API
+// This is an explicit allowlist - only models here are treated as responses API models
+// All other models use the standard API
+const RESPONSES_API_MODELS = [
   'gpt-5',
   'gpt-5-chat-latest',
   'gpt-5-mini',
@@ -24,16 +26,7 @@ const OPENAI_MODELS = [
   'o1-preview',
   'o1-mini',
   'o3-deep-research',
-  'o4-mini-deep-research',
-  'gpt-4-turbo',
-  'gpt-4-turbo-2024-04-09',
-  'gpt-4-turbo-preview',
-  'gpt-4-0125-preview',
-  'gpt-4-1106-preview',
-  'gpt-4',
-  'gpt-3.5-turbo',
-  'gpt-3.5-turbo-0125',
-  'gpt-3.5-turbo-1106'
+  'o4-mini-deep-research'
 ];
 
 // Check if a model should use the responses API
@@ -42,14 +35,14 @@ export function shouldUseResponsesAPI(provider: string, model: string): boolean 
   if (provider !== AI_PROVIDERS.OPENAI) {
     return false;
   }
-  
-  // Check if the model is in the OpenAI models list (supports both exact match and partial match)
-  const isOpenAIModel = OPENAI_MODELS.some(openaiModel => 
-    model.toLowerCase() === openaiModel.toLowerCase() || 
-    model.toLowerCase().includes(openaiModel.toLowerCase())
+
+  // Check if the model is in the responses API models list using exact match only
+  // This is conservative - we assume models DON'T use responses API unless explicitly listed
+  const isResponsesAPIModel = RESPONSES_API_MODELS.some(responsesModel =>
+    model.toLowerCase() === responsesModel.toLowerCase()
   );
-  
-  return isOpenAIModel;
+
+  return isResponsesAPIModel;
 }
 
 // Create a model function that can use either standard or responses API
@@ -85,8 +78,7 @@ const RESTRICTED_PARAMETER_MODELS = [
 // Check if a model has restricted parameter support (e.g., reasoning models that don't support temperature)
 export function modelHasRestrictedParameters(model: string): boolean {
   return RESTRICTED_PARAMETER_MODELS.some(restrictedModel =>
-    model.toLowerCase() === restrictedModel.toLowerCase() ||
-    model.toLowerCase().includes(restrictedModel.toLowerCase())
+    model.toLowerCase() === restrictedModel.toLowerCase()
   );
 }
 

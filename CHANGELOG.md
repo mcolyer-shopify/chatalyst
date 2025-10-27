@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Works with all models that support reasoning (GPT-5, o1, o3, o4-mini)
 
 ### Changed
+- Fix responses API detection to use explicit allowlist instead of broad assumptions
+  - Renamed `OPENAI_MODELS` to `RESPONSES_API_MODELS` for clarity
+  - Now only models explicitly known to support responses API are treated as such
+  - Removed older OpenAI models (gpt-4-turbo, gpt-4, gpt-3.5-turbo) from responses API list
+  - These older models now correctly use standard API instead of responses API
+  - Changed from permissive partial matching to exact model name matching
+  - Fixes issues with models like claude-sonnet-4-5 and other non-responses API models
 - Updated web search tool from 'web_search_preview' to 'web_search' for responses API compatibility with latest OpenAI API changes
   - All models using responses API (GPT-5, GPT-4o, o1, o3, o4-mini) now use the updated 'web_search' tool identifier
   - Tool method call updated from `webSearchPreview` to `webSearch` in OpenAI provider
