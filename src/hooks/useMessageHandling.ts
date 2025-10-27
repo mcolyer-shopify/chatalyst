@@ -192,10 +192,7 @@ export function useMessageHandling() {
       
       // Stream the response
       for await (const part of result.fullStream) {
-        console.error('[STREAM DEBUG] Chunk type:', part.type);
-
         if (part.type === 'error') {
-          console.error('[STREAM ERROR]', (part as { error: unknown }).error);
           const errorResult = handleAIError((part as { error: unknown }).error, conversation.id, assistantMessage.id);
 
           if (errorResult.errorContent) {
@@ -211,32 +208,20 @@ export function useMessageHandling() {
         }
 
         // Skip stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step') {
-          console.error('[STREAM DEBUG] Skipping lifecycle event:', part.type);
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'reasoning-start' || part.type === 'reasoning-end' || part.type === 'text-start' || part.type === 'text-end') {
           continue;
         }
 
-        if (part.type === 'text') {
-          const textContent = (part as { text: string }).text;
-          console.error('[STREAM TEXT]', textContent);
-          fullContent += textContent;
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'reasoning') {
-          const reasoningContent = (part as { text: string }).text;
-          console.error('[STREAM REASONING]', reasoningContent);
-          // Include reasoning in the content for reasoning models
-          fullContent += reasoningContent;
+        if (part.type === 'text-delta') {
+          fullContent += (part as { text: string }).text;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'finish') {
-          console.error('[STREAM FINISH]', 'Stream finished');
           await handleStreamFinish(
             part,
             fullContent,
             conversation,
             assistantMessage
           );
-        } else {
-          console.error('[STREAM UNKNOWN] Unhandled chunk type:', part.type, part);
         }
       }
     } catch (err) {
@@ -452,10 +437,7 @@ Title:`,
       
       // Stream the response
       for await (const part of result.fullStream) {
-        console.error('[STREAM DEBUG] Chunk type:', part.type);
-
         if (part.type === 'error') {
-          console.error('[STREAM ERROR]', (part as { error: unknown }).error);
           const errorResult = handleAIError((part as { error: unknown }).error, conversation.id, assistantMessage.id);
 
           if (errorResult.errorContent) {
@@ -471,32 +453,20 @@ Title:`,
         }
 
         // Skip stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step') {
-          console.error('[STREAM DEBUG] Skipping lifecycle event:', part.type);
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'reasoning-start' || part.type === 'reasoning-end' || part.type === 'text-start' || part.type === 'text-end') {
           continue;
         }
 
-        if (part.type === 'text') {
-          const textContent = (part as { text: string }).text;
-          console.error('[STREAM TEXT]', textContent);
-          fullContent += textContent;
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'reasoning') {
-          const reasoningContent = (part as { text: string }).text;
-          console.error('[STREAM REASONING]', reasoningContent);
-          // Include reasoning in the content for reasoning models
-          fullContent += reasoningContent;
+        if (part.type === 'text-delta') {
+          fullContent += (part as { text: string }).text;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'finish') {
-          console.error('[STREAM FINISH]', 'Stream finished');
           await handleStreamFinish(
             part,
             fullContent,
             conversation,
             assistantMessage
           );
-        } else {
-          console.error('[STREAM UNKNOWN] Unhandled chunk type:', part.type, part);
         }
       }
     } catch (err) {
