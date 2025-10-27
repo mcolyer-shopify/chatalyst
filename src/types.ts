@@ -7,6 +7,8 @@ export interface Message {
   timestamp: number;
   isGenerating?: boolean;
   isError?: boolean; // For error messages
+  isThinking?: boolean; // For reasoning/thinking messages
+  thinkingCollapsed?: boolean; // Track if thinking block is collapsed
   toolName?: string; // For tool messages
   toolCall?: unknown; // Tool call parameters
   toolResult?: unknown; // Tool execution result

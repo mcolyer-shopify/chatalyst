@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add support for GPT-5 with responses API and web search
+- Add support for thinking/reasoning blocks that stream in real-time
+  - New collapsible thinking bubble displays model reasoning process
+  - Automatically streams and collapses when reasoning is complete
+  - Followed by assistant's response in separate message bubble
+  - Supports both light and dark mode with distinct styling
+  - Works with all models that support reasoning (GPT-5, o1, o3, o4-mini)
 
 ### Changed
 - Updated web search tool from 'web_search_preview' to 'web_search' for responses API compatibility with latest OpenAI API changes

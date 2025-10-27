@@ -72,8 +72,10 @@ export function useMessageHandling() {
       isGenerating: true
     };
 
-    // Declare fullContent outside try block so it's accessible in catch
+    // Declare fullContent and thinking content outside try block so they're accessible in catch
     let fullContent = '';
+    let thinkingContent = '';
+    let thinkingMessageId: string | null = null;
 
     try {
       addMessage(conversation.id, assistantMessage);
@@ -209,8 +211,44 @@ export function useMessageHandling() {
           break;
         }
 
-        // Skip stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step' || part.type === 'reasoning-start' || part.type === 'reasoning-end' || part.type === 'text-start' || part.type === 'text-end') {
+        // Handle reasoning/thinking block start
+        if (part.type === 'reasoning-start') {
+          thinkingMessageId = `${Date.now()}-thinking`;
+          const thinkingMessage: Message = {
+            id: thinkingMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+            isGenerating: true,
+            isThinking: true,
+            thinkingCollapsed: false
+          };
+          addMessage(conversation.id, thinkingMessage);
+          continue;
+        }
+
+        // Handle reasoning content streaming
+        if (part.type === 'reasoning-delta') {
+          thinkingContent += (part as { text: string }).text;
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, { content: thinkingContent });
+          }
+          continue;
+        }
+
+        // Handle reasoning block end
+        if (part.type === 'reasoning-end') {
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, {
+              isGenerating: false,
+              thinkingCollapsed: true
+            });
+          }
+          continue;
+        }
+
+        // Skip other stream lifecycle events that don't need processing
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
           continue;
         }
 
@@ -342,8 +380,10 @@ Title:`
       isGenerating: true
     };
 
-    // Declare fullContent outside try block so it's accessible in catch
+    // Declare fullContent and thinking content outside try block so they're accessible in catch
     let fullContent = '';
+    let thinkingContent = '';
+    let thinkingMessageId: string | null = null;
 
     try {
       addMessage(conversation.id, assistantMessage);
@@ -351,11 +391,11 @@ Title:`
       // Call the AI with current settings and conversation model
       const aiProvider = createAIProvider(settings.value);
       const modelToUse = conversation.model || settings.value.defaultModel || DEFAULT_MODEL;
-      
+
       // Get active tools for this conversation
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
-      
+
       // Get built-in tools if using OpenAI provider
       const providerType = aiProvider._providerType;
       const supportsBuiltinTools = providerType === 'openai';
@@ -455,8 +495,44 @@ Title:`
           break;
         }
 
-        // Skip stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step' || part.type === 'reasoning-start' || part.type === 'reasoning-end' || part.type === 'text-start' || part.type === 'text-end') {
+        // Handle reasoning/thinking block start
+        if (part.type === 'reasoning-start') {
+          thinkingMessageId = `${Date.now()}-thinking`;
+          const thinkingMessage: Message = {
+            id: thinkingMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+            isGenerating: true,
+            isThinking: true,
+            thinkingCollapsed: false
+          };
+          addMessage(conversation.id, thinkingMessage);
+          continue;
+        }
+
+        // Handle reasoning content streaming
+        if (part.type === 'reasoning-delta') {
+          thinkingContent += (part as { text: string }).text;
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, { content: thinkingContent });
+          }
+          continue;
+        }
+
+        // Handle reasoning block end
+        if (part.type === 'reasoning-end') {
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, {
+              isGenerating: false,
+              thinkingCollapsed: true
+            });
+          }
+          continue;
+        }
+
+        // Skip other stream lifecycle events that don't need processing
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
           continue;
         }
 
