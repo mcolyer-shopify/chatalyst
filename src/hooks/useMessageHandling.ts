@@ -160,6 +160,7 @@ export function useMessageHandling() {
       console.log('[DEBUG] Before streamText - filtered options:', filteredOptions);
 
       const result = await streamText({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         model: streamTextOptions.model as any,
         messages: streamTextOptions.messages,
         ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
@@ -332,6 +333,7 @@ export function useMessageHandling() {
       const modelToUse = settings.value.defaultModel || DEFAULT_MODEL;
       
       const result = await generateText({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL) as any,
         prompt: `Based on the following conversation, generate a brief 3-5 word title that captures the main topic. Respond with only the title, no additional text, quotes, or punctuation.
 
@@ -450,6 +452,7 @@ Title:`
       console.log('[DEBUG] Before streamText - filtered options:', filteredOptions);
 
       const result = await streamText({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         model: streamTextOptions.model as any,
         messages: streamTextOptions.messages,
         ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
