@@ -18,9 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Support for proxies that handle both responses API and chat completions formats
-  - Added custom fetch interceptor to redirect `/v1/responses` calls to `/v1/chat/completions` for non-responses API models
-  - Transforms request body from responses API format to chat completions format
-  - Response passes through in native chat completions format, allowing SDK to emit proper text-delta chunks
+  - Use `.chat()` method for non-responses API models instead of complex request/response transformation
+  - Responses API models continue to use `.responses()` method
+  - Clean separation of API types using AI SDK's built-in factory methods
+  - Eliminates 200+ lines of complex stream transformation logic
   - Fixes streaming content display when using proxies like those handling claude-sonnet-4-5 with multiple provider backends
 
 ### Changed

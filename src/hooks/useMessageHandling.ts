@@ -253,7 +253,7 @@ export function useMessageHandling() {
         }
 
         // Skip other stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end' || (part as any).type === 'response.created' || (part as any).type === 'response.output_item.added' || (part as any).type === 'response.output_item.done') {
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
           continue;
         }
 
@@ -261,22 +261,6 @@ export function useMessageHandling() {
           const textContent = (part as { text: string }).text;
           fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if ((part as any).type === 'response.output_text.delta') {
-          // Handle responses API format chunks (from transformed chat completions)
-          const delta = (part as any).delta;
-          fullContent += delta;
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'finish-step') {
-          // Handle finish-step event which may contain the final content
-          const stepResponse = (part as any).response;
-          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
-            for (const item of stepResponse.message.content) {
-              if (item.type === 'text' && item.text) {
-                fullContent += item.text;
-                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-              }
-            }
-          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
@@ -559,7 +543,7 @@ Title:`
         }
 
         // Skip other stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end' || (part as any).type === 'response.created' || (part as any).type === 'response.output_item.added' || (part as any).type === 'response.output_item.done') {
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
           continue;
         }
 
@@ -567,22 +551,6 @@ Title:`
           const textContent = (part as { text: string }).text;
           fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if ((part as any).type === 'response.output_text.delta') {
-          // Handle responses API format chunks (from transformed chat completions)
-          const delta = (part as any).delta;
-          fullContent += delta;
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'finish-step') {
-          // Handle finish-step event which may contain the final content
-          const stepResponse = (part as any).response;
-          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
-            for (const item of stepResponse.message.content) {
-              if (item.type === 'text' && item.text) {
-                fullContent += item.text;
-                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-              }
-            }
-          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
