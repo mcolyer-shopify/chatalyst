@@ -19,6 +19,7 @@ const CURRENT_MIGRATION_VERSION = 2;
 // Debug logging helper (disabled in production)
 const DEBUG_LOGGING = false; // Set to true to enable debug logging
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function debugLog(operation: string, details?: any) {
   if (!DEBUG_LOGGING) return;
   
@@ -486,7 +487,9 @@ export async function saveSingleConversation(conversation: Conversation): Promis
                 (message as unknown as { model?: string }).model || null,
                 message.imageIds ? JSON.stringify(message.imageIds) : null,
                 (message as unknown as { toolName?: string }).toolName || null,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (message as unknown as { toolCall?: any }).toolCall ? JSON.stringify((message as unknown as { toolCall: any }).toolCall) : null,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (message as unknown as { toolResult?: any }).toolResult ? JSON.stringify((message as unknown as { toolResult: any }).toolResult) : null
               ]
             );
@@ -596,6 +599,7 @@ export async function loadConversations(): Promise<Conversation[]> {
       debugLog('LOAD_CONVERSATIONS: Messages loaded', { convId: conv.id, messageCount: messages.length });
       
       const processedMessages: Message[] = messages.map(msg => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const message: any = {
           id: msg.id,
           role: msg.role as 'user' | 'assistant' | 'tool' | 'system',
@@ -831,7 +835,9 @@ async function saveConversationsInternal(conversations: Conversation[]): Promise
                   (message as unknown as { model?: string }).model || null,
                   message.imageIds ? JSON.stringify(message.imageIds) : null,
                   (message as unknown as { toolName?: string }).toolName || null,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   (message as unknown as { toolCall?: any }).toolCall ? JSON.stringify((message as unknown as { toolCall: any }).toolCall) : null,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   (message as unknown as { toolResult?: any }).toolResult ? JSON.stringify((message as unknown as { toolResult: any }).toolResult) : null
                 ]
               );

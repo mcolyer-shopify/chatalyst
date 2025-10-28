@@ -165,6 +165,7 @@ describe('EnvVarsTable', () => {
   });
 
   it('handles null or undefined env prop', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     render(<EnvVarsTable env={null as any} onChange={mockOnChange} />);
     
     // Should render without errors

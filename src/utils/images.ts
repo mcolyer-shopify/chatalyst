@@ -280,6 +280,7 @@ export async function getImage(imageId: number): Promise<StoredImage> {
   } else if (Array.isArray(image.data)) {
     processedData = image.data;
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.error('Unexpected data format:', typeof image.data, (image.data as any)?.constructor?.name);
     throw new Error(`Unsupported image data format: ${typeof image.data}`);
   }

@@ -7,6 +7,8 @@ export interface Message {
   timestamp: number;
   isGenerating?: boolean;
   isError?: boolean; // For error messages
+  isThinking?: boolean; // For reasoning/thinking messages
+  thinkingCollapsed?: boolean; // Track if thinking block is collapsed
   toolName?: string; // For tool messages
   toolCall?: unknown; // Tool call parameters
   toolResult?: unknown; // Tool execution result
@@ -47,19 +49,19 @@ export interface OpenAIBuiltinTool {
   id: string;
   name: string;
   description: string;
-  type: string; // e.g., 'web_search_preview'
+  type: string; // e.g., 'web_search'
   requiresResponsesAPI: boolean;
   supportedModels?: string[]; // Optional: limit to specific models
 }
 
 export const OPENAI_BUILTIN_TOOLS: OpenAIBuiltinTool[] = [
   {
-    id: 'web_search_preview',
+    id: 'web_search',
     name: 'Web Search',
     description: 'Search the web for current information',
-    type: 'web_search_preview',
+    type: 'web_search',
     requiresResponsesAPI: true,
-    supportedModels: ['gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini', 'o3-deep-research', 'o4-mini-deep-research']
+    supportedModels: ['gpt-5', 'gpt-5-turbo', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-preview', 'gpt-5-chat-latest', 'gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini', 'o3-deep-research', 'o4-mini-deep-research']
   }
 ];
 

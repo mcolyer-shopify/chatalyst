@@ -114,6 +114,7 @@ describe('Image Utils', () => {
 
     it('throws error for invalid data', () => {
       expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         createDataURL('invalid' as any, 'image/jpeg');
       }).toThrow('Image data must be an array of numbers');
     });
@@ -195,15 +196,16 @@ describe('Image Utils', () => {
     // Helper function to create a mock file with proper slice and arrayBuffer methods
     function createMockFile(bytes: Uint8Array, name: string, type: string): File {
       const file = new File([bytes], name, { type });
-      
+
       // Mock the slice method to return an object with arrayBuffer method
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (file as any).slice = function(start: number, end: number) {
         const slicedBytes = bytes.slice(start, end);
         return {
           arrayBuffer: async () => slicedBytes.buffer.slice(slicedBytes.byteOffset, slicedBytes.byteOffset + slicedBytes.byteLength)
         };
       };
-      
+
       return file;
     }
 
@@ -295,15 +297,16 @@ describe('Image Utils', () => {
     // Use the same createMockFile helper function
     function createMockFile(bytes: Uint8Array, name: string, type: string): File {
       const file = new File([bytes], name, { type });
-      
+
       // Mock the slice method to return an object with arrayBuffer method
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (file as any).slice = function(start: number, end: number) {
         const slicedBytes = bytes.slice(start, end);
         return {
           arrayBuffer: async () => slicedBytes.buffer.slice(slicedBytes.byteOffset, slicedBytes.byteOffset + slicedBytes.byteLength)
         };
       };
-      
+
       return file;
     }
 

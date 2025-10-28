@@ -16,7 +16,7 @@ import {
   generatingTitleFor,
   removeMessagesAfter
 } from '../store';
-import { createAIProvider, createModelFunction } from '../utils/ai';
+import { createAIProvider, createModelFunction, filterStreamTextOptionsForModel } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject, getBuiltinToolsForModel, createBuiltinToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
@@ -72,8 +72,10 @@ export function useMessageHandling() {
       isGenerating: true
     };
 
-    // Declare fullContent outside try block so it's accessible in catch
+    // Declare fullContent and thinking content outside try block so they're accessible in catch
     let fullContent = '';
+    let thinkingContent = '';
+    let thinkingMessageId: string | null = null;
 
     try {
       addMessage(conversation.id, assistantMessage);
@@ -143,13 +145,25 @@ export function useMessageHandling() {
         ? { ...toolsObject, ...builtinToolsObject }
         : toolsObject;
 
-      const result = await streamText({
-        model: createModelFunction(aiProvider, modelToUse),
+      const streamTextOptions = {
+        model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL),
         messages: conversationMessages,
         tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
-        abortSignal: controller.signal,
+        abortSignal: controller.signal
+      };
+
+      const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
+
+      console.log('[DEBUG] Before streamText - model object:', streamTextOptions.model);
+      console.log('[DEBUG] Before streamText - filtered options:', filteredOptions);
+
+      const result = await streamText({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        model: streamTextOptions.model as any,
+        messages: streamTextOptions.messages,
+        ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
             // Create initial tool message when tool is called
@@ -159,7 +173,7 @@ export function useMessageHandling() {
               content: 'Calling tool...',
               timestamp: Date.now(),
               toolName: chunk.toolName || 'unknown',
-              toolCall: chunk.args,
+              toolCall: chunk.input,
               toolResult: undefined
             };
             toolMessagesMap.set(chunk.toolCallId, toolMessage);
@@ -169,8 +183,8 @@ export function useMessageHandling() {
             const existingMessage = toolMessagesMap.get(chunk.toolCallId);
             if (existingMessage) {
               updateMessage(conversation.id, existingMessage.id, {
-                content: JSON.stringify(chunk.result),
-                toolResult: chunk.result
+                content: JSON.stringify(chunk.output),
+                toolResult: chunk.output
               });
             }
           }
@@ -186,9 +200,11 @@ export function useMessageHandling() {
       
       // Stream the response
       for await (const part of result.fullStream) {
+        console.log('[DEBUG] Stream chunk type:', part.type, part);
+
         if (part.type === 'error') {
-          const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
-          
+          const errorResult = handleAIError((part as { error: unknown }).error, conversation.id, assistantMessage.id);
+
           if (errorResult.errorContent) {
             updateMessage(conversation.id, assistantMessage.id, {
               content: errorResult.errorContent,
@@ -200,9 +216,51 @@ export function useMessageHandling() {
           }
           break;
         }
-        
+
+        // Handle reasoning/thinking block start
+        if (part.type === 'reasoning-start') {
+          thinkingMessageId = `${Date.now()}-thinking`;
+          const thinkingMessage: Message = {
+            id: thinkingMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+            isGenerating: true,
+            isThinking: true,
+            thinkingCollapsed: false
+          };
+          addMessage(conversation.id, thinkingMessage);
+          continue;
+        }
+
+        // Handle reasoning content streaming
+        if (part.type === 'reasoning-delta') {
+          thinkingContent += (part as { text: string }).text;
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, { content: thinkingContent });
+          }
+          continue;
+        }
+
+        // Handle reasoning block end
+        if (part.type === 'reasoning-end') {
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, {
+              isGenerating: false,
+              thinkingCollapsed: true
+            });
+          }
+          continue;
+        }
+
+        // Skip other stream lifecycle events that don't need processing
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
+          continue;
+        }
+
         if (part.type === 'text-delta') {
-          fullContent += (part as { textDelta: string }).textDelta;
+          const textContent = (part as { text: string }).text;
+          fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'finish') {
           await handleStreamFinish(
@@ -275,15 +333,14 @@ export function useMessageHandling() {
       const modelToUse = settings.value.defaultModel || DEFAULT_MODEL;
       
       const result = await generateText({
-        model: createModelFunction(aiProvider, modelToUse),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL) as any,
         prompt: `Based on the following conversation, generate a brief 3-5 word title that captures the main topic. Respond with only the title, no additional text, quotes, or punctuation.
 
 Conversation:
 ${conversationContext}
 
-Title:`,
-        temperature: 0.3, // Lower temperature for more consistent results
-        maxTokens: 50     // Sufficient tokens to avoid truncation issues
+Title:`
       });
 
       const title = result.text?.trim();
@@ -331,8 +388,10 @@ Title:`,
       isGenerating: true
     };
 
-    // Declare fullContent outside try block so it's accessible in catch
+    // Declare fullContent and thinking content outside try block so they're accessible in catch
     let fullContent = '';
+    let thinkingContent = '';
+    let thinkingMessageId: string | null = null;
 
     try {
       addMessage(conversation.id, assistantMessage);
@@ -340,11 +399,11 @@ Title:`,
       // Call the AI with current settings and conversation model
       const aiProvider = createAIProvider(settings.value);
       const modelToUse = conversation.model || settings.value.defaultModel || DEFAULT_MODEL;
-      
+
       // Get active tools for this conversation
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
-      
+
       // Get built-in tools if using OpenAI provider
       const providerType = aiProvider._providerType;
       const supportsBuiltinTools = providerType === 'openai';
@@ -378,13 +437,25 @@ Title:`,
         ? { ...toolsObject, ...builtinToolsObject }
         : toolsObject;
 
-      const result = await streamText({
-        model: createModelFunction(aiProvider, modelToUse),
+      const streamTextOptions = {
+        model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL),
         messages: conversationMessages,
         tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
-        abortSignal: controller.signal,
+        abortSignal: controller.signal
+      };
+
+      const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
+
+      console.log('[DEBUG] Before streamText - model object:', streamTextOptions.model);
+      console.log('[DEBUG] Before streamText - filtered options:', filteredOptions);
+
+      const result = await streamText({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        model: streamTextOptions.model as any,
+        messages: streamTextOptions.messages,
+        ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
             // Create initial tool message when tool is called
@@ -394,7 +465,7 @@ Title:`,
               content: 'Calling tool...',
               timestamp: Date.now(),
               toolName: chunk.toolName || 'unknown',
-              toolCall: chunk.args,
+              toolCall: chunk.input,
               toolResult: undefined
             };
             toolMessagesMap.set(chunk.toolCallId, toolMessage);
@@ -404,8 +475,8 @@ Title:`,
             const existingMessage = toolMessagesMap.get(chunk.toolCallId);
             if (existingMessage) {
               updateMessage(conversation.id, existingMessage.id, {
-                content: JSON.stringify(chunk.result),
-                toolResult: chunk.result
+                content: JSON.stringify(chunk.output),
+                toolResult: chunk.output
               });
             }
           }
@@ -421,9 +492,11 @@ Title:`,
       
       // Stream the response
       for await (const part of result.fullStream) {
+        console.log('[DEBUG] Stream chunk type:', part.type, part);
+
         if (part.type === 'error') {
-          const errorResult = handleAIError(part.error, conversation.id, assistantMessage.id);
-          
+          const errorResult = handleAIError((part as { error: unknown }).error, conversation.id, assistantMessage.id);
+
           if (errorResult.errorContent) {
             updateMessage(conversation.id, assistantMessage.id, {
               content: errorResult.errorContent,
@@ -435,9 +508,51 @@ Title:`,
           }
           break;
         }
-        
+
+        // Handle reasoning/thinking block start
+        if (part.type === 'reasoning-start') {
+          thinkingMessageId = `${Date.now()}-thinking`;
+          const thinkingMessage: Message = {
+            id: thinkingMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+            isGenerating: true,
+            isThinking: true,
+            thinkingCollapsed: false
+          };
+          addMessage(conversation.id, thinkingMessage);
+          continue;
+        }
+
+        // Handle reasoning content streaming
+        if (part.type === 'reasoning-delta') {
+          thinkingContent += (part as { text: string }).text;
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, { content: thinkingContent });
+          }
+          continue;
+        }
+
+        // Handle reasoning block end
+        if (part.type === 'reasoning-end') {
+          if (thinkingMessageId) {
+            updateMessage(conversation.id, thinkingMessageId, {
+              isGenerating: false,
+              thinkingCollapsed: true
+            });
+          }
+          continue;
+        }
+
+        // Skip other stream lifecycle events that don't need processing
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
+          continue;
+        }
+
         if (part.type === 'text-delta') {
-          fullContent += (part as { textDelta: string }).textDelta;
+          const textContent = (part as { text: string }).text;
+          fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
         } else if (part.type === 'finish') {
           await handleStreamFinish(

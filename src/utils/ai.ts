@@ -8,8 +8,16 @@ type AIProviderWithMetadata = (ReturnType<typeof createOpenAI> | ReturnType<type
   _providerType: string;
 };
 
-// Common OpenAI models that support the responses API
-const OPENAI_MODELS = [
+// OpenAI models that explicitly support the responses API
+// This is an explicit allowlist - only models here are treated as responses API models
+// All other models use the standard API
+const RESPONSES_API_MODELS = [
+  'gpt-5',
+  'gpt-5-chat-latest',
+  'gpt-5-mini',
+  'gpt-5-nano',
+  'gpt-5-turbo',
+  'gpt-5-preview',
   'gpt-4o',
   'gpt-4o-mini',
   'gpt-4o-2024-08-06',
@@ -18,48 +26,116 @@ const OPENAI_MODELS = [
   'o1-preview',
   'o1-mini',
   'o3-deep-research',
-  'o4-mini-deep-research',
-  'gpt-4-turbo',
-  'gpt-4-turbo-2024-04-09',
-  'gpt-4-turbo-preview',
-  'gpt-4-0125-preview',
-  'gpt-4-1106-preview',
-  'gpt-4',
-  'gpt-3.5-turbo',
-  'gpt-3.5-turbo-0125',
-  'gpt-3.5-turbo-1106'
+  'o4-mini-deep-research'
 ];
 
 // Check if a model should use the responses API
 export function shouldUseResponsesAPI(provider: string, model: string): boolean {
+  console.log('[DEBUG] shouldUseResponsesAPI check:', { provider, model });
+
   // Only use responses API for OpenAI provider
   if (provider !== AI_PROVIDERS.OPENAI) {
+    console.log('[DEBUG] Not OpenAI provider, returning false');
     return false;
   }
-  
-  // Check if the model is in the OpenAI models list (supports both exact match and partial match)
-  const isOpenAIModel = OPENAI_MODELS.some(openaiModel => 
-    model.toLowerCase() === openaiModel.toLowerCase() || 
-    model.toLowerCase().includes(openaiModel.toLowerCase())
+
+  // Check if the model is in the responses API models list using exact match only
+  // This is conservative - we assume models DON'T use responses API unless explicitly listed
+  const isResponsesAPIModel = RESPONSES_API_MODELS.some(responsesModel =>
+    model.toLowerCase() === responsesModel.toLowerCase()
   );
-  
-  return isOpenAIModel;
+
+  console.log('[DEBUG] Is responses API model?', isResponsesAPIModel, {
+    model: model.toLowerCase(),
+    responsesModels: RESPONSES_API_MODELS
+  });
+  return isResponsesAPIModel;
 }
 
 // Create a model function that can use either standard or responses API
-export function createModelFunction(provider: AIProviderWithMetadata, model: string) {
+export function createModelFunction(provider: AIProviderWithMetadata, model: string, baseURL?: string): unknown {
   const providerType = provider._providerType;
   const useResponsesAPI = shouldUseResponsesAPI(providerType, model);
-  
+
+  console.log('[DEBUG] createModelFunction:', { providerType, model, useResponsesAPI, baseURL });
+
   if (useResponsesAPI && providerType === AI_PROVIDERS.OPENAI && 'responses' in provider) {
+    console.log('[DEBUG] Using responses API for', model);
     return (provider as ReturnType<typeof createOpenAI>).responses(model);
   }
+
+  // For non-responses API models with OpenAI provider, use the chat API
+  if (providerType === AI_PROVIDERS.OPENAI && !useResponsesAPI) {
+    console.log('[DEBUG] Using chat API for', model);
+    return (provider as ReturnType<typeof createOpenAI>).chat(model);
+  }
+
+  console.log('[DEBUG] Using standard API for', model);
   return provider(model);
 }
 
 // Check if a model supports built-in tools
 export function modelSupportsBuiltinTools(provider: string, model: string): boolean {
   return provider === AI_PROVIDERS.OPENAI && shouldUseResponsesAPI(provider, model);
+}
+
+// Models that have restricted parameter support (reasoning models)
+const RESTRICTED_PARAMETER_MODELS = [
+  'gpt-5',
+  'gpt-5-chat-latest',
+  'gpt-5-mini',
+  'gpt-5-nano',
+  'gpt-5-turbo',
+  'gpt-5-preview',
+  'o1-preview',
+  'o1-mini',
+  'o3-deep-research',
+  'o4-mini-deep-research'
+];
+
+// Check if a model has restricted parameter support (e.g., reasoning models that don't support temperature)
+export function modelHasRestrictedParameters(model: string): boolean {
+  return RESTRICTED_PARAMETER_MODELS.some(restrictedModel =>
+    model.toLowerCase() === restrictedModel.toLowerCase()
+  );
+}
+
+// Build parameters object based on model capabilities
+export interface GenerateTextParams {
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+}
+
+export function buildModelSpecificParams(model: string, params: GenerateTextParams): GenerateTextParams {
+  // For restricted parameter models, only include maxTokens
+  if (modelHasRestrictedParameters(model)) {
+    return {
+      maxTokens: params.maxTokens
+    };
+  }
+
+  // For other models, include all provided parameters
+  return params;
+}
+
+// Filter streamText options for model capabilities
+// For reasoning models (GPT-5, o1, o3), only pass parameters they support
+export function filterStreamTextOptionsForModel(
+  model: string,
+  options: Record<string, unknown>
+): Record<string, unknown> {
+  if (modelHasRestrictedParameters(model)) {
+    // For reasoning models, only pass core parameters they support
+    // Exclude all sampling parameters: temperature, topP, topK, frequencyPenalty, presencePenalty, stopSequences, seed
+    const { temperature: _temperature, topP: _topP, topK: _topK, frequencyPenalty: _frequencyPenalty, presencePenalty: _presencePenalty, stopSequences: _stopSequences, seed: _seed, ...supportedOptions } = options;
+    return supportedOptions;
+  }
+
+  // For other models, return all options unchanged
+  return options;
 }
 
 export function createAIProvider(settings: Settings): AIProviderWithMetadata {

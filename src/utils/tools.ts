@@ -48,16 +48,19 @@ export function getBuiltinToolsForModel(provider: string, model: string, enabled
 }
 
 export function createBuiltinToolsObject(
-  builtinTools: OpenAIBuiltinTool[], 
+  builtinTools: OpenAIBuiltinTool[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   openaiProvider: any, // OpenAI provider instance
   config?: WebSearchConfig
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const toolsObject: Record<string, any> = {};
   
   builtinTools.forEach(tool => {
     switch (tool.type) {
-    case 'web_search_preview':
-      toolsObject[tool.type] = openaiProvider.tools.webSearchPreview({
+    case 'web_search':
+      toolsObject[tool.type] = openaiProvider.tools.webSearch({
         searchContextSize: config?.searchContextSize || 'medium',
         userLocation: config?.userLocation
       });

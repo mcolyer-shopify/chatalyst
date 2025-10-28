@@ -64,6 +64,13 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
     }
   }, [message.toolResult, message.content, message.role]);
 
+  // Auto-collapse thinking messages when generation is complete
+  useEffect(() => {
+    if (message.isThinking && !message.isGenerating && !isCollapsed) {
+      setIsCollapsed(true);
+    }
+  }, [message.isThinking, message.isGenerating, isCollapsed]);
+
   const getLoadingAnimation = () => {
     const frames = ['⠋', '⠙', '⠹', '⠸'];
     return frames[animationFrame];
@@ -109,6 +116,32 @@ export function Message({ message, collapsed = true, onRetry, onDelete }: Messag
   };
 
   const renderContent = () => {
+    if (message.isThinking) {
+      return (
+        <div class={`message-content thinking-message ${isCollapsed ? 'collapsed' : ''}`}>
+          <div class="thinking-header" onClick={() => setIsCollapsed(!isCollapsed)}>
+            <span class="thinking-icon">💭</span>
+            <span class="thinking-label">{isCollapsed ? 'Thinking' : 'Thinking...'}</span>
+            <span class="thinking-toggle">{isCollapsed ? '▶' : '▼'}</span>
+          </div>
+          {!isCollapsed && (
+            <div class="thinking-content">
+              {message.isGenerating && !message.content && (
+                <div style={{ color: '#999' }}>
+                  {getLoadingAnimation()}
+                </div>
+              )}
+              {message.content && (
+                <div class="thinking-text">
+                  {message.content}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (message.role === 'tool') {
       return (
         <div class={`message-content tool-message ${isCollapsed ? 'collapsed' : ''}`}>

@@ -544,6 +544,65 @@ body {
   word-break: break-word;
 }
 
+/* Thinking message styling */
+.thinking-message {
+  background: #f0f4ff;
+  color: #495057;
+  border: 1px solid #d1e0ff;
+  font-size: 0.875rem;
+}
+
+.thinking-message.collapsed {
+  border-bottom-left-radius: 0.25rem;
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.thinking-header:hover {
+  background-color: #e8f0ff;
+}
+
+.thinking-icon {
+  font-size: 1rem;
+}
+
+.thinking-label {
+  color: #495057;
+  flex: 1;
+  font-weight: 500;
+}
+
+.thinking-toggle {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-left: auto;
+}
+
+.thinking-message.collapsed .thinking-label {
+  margin-bottom: 0;
+}
+
+.thinking-content {
+  animation: expandTool 0.2s ease-out;
+  padding: 0.5rem;
+  border-top: 1px solid #d1e0ff;
+}
+
+.thinking-text {
+  color: #495057;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* Error message styling */
 .message-error .message-content {
   background: #fff3cd;
@@ -1596,6 +1655,33 @@ body {
 
   .message-assistant .message-content hr {
     border-top-color: #555;
+  }
+
+  /* Dark mode thinking message styles */
+  .thinking-message {
+    background: #2a2e3e;
+    color: #c4d0e8;
+    border-color: #3a4a6a;
+  }
+
+  .thinking-header:hover {
+    background-color: #323a4e;
+  }
+
+  .thinking-label {
+    color: #c4d0e8;
+  }
+
+  .thinking-toggle {
+    color: #8a92a8;
+  }
+
+  .thinking-content {
+    border-top-color: #3a4a6a;
+  }
+
+  .thinking-text {
+    color: #c4d0e8;
   }
 
   .message-input-field,
