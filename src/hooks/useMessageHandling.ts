@@ -253,7 +253,7 @@ export function useMessageHandling() {
         }
 
         // Skip other stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end' || (part as any).type === 'response.created' || (part as any).type === 'response.output_item.added' || (part as any).type === 'response.output_item.done') {
           continue;
         }
 
@@ -559,7 +559,7 @@ Title:`
         }
 
         // Skip other stream lifecycle events that don't need processing
-        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end') {
+        if (part.type === 'start' || part.type === 'start-step' || part.type === 'text-start' || part.type === 'text-end' || (part as any).type === 'response.created' || (part as any).type === 'response.output_item.added' || (part as any).type === 'response.output_item.done') {
           continue;
         }
 

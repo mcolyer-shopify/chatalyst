@@ -160,6 +160,10 @@ export function createModelFunction(provider: AIProviderWithMetadata, model: str
           const transformStream = new ReadableStream({
             async start(controller) {
               try {
+                let hasStarted = false;
+                const responseId = `resp_${Date.now()}`;
+                const itemId = `item_${Date.now()}`;
+
                 while (true) {
                   const { done, value } = await reader.read();
                   if (done) break;
@@ -172,7 +176,11 @@ export function createModelFunction(provider: AIProviderWithMetadata, model: str
                     if (line.startsWith('data: ')) {
                       const data = line.slice(6).trim();
                       if (data === '[DONE]') {
-                        // Send done marker
+                        // Send completion events
+                        controller.enqueue(
+                          // eslint-disable-next-line no-undef
+                          new TextEncoder().encode(`data: ${JSON.stringify({ type: 'response.output_item.done', item: { id: itemId } })}\n\n`)
+                        );
                         controller.enqueue(
                           // eslint-disable-next-line no-undef
                           new TextEncoder().encode('data: {"type":"response.done"}\n\n')
@@ -181,16 +189,38 @@ export function createModelFunction(provider: AIProviderWithMetadata, model: str
                         try {
                           const chunk = JSON.parse(data);
                           // Transform chat completions chunk to responses API format
-                          if (chunk.choices && chunk.choices[0] && chunk.choices[0].delta?.content) {
-                            const transformed = {
-                              type: 'response.output_text.delta',
-                              delta: chunk.choices[0].delta.content
-                            };
-                            console.log('[DEBUG] Transformed chunk:', transformed);
-                            controller.enqueue(
-                              // eslint-disable-next-line no-undef
-                              new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`)
-                            );
+                          if (chunk.choices && chunk.choices[0]) {
+                            const choice = chunk.choices[0];
+                            const content = choice.delta?.content;
+
+                            // Send initial events on first content
+                            if (!hasStarted && content) {
+                              hasStarted = true;
+                              console.log('[DEBUG] Sending response.created event');
+                              controller.enqueue(
+                                // eslint-disable-next-line no-undef
+                                new TextEncoder().encode(`data: ${JSON.stringify({ type: 'response.created', response: { id: responseId } })}\n\n`)
+                              );
+                              console.log('[DEBUG] Sending response.output_item.added event');
+                              controller.enqueue(
+                                // eslint-disable-next-line no-undef
+                                new TextEncoder().encode(`data: ${JSON.stringify({ type: 'response.output_item.added', item: { id: itemId, type: 'text' } })}\n\n`)
+                              );
+                            }
+
+                            // Send text delta
+                            if (content !== undefined && content !== null) {
+                              const transformed = {
+                                type: 'response.output_text.delta',
+                                item_id: itemId,
+                                delta: content
+                              };
+                              console.log('[DEBUG] Transformed chunk:', transformed);
+                              controller.enqueue(
+                                // eslint-disable-next-line no-undef
+                                new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`)
+                              );
+                            }
                           }
                         } catch (e) {
                           console.error('[DEBUG] Failed to parse chunk:', e);
