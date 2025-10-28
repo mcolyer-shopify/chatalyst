@@ -30,6 +30,7 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   model?: string;
+  thinkingAmount?: string; // Thinking amount for thinking models ('low', 'medium', 'high', 'enabled', 'extended')
   enabledTools?: { [serverId: string]: string[] }; // serverId -> array of enabled tool names
   enabledBuiltinTools?: string[]; // Array of enabled OpenAI built-in tool names
   sdkMessages?: CoreMessage[];

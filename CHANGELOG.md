@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Followed by assistant's response in separate message bubble
   - Supports both light and dark mode with distinct styling
   - Works with all models that support reasoning (GPT-5, o1, o3, o4-mini)
+- Add thinking amount control for thinking models
+  - New thinking amount selector positioned left of model picker
+  - Supports OpenAI reasoning models (GPT-5, o1, o3) with 'low', 'medium', 'high' presets
+  - Supports Claude thinking models (Sonnet 4.5, Opus 4.1) with 'enabled', 'extended' presets
+  - Per-conversation setting that persists across sessions
+  - Only shown when a thinking model is selected
 
 ### Fixed
 - Support for proxies that handle both responses API and chat completions formats

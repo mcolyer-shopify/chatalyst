@@ -5,9 +5,9 @@ import { MCPSidebar } from './components/MCPSidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { MCPSettingsModal } from './components/MCPSettingsModal';
 import { PromptLibraryModal } from './components/PromptLibraryModal';
-import { 
-  conversations, 
-  selectedConversationId, 
+import {
+  conversations,
+  selectedConversationId,
   selectedConversation,
   settings,
   errorMessage,
@@ -18,6 +18,7 @@ import {
   unarchiveConversation,
   updateConversationTitle,
   updateConversationModel,
+  updateConversationThinkingAmount,
   updateSettings,
   clearError,
   deleteMessage
@@ -177,8 +178,15 @@ function App() {
   const handleConversationModelChange = (modelId: string) => {
     const conversation = selectedConversation.value;
     if (!conversation) return;
-    
+
     updateConversationModel(conversation.id, modelId);
+  };
+
+  const handleConversationThinkingAmountChange = (amount: string) => {
+    const conversation = selectedConversation.value;
+    if (!conversation) return;
+
+    updateConversationThinkingAmount(conversation.id, amount);
   };
 
   // Prompt library management
@@ -271,6 +279,7 @@ function App() {
             onRetryMessage={retryMessage}
             onDeleteMessage={handleDeleteMessage}
             onModelChange={handleConversationModelChange}
+            onThinkingAmountChange={handleConversationThinkingAmountChange}
             onStopGeneration={stopGeneration}
             onOpenPromptLibrary={handleOpenPromptLibrary}
             selectedPromptContent={selectedPromptContent}

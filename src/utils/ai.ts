@@ -1,6 +1,7 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createOpenAI } from '@ai-sdk/openai';
 import { AI_PROVIDERS, PROVIDER_DEFAULTS } from '../constants/ai';
+import { isOpenAIReasoningModel, isClaudeThinkingModel } from './thinkingModels';
 import type { Settings } from '../types';
 
 // Type for AI provider with metadata
@@ -135,6 +136,37 @@ export function filterStreamTextOptionsForModel(
   }
 
   // For other models, return all options unchanged
+  return options;
+}
+
+// Add thinking parameters based on model and thinking amount
+export function addThinkingParameters(
+  model: string,
+  thinkingAmount: string | undefined,
+  options: Record<string, unknown>
+): Record<string, unknown> {
+  if (!thinkingAmount) {
+    return options;
+  }
+
+  // For OpenAI reasoning models, add reasoning_effort parameter
+  if (isOpenAIReasoningModel(model)) {
+    return {
+      ...options,
+      reasoning_effort: thinkingAmount as 'low' | 'medium' | 'high'
+    };
+  }
+
+  // For Claude thinking models, add thinking parameter
+  if (isClaudeThinkingModel(model)) {
+    return {
+      ...options,
+      thinking: {
+        type: thinkingAmount === 'extended' ? 'extended' : 'enabled'
+      }
+    };
+  }
+
   return options;
 }
 
