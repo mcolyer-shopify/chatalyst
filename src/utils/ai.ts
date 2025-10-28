@@ -31,8 +31,11 @@ const RESPONSES_API_MODELS = [
 
 // Check if a model should use the responses API
 export function shouldUseResponsesAPI(provider: string, model: string): boolean {
+  console.log('[DEBUG] shouldUseResponsesAPI check:', { provider, model });
+
   // Only use responses API for OpenAI provider
   if (provider !== AI_PROVIDERS.OPENAI) {
+    console.log('[DEBUG] Not OpenAI provider, returning false');
     return false;
   }
 
@@ -42,17 +45,220 @@ export function shouldUseResponsesAPI(provider: string, model: string): boolean 
     model.toLowerCase() === responsesModel.toLowerCase()
   );
 
+  console.log('[DEBUG] Is responses API model?', isResponsesAPIModel, {
+    model: model.toLowerCase(),
+    responsesModels: RESPONSES_API_MODELS
+  });
   return isResponsesAPIModel;
 }
 
 // Create a model function that can use either standard or responses API
-export function createModelFunction(provider: AIProviderWithMetadata, model: string): unknown {
+export function createModelFunction(provider: AIProviderWithMetadata, model: string, baseURL?: string): unknown {
   const providerType = provider._providerType;
   const useResponsesAPI = shouldUseResponsesAPI(providerType, model);
 
+  console.log('[DEBUG] createModelFunction:', { providerType, model, useResponsesAPI, baseURL });
+
   if (useResponsesAPI && providerType === AI_PROVIDERS.OPENAI && 'responses' in provider) {
+    console.log('[DEBUG] Using responses API for', model);
     return (provider as ReturnType<typeof createOpenAI>).responses(model);
   }
+
+  // For non-responses API models with OpenAI provider, create a custom provider
+  // that redirects responses API calls to chat completions
+  if (providerType === AI_PROVIDERS.OPENAI && !useResponsesAPI) {
+    console.log('[DEBUG] Using chat completions for non-responses model:', model);
+
+    const apiKey = (provider as any).config?.apiKey || (provider as any).apiKey || '';
+    const url = baseURL || 'https://api.openai.com/v1';
+
+    // Create a custom fetch function that intercepts responses API calls
+    // and redirects them to chat completions, also converting the request body
+    // eslint-disable-next-line no-undef
+    const customFetch = async (input: unknown, init?: unknown) => {
+      let url_str = typeof input === 'string' ? input : String(input);
+      const initObj = init as any || {};
+
+      console.log('[DEBUG] customFetch intercepting:', { url: url_str, model });
+
+      // If this is a responses API call, redirect to chat completions
+      if (url_str.includes('/v1/responses')) {
+        url_str = url_str.replace('/v1/responses', '/v1/chat/completions');
+        console.log('[DEBUG] Redirecting responses to chat completions:', url_str);
+
+        // Also need to transform the request body from responses API format to chat completions
+        if (initObj.body) {
+          try {
+            const body = typeof initObj.body === 'string' ? JSON.parse(initObj.body) : initObj.body;
+            console.log('[DEBUG] Original body:', JSON.stringify(body, null, 2));
+
+            // Convert responses API body to chat completions body
+            // Responses API uses "input" array with content objects like {type: "input_text", text: "..."}
+            // Chat completions uses "messages" array with content as strings
+            const convertedMessages = (body.input || []).map((msg: any) => {
+              // Convert content from array format to string format
+              let content = msg.content;
+              if (Array.isArray(content)) {
+                // Extract text from content array
+                content = content
+                  .map((c: any) => (typeof c === 'string' ? c : c.text || ''))
+                  .join('');
+              }
+              return {
+                role: msg.role,
+                content
+              };
+            });
+
+            const convertedBody = {
+              model: body.model,
+              messages: convertedMessages,
+              temperature: body.temperature,
+              top_p: body.top_p,
+              max_tokens: body.max_tokens,
+              presence_penalty: body.presence_penalty,
+              frequency_penalty: body.frequency_penalty,
+              stream: body.stream,
+              tools: body.tools,
+              tool_choice: body.tool_choice
+            };
+
+            // Remove undefined values
+            Object.keys(convertedBody).forEach((key: string) => {
+              if ((convertedBody as any)[key] === undefined) {
+                delete (convertedBody as any)[key];
+              }
+            });
+
+            initObj.body = JSON.stringify(convertedBody);
+            console.log('[DEBUG] Converted body:', convertedBody);
+          } catch (e) {
+            console.error('[DEBUG] Failed to convert body:', e);
+          }
+        }
+      }
+
+      // Use fetch from global scope
+      const response = await fetch(url_str, initObj);
+
+      // If this is a chat completions response, we need to transform it back to responses API format
+      // so the OpenAI SDK can parse it correctly
+      if (url_str.includes('/v1/chat/completions') && response.ok) {
+        console.log('[DEBUG] Transforming chat completions response to responses API format');
+        const contentType = response.headers.get('content-type') || '';
+
+        // For streaming responses (content-type might be text/event-stream or application/json)
+        if (initObj.stream || contentType.includes('text/event-stream') || contentType.includes('stream')) {
+          console.log('[DEBUG] Transforming streaming response');
+          // Create a new response that transforms the stream
+          const reader = response.body?.getReader();
+          if (!reader) return response;
+
+          // eslint-disable-next-line no-undef
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          // eslint-disable-next-line no-undef
+          const transformStream = new ReadableStream({
+            async start(controller) {
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop() || '';
+
+                  for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                      const data = line.slice(6).trim();
+                      if (data === '[DONE]') {
+                        // Convert to responses API format
+                        controller.enqueue(
+                          // eslint-disable-next-line no-undef
+                          new TextEncoder().encode('data: {"type":"response.done"}\n\n')
+                        );
+                      } else {
+                        try {
+                          const chunk = JSON.parse(data);
+                          // Transform chat completions chunk to responses API format
+                          const transformed = transformChatCompletionChunk(chunk);
+                          console.log('[DEBUG] Transformed chunk:', {
+                            original: chunk,
+                            transformed
+                          });
+                          controller.enqueue(
+                            // eslint-disable-next-line no-undef
+                            new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`)
+                          );
+                        } catch (e) {
+                          console.error('[DEBUG] Failed to parse chunk:', e);
+                          // eslint-disable-next-line no-undef
+                          controller.enqueue(new TextEncoder().encode(line + '\n'));
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('[DEBUG] Stream transformation error:', e);
+                controller.error(e);
+              } finally {
+                controller.close();
+              }
+            }
+          });
+
+          // eslint-disable-next-line no-undef
+          return new Response(transformStream, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          });
+        }
+      }
+
+      return response;
+    };
+
+    // Transform a chat completions chunk to responses API format
+    const transformChatCompletionChunk = (chunk: any) => {
+      // Chat completions format: {choices: [{delta: {content: "..."}}]}
+      // Responses API format: {type: "response.output_text.delta", delta: "..."}
+      if (chunk.choices && chunk.choices[0]) {
+        const choice = chunk.choices[0];
+        // Check if content exists (including empty strings, which are falsy but valid)
+        if (choice.delta && 'content' in choice.delta) {
+          return {
+            type: 'response.output_text.delta',
+            delta: choice.delta.content || ''
+          };
+        }
+        if (choice.finish_reason === 'stop') {
+          return {
+            type: 'response.done'
+          };
+        }
+      }
+      // Return a generic event if we can't transform it
+      console.log('[DEBUG] Could not transform chunk:', chunk);
+      return {
+        type: 'response.done'
+      };
+    };
+
+    // Create provider with custom fetch
+    const customProvider = createOpenAI({
+      apiKey,
+      baseURL: url,
+      fetch: customFetch as any
+    });
+
+    return customProvider(model);
+  }
+
+  console.log('[DEBUG] Using standard API for', model);
   return provider(model);
 }
 

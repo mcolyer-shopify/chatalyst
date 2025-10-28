@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Supports both light and dark mode with distinct styling
   - Works with all models that support reasoning (GPT-5, o1, o3, o4-mini)
 
+### Fixed
+- Support for proxies that handle both responses API and chat completions formats
+  - Added custom fetch interceptor to transparently transform requests and responses
+  - Intercepts `/v1/responses` calls for non-responses API models and redirects to `/v1/chat/completions`
+  - Transforms request body from responses API format to chat completions format
+  - Transforms response from chat completions back to responses API format
+  - Added handling for `finish-step` events to extract content from nested response structure
+  - Fixes streaming content display when using proxies like those handling claude-sonnet-4-5 with multiple provider backends
+
 ### Changed
 - Fix responses API detection to use explicit allowlist instead of broad assumptions
   - Renamed `OPENAI_MODELS` to `RESPONSES_API_MODELS` for clarity

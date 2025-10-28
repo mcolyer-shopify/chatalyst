@@ -146,7 +146,7 @@ export function useMessageHandling() {
         : toolsObject;
 
       const streamTextOptions = {
-        model: createModelFunction(aiProvider, modelToUse),
+        model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL),
         messages: conversationMessages,
         tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
@@ -155,6 +155,9 @@ export function useMessageHandling() {
       };
 
       const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
+
+      console.log('[DEBUG] Before streamText - model object:', streamTextOptions.model);
+      console.log('[DEBUG] Before streamText - filtered options:', filteredOptions);
 
       const result = await streamText({
         model: streamTextOptions.model as any,
@@ -196,6 +199,8 @@ export function useMessageHandling() {
       
       // Stream the response
       for await (const part of result.fullStream) {
+        console.log('[DEBUG] Stream chunk type:', part.type, part);
+
         if (part.type === 'error') {
           const errorResult = handleAIError((part as { error: unknown }).error, conversation.id, assistantMessage.id);
 
@@ -253,8 +258,28 @@ export function useMessageHandling() {
         }
 
         if (part.type === 'text-delta') {
-          fullContent += (part as { text: string }).text;
+          const textContent = (part as { text: string }).text;
+          console.log('[DEBUG] text-delta content:', textContent);
+          fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if ((part as any).type === 'response.output_text.delta') {
+          // Handle responses API format chunks (from transformed chat completions)
+          const delta = (part as any).delta;
+          console.log('[DEBUG] response.output_text.delta content:', delta);
+          fullContent += delta;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'finish-step') {
+          // Handle finish-step event which contains the final content from responses API
+          const stepResponse = (part as any).response;
+          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
+            for (const item of stepResponse.message.content) {
+              if (item.type === 'text' && item.text) {
+                console.log('[DEBUG] finish-step text content:', item.text);
+                fullContent += item.text;
+                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+              }
+            }
+          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
@@ -326,7 +351,7 @@ export function useMessageHandling() {
       const modelToUse = settings.value.defaultModel || DEFAULT_MODEL;
       
       const result = await generateText({
-        model: createModelFunction(aiProvider, modelToUse) as any,
+        model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL) as any,
         prompt: `Based on the following conversation, generate a brief 3-5 word title that captures the main topic. Respond with only the title, no additional text, quotes, or punctuation.
 
 Conversation:
@@ -430,7 +455,7 @@ Title:`
         : toolsObject;
 
       const streamTextOptions = {
-        model: createModelFunction(aiProvider, modelToUse),
+        model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL),
         messages: conversationMessages,
         tools: combinedTools,
         maxSteps: MAX_TOOL_STEPS,
@@ -439,6 +464,9 @@ Title:`
       };
 
       const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
+
+      console.log('[DEBUG] Before streamText - model object:', streamTextOptions.model);
+      console.log('[DEBUG] Before streamText - filtered options:', filteredOptions);
 
       const result = await streamText({
         model: streamTextOptions.model as any,
@@ -480,6 +508,8 @@ Title:`
       
       // Stream the response
       for await (const part of result.fullStream) {
+        console.log('[DEBUG] Stream chunk type:', part.type, part);
+
         if (part.type === 'error') {
           const errorResult = handleAIError((part as { error: unknown }).error, conversation.id, assistantMessage.id);
 
@@ -537,8 +567,28 @@ Title:`
         }
 
         if (part.type === 'text-delta') {
-          fullContent += (part as { text: string }).text;
+          const textContent = (part as { text: string }).text;
+          console.log('[DEBUG] text-delta content:', textContent);
+          fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if ((part as any).type === 'response.output_text.delta') {
+          // Handle responses API format chunks (from transformed chat completions)
+          const delta = (part as any).delta;
+          console.log('[DEBUG] response.output_text.delta content:', delta);
+          fullContent += delta;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'finish-step') {
+          // Handle finish-step event which contains the final content from responses API
+          const stepResponse = (part as any).response;
+          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
+            for (const item of stepResponse.message.content) {
+              if (item.type === 'text' && item.text) {
+                console.log('[DEBUG] finish-step text content:', item.text);
+                fullContent += item.text;
+                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+              }
+            }
+          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
