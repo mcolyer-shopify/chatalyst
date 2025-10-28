@@ -8,6 +8,7 @@ interface MessageProps {
 }
 
 interface MessageInputProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSend: (message: string, images?: any[]) => void;
   disabled?: boolean;
 }

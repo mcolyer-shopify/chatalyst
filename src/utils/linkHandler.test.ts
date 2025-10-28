@@ -40,10 +40,12 @@ describe('linkHandler', () => {
 
     it('handles Tauri errors gracefully', async () => {
       const mockError = new Error('Tauri error');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (openUrl as any).mockRejectedValueOnce(mockError);
-      
+
       // Mock window.open
       const mockWindowOpen = vi.fn();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       global.window = { open: mockWindowOpen } as any;
 
       await openExternalLink('https://example.com');
@@ -58,10 +60,11 @@ describe('linkHandler', () => {
     it('handles anchor tag clicks', () => {
       const mockAnchor = document.createElement('a');
       mockAnchor.href = 'https://example.com';
-      
+
       const mockEvent = {
         target: mockAnchor,
         preventDefault: vi.fn()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
 
       handleLinkClick(mockEvent);
@@ -72,10 +75,11 @@ describe('linkHandler', () => {
 
     it('ignores non-anchor clicks', () => {
       const mockDiv = document.createElement('div');
-      
+
       const mockEvent = {
         target: mockDiv,
         preventDefault: vi.fn()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
 
       handleLinkClick(mockEvent);
@@ -87,10 +91,11 @@ describe('linkHandler', () => {
     it('ignores anchor tags without href', () => {
       const mockAnchor = document.createElement('a');
       // No href set
-      
+
       const mockEvent = {
         target: mockAnchor,
         preventDefault: vi.fn()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
 
       handleLinkClick(mockEvent);
