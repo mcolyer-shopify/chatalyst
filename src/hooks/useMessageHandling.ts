@@ -259,27 +259,8 @@ export function useMessageHandling() {
 
         if (part.type === 'text-delta') {
           const textContent = (part as { text: string }).text;
-          console.log('[DEBUG] text-delta content:', textContent);
           fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if ((part as any).type === 'response.output_text.delta') {
-          // Handle responses API format chunks (from transformed chat completions)
-          const delta = (part as any).delta;
-          console.log('[DEBUG] response.output_text.delta content:', delta);
-          fullContent += delta;
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'finish-step') {
-          // Handle finish-step event which contains the final content from responses API
-          const stepResponse = (part as any).response;
-          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
-            for (const item of stepResponse.message.content) {
-              if (item.type === 'text' && item.text) {
-                console.log('[DEBUG] finish-step text content:', item.text);
-                fullContent += item.text;
-                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-              }
-            }
-          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
@@ -568,27 +549,8 @@ Title:`
 
         if (part.type === 'text-delta') {
           const textContent = (part as { text: string }).text;
-          console.log('[DEBUG] text-delta content:', textContent);
           fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if ((part as any).type === 'response.output_text.delta') {
-          // Handle responses API format chunks (from transformed chat completions)
-          const delta = (part as any).delta;
-          console.log('[DEBUG] response.output_text.delta content:', delta);
-          fullContent += delta;
-          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-        } else if (part.type === 'finish-step') {
-          // Handle finish-step event which contains the final content from responses API
-          const stepResponse = (part as any).response;
-          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
-            for (const item of stepResponse.message.content) {
-              if (item.type === 'text' && item.text) {
-                console.log('[DEBUG] finish-step text content:', item.text);
-                fullContent += item.text;
-                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
-              }
-            }
-          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,

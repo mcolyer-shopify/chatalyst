@@ -74,7 +74,7 @@ export function createModelFunction(provider: AIProviderWithMetadata, model: str
 
     // Create a custom fetch function that intercepts responses API calls
     // and redirects them to chat completions, also converting the request body
-    // eslint-disable-next-line no-undef
+     
     const customFetch = async (input: unknown, init?: unknown) => {
       let url_str = typeof input === 'string' ? input : String(input);
       const initObj = init as any || {};
@@ -141,111 +141,10 @@ export function createModelFunction(provider: AIProviderWithMetadata, model: str
       // Use fetch from global scope
       const response = await fetch(url_str, initObj);
 
-      // If this is a chat completions response, we need to transform it back to responses API format
-      // so the OpenAI SDK can parse it correctly
-      if (url_str.includes('/v1/chat/completions') && response.ok) {
-        console.log('[DEBUG] Transforming chat completions response to responses API format');
-        const contentType = response.headers.get('content-type') || '';
-
-        // For streaming responses (content-type might be text/event-stream or application/json)
-        if (initObj.stream || contentType.includes('text/event-stream') || contentType.includes('stream')) {
-          console.log('[DEBUG] Transforming streaming response');
-          // Create a new response that transforms the stream
-          const reader = response.body?.getReader();
-          if (!reader) return response;
-
-          // eslint-disable-next-line no-undef
-          const decoder = new TextDecoder();
-          let buffer = '';
-
-          // eslint-disable-next-line no-undef
-          const transformStream = new ReadableStream({
-            async start(controller) {
-              try {
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-
-                  buffer += decoder.decode(value, { stream: true });
-                  const lines = buffer.split('\n');
-                  buffer = lines.pop() || '';
-
-                  for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                      const data = line.slice(6).trim();
-                      if (data === '[DONE]') {
-                        // Convert to responses API format
-                        controller.enqueue(
-                          // eslint-disable-next-line no-undef
-                          new TextEncoder().encode('data: {"type":"response.done"}\n\n')
-                        );
-                      } else {
-                        try {
-                          const chunk = JSON.parse(data);
-                          // Transform chat completions chunk to responses API format
-                          const transformed = transformChatCompletionChunk(chunk);
-                          console.log('[DEBUG] Transformed chunk:', {
-                            original: chunk,
-                            transformed
-                          });
-                          controller.enqueue(
-                            // eslint-disable-next-line no-undef
-                            new TextEncoder().encode(`data: ${JSON.stringify(transformed)}\n\n`)
-                          );
-                        } catch (e) {
-                          console.error('[DEBUG] Failed to parse chunk:', e);
-                          // eslint-disable-next-line no-undef
-                          controller.enqueue(new TextEncoder().encode(line + '\n'));
-                        }
-                      }
-                    }
-                  }
-                }
-              } catch (e) {
-                console.error('[DEBUG] Stream transformation error:', e);
-                controller.error(e);
-              } finally {
-                controller.close();
-              }
-            }
-          });
-
-          // eslint-disable-next-line no-undef
-          return new Response(transformStream, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers
-          });
-        }
-      }
-
+      // Just return the response as-is - the SDK will handle chat completions format naturally
+      // and emit text-delta chunks in the fullStream
+      console.log('[DEBUG] customFetch returning response for:', url_str, 'status:', response.status);
       return response;
-    };
-
-    // Transform a chat completions chunk to responses API format
-    const transformChatCompletionChunk = (chunk: any) => {
-      // Chat completions format: {choices: [{delta: {content: "..."}}]}
-      // Responses API format: {type: "response.output_text.delta", delta: "..."}
-      if (chunk.choices && chunk.choices[0]) {
-        const choice = chunk.choices[0];
-        // Check if content exists (including empty strings, which are falsy but valid)
-        if (choice.delta && 'content' in choice.delta) {
-          return {
-            type: 'response.output_text.delta',
-            delta: choice.delta.content || ''
-          };
-        }
-        if (choice.finish_reason === 'stop') {
-          return {
-            type: 'response.done'
-          };
-        }
-      }
-      // Return a generic event if we can't transform it
-      console.log('[DEBUG] Could not transform chunk:', chunk);
-      return {
-        type: 'response.done'
-      };
     };
 
     // Create provider with custom fetch
