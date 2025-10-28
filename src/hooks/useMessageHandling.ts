@@ -261,6 +261,22 @@ export function useMessageHandling() {
           const textContent = (part as { text: string }).text;
           fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if ((part as any).type === 'response.output_text.delta') {
+          // Handle responses API format chunks (from transformed chat completions)
+          const delta = (part as any).delta;
+          fullContent += delta;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'finish-step') {
+          // Handle finish-step event which may contain the final content
+          const stepResponse = (part as any).response;
+          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
+            for (const item of stepResponse.message.content) {
+              if (item.type === 'text' && item.text) {
+                fullContent += item.text;
+                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+              }
+            }
+          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
@@ -551,6 +567,22 @@ Title:`
           const textContent = (part as { text: string }).text;
           fullContent += textContent;
           updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if ((part as any).type === 'response.output_text.delta') {
+          // Handle responses API format chunks (from transformed chat completions)
+          const delta = (part as any).delta;
+          fullContent += delta;
+          updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+        } else if (part.type === 'finish-step') {
+          // Handle finish-step event which may contain the final content
+          const stepResponse = (part as any).response;
+          if (stepResponse?.message?.content && Array.isArray(stepResponse.message.content)) {
+            for (const item of stepResponse.message.content) {
+              if (item.type === 'text' && item.text) {
+                fullContent += item.text;
+                updateMessage(conversation.id, assistantMessage.id, { content: fullContent });
+              }
+            }
+          }
         } else if (part.type === 'finish') {
           await handleStreamFinish(
             part,
