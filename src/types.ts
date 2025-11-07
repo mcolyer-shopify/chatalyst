@@ -30,6 +30,7 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   model?: string;
+  thinkingAmount?: string; // Thinking amount for thinking models ('low', 'medium', 'high', 'enabled', 'extended')
   enabledTools?: { [serverId: string]: string[] }; // serverId -> array of enabled tool names
   enabledBuiltinTools?: string[]; // Array of enabled OpenAI built-in tool names
   sdkMessages?: CoreMessage[];
@@ -61,7 +62,7 @@ export const OPENAI_BUILTIN_TOOLS: OpenAIBuiltinTool[] = [
     description: 'Search the web for current information',
     type: 'web_search',
     requiresResponsesAPI: true,
-    supportedModels: ['gpt-5', 'gpt-5-turbo', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-preview', 'gpt-5-chat-latest', 'gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini', 'o3-deep-research', 'o4-mini-deep-research']
+    supportedModels: ['gpt-5', 'gpt-5-turbo', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-preview', 'gpt-5-chat-latest', 'gpt-5-2025-08-07', 'gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini', 'o3-deep-research', 'o4-mini-deep-research']
   }
 ];
 

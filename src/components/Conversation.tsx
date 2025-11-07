@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Message } from './Message';
 import { MessageInput } from './MessageInput';
 import { ModelSelector } from './ModelSelector';
+import { ThinkingAmountSelector } from './ThinkingAmountSelector';
 import { isStreaming } from '../store';
 import type { Conversation as ConversationType, PendingImage } from '../types';
 
@@ -11,12 +12,13 @@ interface ConversationProps {
   onRetryMessage: (messageId: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onModelChange: (modelId: string) => void;
+  onThinkingAmountChange: (amount: string) => void;
   onStopGeneration?: () => void;
   onOpenPromptLibrary: () => void;
   selectedPromptContent?: string;
 }
 
-export function Conversation({ conversation, onSendMessage, onRetryMessage, onDeleteMessage, onModelChange, onStopGeneration, onOpenPromptLibrary, selectedPromptContent }: ConversationProps) {
+export function Conversation({ conversation, onSendMessage, onRetryMessage, onDeleteMessage, onModelChange, onThinkingAmountChange, onStopGeneration, onOpenPromptLibrary, selectedPromptContent }: ConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -190,11 +192,19 @@ export function Conversation({ conversation, onSendMessage, onRetryMessage, onDe
       <div class="conversation-header">
         <div class="conversation-header-content">
           <h2>{conversation.title}</h2>
-          <ModelSelector
-            selectedModel={conversation.model}
-            onModelChange={onModelChange}
-            className="conversation-model-selector"
-          />
+          <div class="conversation-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ThinkingAmountSelector
+              model={conversation.model}
+              selectedAmount={conversation.thinkingAmount}
+              onAmountChange={onThinkingAmountChange}
+              className="conversation-thinking-selector"
+            />
+            <ModelSelector
+              selectedModel={conversation.model}
+              onModelChange={onModelChange}
+              className="conversation-model-selector"
+            />
+          </div>
         </div>
       </div>
       <div class="conversation-messages" ref={messagesContainerRef}>

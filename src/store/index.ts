@@ -345,13 +345,13 @@ export async function updateConversationTitle(id: string, title: string) {
 export async function updateConversationModel(id: string, model: string) {
   const conversation = conversations.value.find(c => c.id === id);
   if (!conversation) return;
-  
+
   const updatedConversation = { ...conversation, model, updatedAt: Date.now() };
-  
+
   try {
     // Save to database first
     await saveSingleConversation(updatedConversation);
-    
+
     // Update memory state
     conversations.value = conversations.value.map((c) =>
       c.id === id ? updatedConversation : c
@@ -359,6 +359,26 @@ export async function updateConversationModel(id: string, model: string) {
   } catch (error) {
     console.error('Failed to update conversation model:', error);
     showError(`Failed to update model: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+export async function updateConversationThinkingAmount(id: string, thinkingAmount: string) {
+  const conversation = conversations.value.find(c => c.id === id);
+  if (!conversation) return;
+
+  const updatedConversation = { ...conversation, thinkingAmount, updatedAt: Date.now() };
+
+  try {
+    // Save to database first
+    await saveSingleConversation(updatedConversation);
+
+    // Update memory state
+    conversations.value = conversations.value.map((c) =>
+      c.id === id ? updatedConversation : c
+    );
+  } catch (error) {
+    console.error('Failed to update conversation thinking amount:', error);
+    showError(`Failed to update thinking amount: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

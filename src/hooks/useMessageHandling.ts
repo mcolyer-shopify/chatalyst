@@ -16,7 +16,7 @@ import {
   generatingTitleFor,
   removeMessagesAfter
 } from '../store';
-import { createAIProvider, createModelFunction, filterStreamTextOptionsForModel } from '../utils/ai';
+import { createAIProvider, createModelFunction, filterStreamTextOptionsForModel, addThinkingParameters } from '../utils/ai';
 import { getActiveToolsForConversation } from '../utils/mcp';
 import { createToolsObject, getBuiltinToolsForModel, createBuiltinToolsObject } from '../utils/tools';
 import { handleAIError } from '../utils/errors';
@@ -83,27 +83,27 @@ export function useMessageHandling() {
       // Call the AI with current settings and conversation model
       const aiProvider = createAIProvider(settings.value);
       const modelToUse = conversation.model || settings.value.defaultModel || DEFAULT_MODEL;
-      
+
       // Get active tools for this conversation
       const activeTools = await getActiveToolsForConversation(conversation);
       const toolsObject = createToolsObject(activeTools);
-      
+
       // Get built-in tools if using OpenAI provider
       const providerType = aiProvider._providerType;
       const supportsBuiltinTools = providerType === 'openai';
-      const builtinTools = supportsBuiltinTools 
+      const builtinTools = supportsBuiltinTools
         ? getBuiltinToolsForModel(providerType, modelToUse, conversation.enabledBuiltinTools)
         : [];
       const builtinToolsObject = supportsBuiltinTools && builtinTools.length > 0
         ? createBuiltinToolsObject(builtinTools, aiProvider)
         : {};
-      
+
       // Use SDK messages if available, otherwise create from scratch
       const conversationMessages: CoreMessage[] = conversation.sdkMessages || [];
-      
+
       // Create user message content with images if any
       let messageContent: string | Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = content;
-      
+
       if (imageIds.length > 0) {
         // Get the stored images and convert to data URLs
         const imageDataUrls: string[] = [];
@@ -116,7 +116,7 @@ export function useMessageHandling() {
             console.error('Failed to get image for AI:', error);
           }
         }
-        
+
         // Create message content with images
         const contentParts: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [];
         if (content.trim()) {
@@ -128,24 +128,24 @@ export function useMessageHandling() {
             image: dataUrl
           });
         });
-        
+
         messageContent = contentParts;
       }
-      
+
       conversationMessages.push({
         role: 'user',
         content: messageContent
       });
-      
+
       // Track tool messages by ID to update them when results come in
       const toolMessagesMap = new Map<string, Message>();
-      
+
       // Combine MCP tools with built-in tools for responses API
       const combinedTools = supportsBuiltinTools && Object.keys(builtinToolsObject).length > 0
         ? { ...toolsObject, ...builtinToolsObject }
         : toolsObject;
 
-      const streamTextOptions = {
+      let streamTextOptions: Record<string, unknown> = {
         model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL),
         messages: conversationMessages,
         tools: combinedTools,
@@ -153,6 +153,9 @@ export function useMessageHandling() {
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal
       };
+
+      // Add thinking parameters if model supports them
+      streamTextOptions = addThinkingParameters(modelToUse, conversation.thinkingAmount, streamTextOptions);
 
       const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
 
@@ -162,7 +165,7 @@ export function useMessageHandling() {
       const result = await streamText({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         model: streamTextOptions.model as any,
-        messages: streamTextOptions.messages,
+        messages: streamTextOptions.messages as CoreMessage[],
         ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
@@ -437,7 +440,7 @@ Title:`
         ? { ...toolsObject, ...builtinToolsObject }
         : toolsObject;
 
-      const streamTextOptions = {
+      let streamTextOptions: Record<string, unknown> = {
         model: createModelFunction(aiProvider, modelToUse, settings.value.baseURL),
         messages: conversationMessages,
         tools: combinedTools,
@@ -445,6 +448,9 @@ Title:`
         system: 'You are a helpful assistant. Always provide a summary of any tool call results',
         abortSignal: controller.signal
       };
+
+      // Add thinking parameters if model supports them
+      streamTextOptions = addThinkingParameters(modelToUse, conversation.thinkingAmount, streamTextOptions);
 
       const filteredOptions = filterStreamTextOptionsForModel(modelToUse, streamTextOptions);
 
@@ -454,7 +460,7 @@ Title:`
       const result = await streamText({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         model: streamTextOptions.model as any,
-        messages: streamTextOptions.messages,
+        messages: streamTextOptions.messages as CoreMessage[],
         ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
