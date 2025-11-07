@@ -165,7 +165,7 @@ export function useMessageHandling() {
       const result = await streamText({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         model: streamTextOptions.model as any,
-        messages: streamTextOptions.messages,
+        messages: streamTextOptions.messages as CoreMessage[],
         ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {
@@ -460,7 +460,7 @@ Title:`
       const result = await streamText({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         model: streamTextOptions.model as any,
-        messages: streamTextOptions.messages,
+        messages: streamTextOptions.messages as CoreMessage[],
         ...(Object.fromEntries(Object.entries(filteredOptions).filter(([key]) => !['model', 'messages'].includes(key))) as Record<string, unknown>),
         onChunk: async ({ chunk }) => {
           if (chunk.type === 'tool-call') {

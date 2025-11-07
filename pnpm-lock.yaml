@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@ai-sdk/openai':
-        specifier: 2.0.56
-        version: 2.0.56(zod@4.1.12)
+        specifier: 3.0.0-beta.43
+        version: 3.0.0-beta.43(zod@4.1.12)
       '@ai-sdk/openai-compatible':
         specifier: 0.2.14
         version: 0.2.14(zod@4.1.12)
@@ -126,8 +126,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/openai@2.0.56':
-    resolution: {integrity: sha512-D+IlvQJYvlhSMTL9t6RxwineAznyKv9j1wytjvD+mf8oivDCEyHjURXbcFKK7yyVJQTUc91YbnhjUw7YgxPbYQ==}
+  '@ai-sdk/openai@3.0.0-beta.43':
+    resolution: {integrity: sha512-BfDlDuGSnJxrBodG3OsgpM1tVl/hqBr67tifO2Bxm88Rvl38KD9KtIJ3/ax3w0PWadNq2lwqdG89Sn7p54i1ow==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -144,12 +144,32 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/provider-utils@4.0.0-beta.27':
+    resolution: {integrity: sha512-Qvc6dLJdjXx5AOfty4aZlfMRmZp9HT83R8i17eCqRo20nW68DZ9VKzK0BtKiOXHLeBR/F4WVKvMsza8TwLlXFQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@valibot/to-json-schema': ^1.3.0
+      arktype: ^2.1.22
+      effect: ^3.18.4
+      zod: ^3.25.76 || ^4.1.8
+    peerDependenciesMeta:
+      '@valibot/to-json-schema':
+        optional: true
+      arktype:
+        optional: true
+      effect:
+        optional: true
+
   '@ai-sdk/provider@1.1.3':
     resolution: {integrity: sha512-qZMxYJ0qqX/RfnuIaab+zp8UAeJn/ygXXAffR5I4N0n1IrvA6qBsjc8hXLmBiMV2zoXlifkacF7sEFnYnjBcqg==}
     engines: {node: '>=18'}
 
   '@ai-sdk/provider@2.0.0':
     resolution: {integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==}
+    engines: {node: '>=18'}
+
+  '@ai-sdk/provider@3.0.0-beta.13':
+    resolution: {integrity: sha512-I1dQccnA+G8/RTrVDoHfjFdUG534z+371D1hZVeo8yLWoaLMvRiPrk+fIJkkGjvdZ3OQdsQMDNw3WCKW6GFSbw==}
     engines: {node: '>=18'}
 
   '@ai-sdk/react@1.2.12':
@@ -2574,11 +2594,15 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.8(zod@4.1.12)
       zod: 4.1.12
 
-  '@ai-sdk/openai@2.0.56(zod@4.1.12)':
+  '@ai-sdk/openai@3.0.0-beta.43(zod@4.1.12)':
     dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.13(zod@4.1.12)
+      '@ai-sdk/provider': 3.0.0-beta.13
+      '@ai-sdk/provider-utils': 4.0.0-beta.27(zod@4.1.12)
       zod: 4.1.12
+    transitivePeerDependencies:
+      - '@valibot/to-json-schema'
+      - arktype
+      - effect
 
   '@ai-sdk/provider-utils@2.2.8(zod@4.1.12)':
     dependencies:
@@ -2594,11 +2618,22 @@ snapshots:
       eventsource-parser: 3.0.6
       zod: 4.1.12
 
+  '@ai-sdk/provider-utils@4.0.0-beta.27(zod@4.1.12)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.0-beta.13
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
+      zod: 4.1.12
+
   '@ai-sdk/provider@1.1.3':
     dependencies:
       json-schema: 0.4.0
 
   '@ai-sdk/provider@2.0.0':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@3.0.0-beta.13':
     dependencies:
       json-schema: 0.4.0
 

@@ -16,7 +16,7 @@
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
   },
   "dependencies": {
-    "@ai-sdk/openai": "2.0.56",
+    "@ai-sdk/openai": "3.0.0-beta.43",
     "@ai-sdk/openai-compatible": "0.2.14",
     "@ai-sdk/react": "1.2.12",
     "@modelcontextprotocol/sdk": "^1.12.0",

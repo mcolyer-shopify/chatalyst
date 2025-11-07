@@ -9,6 +9,7 @@ const THINKING_MODELS = [
   'gpt-5-nano',
   'gpt-5-turbo',
   'gpt-5-preview',
+  'gpt-5-2025-08-07',
   // Claude models (use thinking parameter)
   'claude-sonnet-4.5-*',
   'claude-opus-4.1-*'
