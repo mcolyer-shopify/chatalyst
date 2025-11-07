@@ -18,7 +18,7 @@
   "dependencies": {
     "@ai-sdk/openai": "3.0.0-beta.43",
     "@ai-sdk/openai-compatible": "0.2.14",
-    "@ai-sdk/react": "1.2.12",
+    "@ai-sdk/react": "3.0.0-beta.94",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@preact/signals": "^2.0.5",
     "@tauri-apps/api": "2.9.0",
@@ -27,7 +27,7 @@
     "@tauri-apps/plugin-shell": "2.3.1",
     "@tauri-apps/plugin-sql": "^2.3.0",
     "@types/sortablejs": "^1.15.8",
-    "ai": "5.0.81",
+    "ai": "6.0.0-beta.94",
     "marked": "^15.0.12",
     "preact": "^10.25.1",
     "sortablejs": "^1.15.6",
