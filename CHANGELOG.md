@@ -31,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixes streaming content display when using proxies like those handling claude-sonnet-4-5 with multiple provider backends
 
 ### Changed
+- Hide thinking blocks from conversation UI while keeping backend processing
+  - Thinking blocks no longer visible in conversation view
+  - Thinking amount controls remain functional
+  - Stream processing and parameter passing continue to work
+  - Existing thinking messages in database are preserved but filtered from display
 - Fix responses API detection to use explicit allowlist instead of broad assumptions
   - Renamed `OPENAI_MODELS` to `RESPONSES_API_MODELS` for clarity
   - Now only models explicitly known to support responses API are treated as such

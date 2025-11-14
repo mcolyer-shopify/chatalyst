@@ -209,14 +209,16 @@ export function Conversation({ conversation, onSendMessage, onRetryMessage, onDe
       </div>
       <div class="conversation-messages" ref={messagesContainerRef}>
         <div class="conversation-messages-content">
-          {conversation.messages.map((message) => (
-            <Message 
-              key={message.id} 
-              message={message}
-              onRetry={() => handleRetry(message.id)}
-              onDelete={() => handleDelete(message.id)}
-            />
-          ))}
+          {conversation.messages
+            .filter((message) => !message.isThinking)
+            .map((message) => (
+              <Message
+                key={message.id}
+                message={message}
+                onRetry={() => handleRetry(message.id)}
+                onDelete={() => handleDelete(message.id)}
+              />
+            ))}
           <div ref={messagesEndRef} />
         </div>
         {showScrollButton && (
